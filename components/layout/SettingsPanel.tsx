@@ -2,6 +2,7 @@ import React, { useEffect, useRef, useState } from 'react';
 import {
   GestureResponderEvent,
   KeyboardAvoidingView,
+  Linking,
   Platform,
   Pressable,
   ScrollView,
@@ -11,6 +12,9 @@ import {
   View,
 } from 'react-native';
 import GeminiKeyField from './GeminiKeyField';
+import Constants from 'expo-constants';
+import appConfig from '../../app.json';
+import { checkAppUpdate, type UpdateResult } from '@/services/appUpdate';
 import { getBgmVolume, setBgmVolume, subscribeBgmVolume } from '@/services/bgmVolume';
 import { getSfxVolume, setSfxVolume, subscribeSfxVolume } from '@/services/sfxVolume';
 import { APP_LANGUAGES, setAppLanguage } from '@/services/appLanguage';
@@ -89,6 +93,39 @@ export default function SettingsPanel({
   const [sfx, setSfx] = useState(getSfxVolume);
   const scrollRef = useRef<ScrollView>(null);
   const [keyOffset, setKeyOffset] = useState(0);
+  // Web's Expo manifest is captured when Metro starts and can lag behind
+  // hot-reloaded source. Read the bundled config on web so the displayed
+  // version and update comparison describe the code currently being served.
+  const appVersion = Platform.OS === 'web'
+    ? appConfig.expo.version
+    : Constants.expoConfig?.version ?? appConfig.expo.version;
+  const [updateStatus, setUpdateStatus] = useState<'idle' | 'checking' | 'done' | 'error'>('idle');
+  const [updateResult, setUpdateResult] = useState<UpdateResult | null>(null);
+  const [linkError, setLinkError] = useState(false);
+  const updateRequest = useRef<AbortController | null>(null);
+  useEffect(() => () => { updateRequest.current?.abort(); }, []);
+
+  const checkUpdate = async () => {
+    if (updateRequest.current) return;
+    const request = new AbortController();
+    updateRequest.current = request;
+    setUpdateStatus('checking'); setUpdateResult(null); setLinkError(false);
+    try {
+      const result = await checkAppUpdate(appVersion, request.signal);
+      if (!request.signal.aborted) { setUpdateResult(result); setUpdateStatus('done'); }
+    } catch {
+      if (!request.signal.aborted) setUpdateStatus('error');
+    } finally {
+      if (updateRequest.current === request) updateRequest.current = null;
+    }
+  };
+
+  const openUpdate = async () => {
+    if (!updateResult?.available) return;
+    setLinkError(false);
+    try { await Linking.openURL(updateResult.url); }
+    catch { setLinkError(true); }
+  };
 
   useEffect(() => subscribeBgmVolume(setVolume), []);
   useEffect(() => subscribeSfxVolume(setSfx), []);
@@ -184,6 +221,28 @@ export default function SettingsPanel({
             <Text style={styles.guideText}>{t('terms')}</Text>
           </TouchableOpacity>
         </View>
+      </View>
+      <View style={styles.card}>
+        <Text style={styles.label}>{t('appVersion')}</Text>
+        <Text selectable style={styles.value}>{appVersion}</Text>
+        <View style={styles.languageRow}>
+          <TouchableOpacity accessibilityRole="button" disabled={updateStatus === 'checking'}
+            style={[styles.guideBtn, updateStatus === 'checking' && styles.disabled]} onPress={() => void checkUpdate()}>
+            <Text style={styles.guideText}>{t(updateStatus === 'checking' ? 'updateChecking' : 'checkUpdate')}</Text>
+          </TouchableOpacity>
+          {updateResult?.available && (
+            <TouchableOpacity accessibilityRole="link" style={styles.guideBtn} onPress={() => void openUpdate()}>
+              <Text style={styles.guideText}>{t('openUpdateDownload')}</Text>
+            </TouchableOpacity>
+          )}
+        </View>
+        {updateStatus === 'done' && updateResult && (
+          <Text style={styles.hint} accessibilityLiveRegion="polite">
+            {t(updateResult.available ? 'updateAvailable' : 'updateCurrent', { version: updateResult.version })}
+          </Text>
+        )}
+        {updateStatus === 'error' && <Text style={styles.hint} accessibilityLiveRegion="polite">{t('updateCheckFailed')}</Text>}
+        {linkError && <Text selectable style={styles.hint}>{t('updateOpenFailed')} {updateResult?.url}</Text>}
       </View>
       </ScrollView>
     </KeyboardAvoidingView>

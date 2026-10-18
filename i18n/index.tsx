@@ -6,6 +6,11 @@ type Dictionary = Record<string, string>;
 
 const translations: Record<AppLanguage, Dictionary> = {
   ko: {
+    appVersion: '현재 버전',
+    checkUpdate: '업데이트 확인', updateChecking: '확인 중…', updateCurrent: '최신 정식 버전 이상을 사용 중입니다.', updateAvailable: '새 버전 {version}이 있습니다.', openUpdateDownload: '다운로드 페이지', updateCheckFailed: '업데이트를 확인하지 못했습니다. 네트워크 연결을 확인하고 다시 시도해 주세요.', updateOpenFailed: '다운로드 페이지를 열지 못했습니다. 아래 주소를 이용해 주세요.',
+    videoPrepareFailed: '영상에 필요한 이미지·음원·글꼴을 읽지 못했습니다. 앱을 다시 실행한 후 재시도해 주세요.',
+    videoEncodeFailed: '영상 생성 중 오류가 발생했습니다. 앱을 다시 실행하고 Android System WebView를 최신 버전으로 업데이트해 주세요.',
+    videoSaveFailed: '영상 파일을 저장하지 못했습니다. 저장 위치와 접근 권한, 여유 공간을 확인해 주세요.',
     videoChooseLocation: '저장 창에서 파일명과 위치를 선택해 주세요. 선택하기 전에는 영상을 생성하지 않습니다.',
     videoSavedFile: '선택한 위치에 MP4 파일을 저장했습니다.', fileSaveUnsupported: '이 브라우저는 저장 위치 선택을 지원하지 않습니다. 최신 Chrome·Edge 또는 Windows 프로그램을 사용해 주세요.',
     videoLimitHint: '최대 10분까지 추출할 수 있습니다.',
@@ -28,6 +33,11 @@ const translations: Record<AppLanguage, Dictionary> = {
     termsTitle: '이용 약관', tutorialTitle: '사용 방법', agreeTerms: '위 내용을 확인했고, 이에 동의합니다.', agreeStart: '동의하고 시작', skip: '건너뛰기', previous: '이전', start: '시작하기', next: '다음', openAiStudio: 'Google AI Studio 열기',
   },
   en: {
+    appVersion: 'App version',
+    checkUpdate: 'Check for updates', updateChecking: 'Checking…', updateCurrent: 'You are running the latest stable version or newer.', updateAvailable: 'Version {version} is available.', openUpdateDownload: 'Download page', updateCheckFailed: 'Could not check for updates. Check your connection and try again.', updateOpenFailed: 'Could not open the download page. Use this address:',
+    videoPrepareFailed: 'Could not read the images, audio, or font needed for the video. Restart the app and try again.',
+    videoEncodeFailed: 'Video creation failed. Restart the app and update Android System WebView if applicable.',
+    videoSaveFailed: 'Could not save the video file. Check the destination, permissions, and available storage.',
     videoChooseLocation: 'Choose a filename and location in the save dialog. Video creation starts only after selection.',
     videoSavedFile: 'MP4 saved to your selected location.', fileSaveUnsupported: 'This browser cannot choose a save location. Use current Chrome, Edge, or the Windows app.',
     videoLimitHint: 'Export videos up to 10 minutes long.',
@@ -50,6 +60,11 @@ const translations: Record<AppLanguage, Dictionary> = {
     termsTitle: 'Terms of use', tutorialTitle: 'How to use', agreeTerms: 'I have read and agree to the above.', agreeStart: 'Agree and start', skip: 'Skip', previous: 'Previous', start: 'Start', next: 'Next', openAiStudio: 'Open Google AI Studio',
   },
   ja: {
+    appVersion: '現在のバージョン',
+    checkUpdate: '更新を確認', updateChecking: '確認中…', updateCurrent: '最新の正式版以降を使用中です。', updateAvailable: '新しいバージョン {version} があります。', openUpdateDownload: 'ダウンロードページ', updateCheckFailed: '更新を確認できませんでした。接続を確認して再試行してください。', updateOpenFailed: 'ページを開けませんでした。次のURLをご利用ください。',
+    videoPrepareFailed: '動画に必要な画像・音声・フォントを読み込めませんでした。アプリを再起動して再試行してください。',
+    videoEncodeFailed: '動画の生成中にエラーが発生しました。アプリを再起動し、Android System WebViewを更新してください。',
+    videoSaveFailed: '動画を保存できませんでした。保存先、アクセス権限、空き容量を確認してください。',
     videoChooseLocation: '保存ダイアログで名前と場所を選んでください。選択後に動画の作成を開始します。',
     videoSavedFile: '選択した場所にMP4を保存しました。', fileSaveUnsupported: 'このブラウザーでは保存先を選べません。最新のChrome・EdgeまたはWindowsアプリをご利用ください。',
     videoLimitHint: '10分以内の動画を書き出せます。',
@@ -72,6 +87,11 @@ const translations: Record<AppLanguage, Dictionary> = {
     termsTitle: '利用規約', tutorialTitle: '使い方', agreeTerms: '上記を確認し、同意します。', agreeStart: '同意して始める', skip: 'スキップ', previous: '戻る', start: '始める', next: '次へ', openAiStudio: 'Google AI Studio を開く',
   },
   zh: {
+    appVersion: '当前版本',
+    checkUpdate: '检查更新', updateChecking: '检查中…', updateCurrent: '您正在使用最新正式版或更新版本。', updateAvailable: '发现新版本 {version}。', openUpdateDownload: '下载页面', updateCheckFailed: '无法检查更新。请检查网络连接后重试。', updateOpenFailed: '无法打开下载页面。请使用以下地址：',
+    videoPrepareFailed: '无法读取视频所需的图片、音频或字体。请重启应用后重试。',
+    videoEncodeFailed: '生成视频时发生错误。请重启应用并更新Android System WebView。',
+    videoSaveFailed: '无法保存视频文件。请检查保存位置、访问权限和可用空间。',
     videoChooseLocation: '请在保存窗口中选择文件名和位置。选择后才会开始生成视频。',
     videoSavedFile: 'MP4已保存到所选位置。', fileSaveUnsupported: '此浏览器不支持选择保存位置。请使用最新版Chrome、Edge或Windows应用。',
     videoLimitHint: '支持导出10分钟以内的视频。',

@@ -7,6 +7,7 @@ import WebView, { type WebViewMessageEvent } from 'react-native-webview';
 import { videoFileName } from '@/services/videoExport/types';
 import { decodeBase64 } from '@/services/videoExport/base64';
 import type { VideoExportWorkerProps } from './VideoExportWorker.types';
+import { readableVideoAsset } from './videoAsset';
 
 export default function VideoExportWorker(props: VideoExportWorkerProps) {
   const latest = useRef(props); latest.current = props;
@@ -32,8 +33,7 @@ export default function VideoExportWorker(props: VideoExportWorkerProps) {
     void (async () => {
       if (Platform.OS === 'android' && !NativeModules.MomoVideoDownloads) throw new Error('VIDEO_NATIVE_REBUILD');
       const asset = Asset.fromModule(require('../assets/video-renderer.js.txt'));
-      await asset.downloadAsync();
-      const script = await new File(asset.localUri ?? asset.uri).text();
+      const script = await (await readableVideoAsset(asset)).text();
       if (active && !disposed.current) {
         setHtml(`<!doctype html><html><head><meta name="viewport" content="width=device-width"><meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'unsafe-inline' 'wasm-unsafe-eval' blob:; worker-src blob:; connect-src data: blob:; img-src data:; font-src data:; style-src 'unsafe-inline'"></head><body><script>${script.replace(/<\/script/gi, '<\\/script')}</script></body></html>`);
         bridgeTimer.current = setTimeout(() => fail(new Error('VIDEO_UNSUPPORTED')), 30000);

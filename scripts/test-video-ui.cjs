@@ -112,6 +112,36 @@ function load(file, mocks) {
   assert.equal(delayedPrepareCount, 1);
   await React.act(async () => tree.unmount());
 
+  // Failure messages must identify the phase, not assume storage is full.
+  for (const failurePhase of ['preparing', 'encoding', 'saving']) {
+    const Broken = load('components/chat/VideoExportModal.tsx', {
+      ...pickerMocks, 'react-native': rn, '@/i18n': i18n,
+      '@/services/videoExport/prepare': { prepareVideo: async () => {
+        if (failurePhase === 'preparing') throw new Error('resource unavailable');
+        return { title: 'test' };
+      } },
+      '@/platform/VideoExportWorker': 'VideoExportWorker',
+    }).default;
+    const originalError = console.error;
+    try {
+      console.error = () => {};
+      await React.act(async () => { tree = Renderer.create(React.createElement(Broken, { story, onClose() {} })); });
+      await React.act(async () => button('videoDownload').props.onPress());
+      if (failurePhase !== 'preparing') {
+        await React.act(async () => {
+          const worker = tree.root.findByType('VideoExportWorker');
+          // Progress and failure can arrive in the same tick, before re-render.
+          worker.props.options.onProgress({ phase: failurePhase, progress: 0.5 });
+          worker.props.onError(new Error('failure'));
+        });
+      }
+      const key = { preparing: 'videoPrepareFailed', encoding: 'videoEncodeFailed', saving: 'videoSaveFailed' }[failurePhase];
+      assert.ok(tree.root.findAllByType('Text').some(text => text.props.children === key));
+      assert.ok(button('videoDownload'), 'failure must allow retry');
+      await React.act(async () => tree.unmount());
+    } finally { console.error = originalError; }
+  }
+
   const List = load('components/chat/StoryLibraryList.tsx', {
     'react-native': rn, '@expo/vector-icons': { Ionicons: 'Ionicons' }, '@/constants/characters': { avatarOf: () => undefined, displayCharacterName: (name) => name },
     '@/hooks/useLayout': { useLayout: () => ({ isCompact: true }) }, '@/components/chat/StoryAssetPanel': 'StoryAssetPanel', './VideoExportModal': 'VideoExportModal',

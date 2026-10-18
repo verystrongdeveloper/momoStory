@@ -20,6 +20,11 @@ export default function VideoExportModal({ story, onClose }: { story: SavedStory
   const destination = useRef<FileSaveTarget | undefined>(undefined);
   const alive = useRef(true);
   const starting = useRef(false);
+  const phase = useRef<'picking' | ExportProgress['phase']>('preparing');
+  const reportProgress = useCallback((value: ExportProgress) => {
+    phase.current = value.phase;
+    setProgress(value);
+  }, []);
   useEffect(() => {
     alive.current = true;
     return () => { alive.current = false; controller.current?.abort(); void destination.current?.cancel?.().catch(() => {}); };
@@ -31,12 +36,15 @@ export default function VideoExportModal({ story, onClose }: { story: SavedStory
     setPayload(null);
     void destination.current?.cancel?.().catch(() => {});
     if (failure.message.includes('EXPORT_CANCELED')) { setStatus('idle'); return; }
-    console.error('[VideoExport]', failure);
+    console.error('[VideoExport]', phase.current, failure);
     const key = failure.message === 'VIDEO_UNSUPPORTED' ? 'videoUnsupported'
       : failure.message === 'VIDEO_NATIVE_REBUILD' ? 'videoNativeRebuild'
       : failure.message === 'VIDEO_TOO_LONG' ? 'videoTooLong'
       : failure.message === 'VIDEO_TOO_LARGE' ? 'videoTooLarge'
-      : failure.message === 'SAVE_LOCATION_UNSUPPORTED' ? 'fileSaveUnsupported' : 'videoExportFailed';
+      : failure.message === 'SAVE_LOCATION_UNSUPPORTED' ? 'fileSaveUnsupported'
+      : phase.current === 'preparing' ? 'videoPrepareFailed'
+      : phase.current === 'encoding' ? 'videoEncodeFailed'
+      : 'videoSaveFailed';
     setError(key); setStatus('error');
   }, []);
 
@@ -44,17 +52,18 @@ export default function VideoExportModal({ story, onClose }: { story: SavedStory
     if (starting.current) return;
     starting.current = true;
     const abort = new AbortController(); controller.current = abort;
+    phase.current = 'picking';
     setError(''); setStatus('picking');
     try {
       const target = await chooseVideoSaveTarget(videoFileName(story.title, ratio), abort.signal);
       if (!alive.current || abort.signal.aborted) { await target?.cancel?.(); return; }
       if (target === null) { starting.current = false; setStatus('idle'); return; }
       destination.current = target;
-      setStatus('working'); setProgress({ phase: 'preparing', progress: 0 });
+      setStatus('working'); reportProgress({ phase: 'preparing', progress: 0 });
       const prepared = await prepareVideo(story, ratio, language, {
         bondEvent: t('bondEvent'), bondStory: t('bondStory', { name: story.character }),
-      }, { signal: abort.signal, onProgress: (value) => { if (alive.current && !abort.signal.aborted) setProgress(value); } });
-      if (alive.current && !abort.signal.aborted) setPayload(prepared);
+      }, { signal: abort.signal, onProgress: (value) => { if (alive.current && !abort.signal.aborted) reportProgress(value); } });
+      if (alive.current && !abort.signal.aborted) { phase.current = 'encoding'; setPayload(prepared); }
     } catch (failure) { failed(failure instanceof Error ? failure : new Error(String(failure))); }
   };
 
@@ -116,7 +125,7 @@ export default function VideoExportModal({ story, onClose }: { story: SavedStory
           </ScrollView>
         </View>
         {payload && controller.current && (
-          <VideoExportWorker payload={payload} options={{ signal: controller.current.signal, onProgress: setProgress }} destination={destination.current} onComplete={completed} onError={failed} />
+          <VideoExportWorker payload={payload} options={{ signal: controller.current.signal, onProgress: reportProgress }} destination={destination.current} onComplete={completed} onError={failed} />
         )}
       </View>
     </Modal>

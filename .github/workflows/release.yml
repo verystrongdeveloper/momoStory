@@ -10,8 +10,9 @@ permissions:
   contents: write
 
 env:
-  EXPO_PUBLIC_SUPABASE_URL: ${{ vars.EXPO_PUBLIC_SUPABASE_URL }}
-  EXPO_PUBLIC_SUPABASE_PUBLISHABLE_KEY: ${{ vars.EXPO_PUBLIC_SUPABASE_PUBLISHABLE_KEY }}
+  # Public client configuration; never put secret/service_role credentials here.
+  EXPO_PUBLIC_SUPABASE_URL: ${{ vars.EXPO_PUBLIC_SUPABASE_URL || 'https://quowxrwqyddxsvoycxth.supabase.co' }}
+  EXPO_PUBLIC_SUPABASE_PUBLISHABLE_KEY: ${{ vars.EXPO_PUBLIC_SUPABASE_PUBLISHABLE_KEY || 'sb_publishable_qlUpGcmaxLh7spZm96ItIw_5HxsBF9c' }}
 
 jobs:
   desktop:

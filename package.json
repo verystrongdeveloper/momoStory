@@ -1,11 +1,12 @@
 {
   "name": "momostory",
   "main": "expo-router/entry",
-  "version": "1.0.5",
+  "version": "1.0.6",
   "scripts": {
     "community:assets": "node scripts/build-community-assets.cjs",
     "test:community": "node scripts/build-community-assets.cjs --check && node scripts/test-community.cjs && node scripts/test-community-client.cjs && node scripts/test-community-ui.cjs",
     "test:editor": "node scripts/test-story-editor.cjs",
+    "test:tutorial": "node scripts/test-tutorial.cjs",
     "video:renderer": "node scripts/build-video-renderer.js",
     "test:video": "node scripts/test-video-timeline.cjs && node scripts/test-video-presentation.cjs && node scripts/test-video-assets.cjs && node scripts/test-video-ui.cjs && node scripts/test-background-transition.cjs",
     "test:file-save": "node scripts/test-file-save.cjs && node scripts/test-local-file-save.cjs",

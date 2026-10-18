@@ -3,12 +3,15 @@ import { Linking, Pressable, ScrollView, StyleSheet, Text, TouchableOpacity, Vie
 import { Ionicons } from '@expo/vector-icons';
 import { getSetting, isStorageSynced, saveSetting, subscribeStorage } from '@/storage';
 import { useI18n } from '@/i18n';
+import type { AppLanguage } from '@/storage/types';
+import { getTutorialContent } from './tutorialContent';
 
 const AI_STUDIO_URL = 'https://aistudio.google.com/apikey';
 
 export type GuideMode = 'terms' | 'tutorial';
 
 type Step = {
+  id: string;
   title: string;
   body: React.ReactNode;
 };
@@ -35,86 +38,26 @@ function IconLine({ name, label, text }: { name: keyof typeof Ionicons.glyphMap;
   );
 }
 
-function tutorialSteps(): Step[] {
-  return [
-  {
-    title: 'MomoStory',
-    body: (
-      <Text style={styles.body}>
-        블루 아카이브 캐릭터와 대화하고, 그 대화를 바탕으로 인연 스토리를 만드는 팬 프로그램입니다. 공식 게임이 아니며, 대사는 AI가 만듭니다.
-      </Text>
-    ),
-  },
-  {
-    title: 'Gemini API 키 발급',
-    body: (
-      <>
-        <Text style={styles.body}>대화와 스토리 생성에는 본인 Google 계정의 Gemini API 키가 필요합니다.</Text>
-        <Text style={styles.stepLine}>1. 아래 버튼으로 Google AI Studio를 엽니다.</Text>
-        <Text style={styles.stepLine}>2. Google 계정으로 로그인합니다.</Text>
-        <Text style={styles.stepLine}>3. 「API 키 만들기」를 누릅니다.</Text>
-        <Text style={styles.stepLine}>4. 나온 키를 복사합니다.</Text>
+const tutorialIcons: Partial<Record<string, keyof typeof Ionicons.glyphMap>> = {
+  key: 'settings-outline', chat: 'person-outline', library: 'library-outline', community: 'people-outline',
+};
+
+function tutorialSteps(language: AppLanguage, aiStudioLabel: string): Step[] {
+  return getTutorialContent(language).map(page => ({
+    id: page.id,
+    title: page.title,
+    body: <>
+      {page.paragraphs.map((paragraph, index) => index === 0 && tutorialIcons[page.id]
+        ? <IconLine key={index} name={tutorialIcons[page.id]!} label="" text={paragraph} />
+        : <Text key={index} style={styles.body}>{paragraph}</Text>)}
+      {page.aiStudio && <>
         <TouchableOpacity style={styles.linkBtn} onPress={openAiStudio}>
-          <Text style={styles.linkText}>Google AI Studio 열기</Text>
+          <Text style={styles.linkText}>{aiStudioLabel}</Text>
         </TouchableOpacity>
-        <Text selectable style={styles.url}>
-          {AI_STUDIO_URL}
-        </Text>
-        <Text style={styles.note}>키는 비밀번호와 같습니다. 다른 사람에게 보내거나 채팅에 붙여 넣지 마세요. 사용량은 본인 Google 계정 기준으로 계산됩니다.</Text>
-      </>
-    ),
-  },
-  {
-    title: '키를 넣는 곳',
-    body: (
-      <>
-        <IconLine name="settings-outline" label="톱니바퀴" text="를 누릅니다. 좁은 화면에서는 아래쪽 탭에 있습니다." />
-        <Text style={styles.body}>Gemini API 키 칸에 붙여 넣고 저장을 누릅니다.</Text>
-        <Text style={styles.body}>API 키 기억하기를 켜면 다음에도 이 기기에 남습니다. 끄면 이번 실행에서만 쓰입니다.</Text>
-      </>
-    ),
-  },
-  {
-    title: '대화하는 법',
-    body: (
-      <>
-        <IconLine name="person-outline" label="사람 아이콘" text="은 캐릭터와 1:1로 이야기합니다." />
-        <Text style={styles.body}>목록에서 상대를 고른 뒤 메시지를 보내고, 보내기를 누릅니다.</Text>
-        <Text style={styles.body}>목록 위의 먼저 말 걸기를 켜면, 방에 들어갈 때 상대가 먼저 말을 겁니다.</Text>
-      </>
-    ),
-  },
-  {
-    title: '인연 스토리',
-    body: (
-      <Text style={styles.body}>
-        같은 캐릭터와 대화를 세 번 쌓으면 입력창 위에 인연 이벤트가 나타납니다. 먼저 말 걸기를 켠 경우, 그 첫 말도 한 번으로 칩니다. 버튼을 누르면 지금까지의 대화를 바탕으로 스토리가 만들어지고 바로 재생됩니다. 재생 중 배경, 표정, 음악이 바뀌고, 끝난 스토리는 라이브러리에 남습니다.
-      </Text>
-    ),
-  },
-  {
-    title: '라이브러리',
-    body: (
-      <>
-        <IconLine name="library-outline" label="책 아이콘" text="이 라이브러리입니다. 만들어진 인연 스토리가 카드로 모입니다." />
-        <Text style={styles.body}>카드를 누르면 저장된 대화가 하나씩 재생됩니다. 화면을 누르면 전체 대화를 바로 볼 수 있습니다. 이 채팅방에서는 메시지를 보낼 수 없고, 인연 스토리로 버튼을 눌러 스토리를 시작합니다.</Text>
-        <Text style={styles.body}>카드의 … 메뉴에서 대본을 수정하거나, 텍스트 파일로 추출하거나, 지울 수 있습니다.</Text>
-        <Text style={styles.body}>영상 추출은 16:9 또는 9:16 MP4로 대화와 스토리를 이어 저장합니다. 선택지는 첫 번째 항목을 자동으로 선택합니다.</Text>
-        <Text style={styles.body}>위쪽 프롬프트 복사는 스토리 대본을 쓰는 안내문입니다. 불러오기는 텍스트 대본 파일을 라이브러리에 넣습니다.</Text>
-        <Text style={styles.body}>새로 만들기를 누르면 빈 편집 화면이 열립니다. 대본을 작성하고 저장하면 새 스토리가 라이브러리에 추가됩니다.</Text>
-      </>
-    ),
-  },
-  {
-    title: '설정',
-    body: (
-      <>
-        <Text style={styles.body}>톱니바퀴에서 BGM과 효과음 크기를 바꿉니다. 스토리 화면의 볼륨과 같습니다.</Text>
-        <Text style={styles.body}>사용 방법과 이용 약관은 설정에서 언제든 다시 볼 수 있습니다.</Text>
-      </>
-    ),
-  },
-  ];
+        <Text selectable style={styles.url}>{AI_STUDIO_URL}</Text>
+      </>}
+    </>,
+  }));
 }
 
 export default function AppGuide({
@@ -124,7 +67,7 @@ export default function AppGuide({
   manual: GuideMode | null;
   onManualClose: () => void;
 }) {
-  const { t } = useI18n();
+  const { language, t } = useI18n();
   const synced = useSyncExternalStore(subscribeStorage, isStorageSynced, () => false);
   const termsAccepted = useSyncExternalStore(subscribeStorage, () => getSetting('termsAccepted'), () => false);
   const tutorialSeen = useSyncExternalStore(subscribeStorage, () => getSetting('tutorialSeen'), () => false);
@@ -151,7 +94,7 @@ export default function AppGuide({
     if (manual) onManualClose();
   };
 
-  const steps = tutorialSteps();
+  const steps = tutorialSteps(language, t('openAiStudio'));
   const last = step >= steps.length - 1;
   const current = steps[step];
 
@@ -196,7 +139,7 @@ export default function AppGuide({
             <Text style={styles.body}>AI가 만든 대사와 스토리는 공식 설정과 다를 수 있습니다.</Text>
           </ScrollView>
         ) : (
-          <ScrollView style={styles.scroll} contentContainerStyle={styles.scrollContent}>
+          <ScrollView key={current.id} style={styles.scroll} contentContainerStyle={styles.scrollContent}>
             <Text style={styles.section}>{current.title}</Text>
             {current.body}
           </ScrollView>
@@ -230,7 +173,7 @@ export default function AppGuide({
           <View style={styles.footer}>
             <View style={styles.dots}>
               {steps.map((item, index) => (
-                <View key={item.title} style={[styles.dot, index === step && styles.dotOn]} />
+                <View key={item.id} style={[styles.dot, index === step && styles.dotOn]} />
               ))}
             </View>
             <View style={styles.row}>

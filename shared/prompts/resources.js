@@ -94,9 +94,24 @@ const resources = {
       'Signal of Abydos.mp3',
       'Usagi Flap.mp3',
     ],
-    // 파일이 생기면 파일명 그대로 추가한다.
-    sound: [],
-    expression: [],
+    // Canonical script keys from constants/eventAssets.ts (not physical paths).
+    sound: [
+      'SE_49mm_01.mp3', 'SE_Alarm_02.mp3', 'SE_Answer_01.mp3',
+      'SE_Appear_01a.mp3', 'SE_Army_01.mp3', 'SE_Bear_01.mp3',
+      'SE_BeepScreen_01.mp3', 'SE_Beep_01.mp3', 'SE_BikeBell_01.mp3',
+      'SE_Bird_01.mp3', 'SE_Book_02.mp3', 'SE_BoomEffect_02.mp3',
+      'SE_BoomFuse_02a.mp3', 'SE_Boom_01.mp3', 'SE_BoxShake_02.mp3',
+      'SE_Bug_01.mp3', 'SE_Burning_02.mp3', 'SE_BushRusting_02b.mp3',
+      'SE_CarHorn_01.mp3', 'SE_Cartoon_01.mp3', 'SE_Cartoon_02.mp3',
+      'SE_Cat_01.mp3', 'SE_Clap_01.mp3', 'SE_ClockAlarm_01.mp3',
+      'SE_Clock_02.mp3', 'SE_Confirm_01.mp3', 'SE_Confirm_02.mp3',
+      'SE_Cook_03.mp3', 'SE_Cricket_01.mp3', 'SE_Crow_04.wav',
+      'SE_Crowd_02.mp3', 'SE_Crowd_05.mp3', 'SE_Cup_02.mp3',
+      'SE_Denied_01.mp3', 'SE_Dog_01a.mp3', 'SE_DoorBell_01.mp3',
+      'SE_DoorClose_01.mp3', 'SE_DoorSlowOpen_01.mp3', 'SE_Drill_02.mp3',
+    ],
+    // Headpat/Question2 retain .png script keys for compatibility with old stories.
+    expression: ['Headpat.png', 'Question2.png', 'question_mark.png', 'sweat.png'],
   },
 
   호시노: {

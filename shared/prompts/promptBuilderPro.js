@@ -50,6 +50,7 @@ ${charPromptBlock}
 ${historyTXT}
 
 [작성 규칙]
+이 요청은 일반 채팅이 아닌 이벤트 대본이다. 위 공통 규칙의 말투·인물 설정은 지키되, "대사만 출력"·"행동 묘사 금지"는 대사 본문에 적용한다. 나레이션과 아래 연출 메타데이터·명령은 반드시 필요한 곳에 사용할 수 있다.
 1. 위 대화와 전개 방향을 이어서 쓴다. 선택지는 어떤 것을 골라도 자연스럽게 이어지게 한다.
 2. 선생 대사는 대사창에 넣지 말고 selection 태그만 쓴다.
 3. 말투·호칭·반말/존댓말은 페르소나를 지킨다. 히나와 호시노는 누구에게나 반말. 선생은 나레이션에서도 이름을 선배/님 없이 부른다.
@@ -60,6 +61,19 @@ ${historyTXT}
 8. 대사에 괄호 행동 지문을 넣지 않는다.
 9. emotion은 그 대사를 한 캐릭터의 파일만 쓴다. 파일명은 목록의 철자·확장자 그대로. 없는 파일명 금지. sound와 expression은 목록에 있을 때만 쓴다.
 10. 이벤트 시작 시 bg와 music을 반드시 하나 지정한다. music : none 으로 끌 수 있다.
+
+[애니메이션·장면 연출 규칙]
+- animation은 아래 네 값만 사용한다. 대소문자와 철자를 그대로 유지하며 임의의 fade, zoom, jump, walk 등은 만들지 않는다.
+  - shakeX: 캐릭터가 좌우로 짧게 여러 번 흔들린 뒤 원위치로 돌아온다. 당황·부정·놀람·강한 항의에 어울린다.
+  - shakeY: 캐릭터가 위아래로 짧게 여러 번 흔들린 뒤 원위치로 돌아온다. 들뜸·웃음·강한 반응에 어울린다.
+  - slideX: 캐릭터가 가로로 조금 움직였다가 원위치로 돌아온다. 짧게 몸을 기울이는 반응에 사용한다. 입장·퇴장이나 위치 이동을 뜻하지 않는다.
+  - slideY: 캐릭터가 세로로 조금 움직였다가 원위치로 돌아온다. 가벼운 끄덕임 같은 짧은 반응에 사용한다. 실제 보행·퇴장 연출이 아니다.
+- animation과 expression은 초상이 있는 캐릭터 대사의 [ ] 안에만 넣는다. 그 줄에 화자에 맞는 emotion도 함께 지정한다. selection·narration에 붙이거나 별도 animation 줄로 쓰지 않는다.
+- 중요한 감정 변화에 animation 또는 expression을 적절히 넣는다. 여러 장면의 긴 이야기라면 자연스러운 반응 지점에 분산하되 매 줄 넣거나 같은 효과를 연속 반복하지 않는다. 조용한 장면에 효과를 억지로 추가하지 않는다.
+- emotion은 캐릭터의 표정 이미지이며, expression은 초상 위에 잠깐 나타났다 사라지는 아이콘이다. 서로 혼동하지 않는다. 의문에는 question_mark.png 또는 Question2.png, 난처함·긴장에는 sweat.png, 실제로 머리를 쓰다듬는 맥락에는 Headpat.png를 사용할 수 있다.
+- sound는 목록의 파일명만 사용하고, 장면에서 실제로 일어나는 소리와 일치시킨다. 문을 열 때 SE_DoorSlowOpen_01.mp3, 닫을 때 SE_DoorClose_01.mp3, 책을 다룰 때 SE_Book_02.mp3처럼 필요한 순간에만 넣는다. 일상 대화에 총성·폭발음을 임의로 넣지 않는다. WAV 파일도 확장자를 그대로 유지한다.
+- 장소가 바뀔 때만 새 bg를 지정한다. 재생기와 영상 추출기가 배경 변경 시 자동으로 페이드아웃·페이드인하고 대화창을 잠깐 숨기므로, 이를 위한 animation 값이나 별도 전환 명령·waitSecond를 만들지 않는다. 장소 변경만을 위해 deleteAll을 넣지 않는다.
+- 한 줄의 animation, expression, sound는 각각 최대 하나다. 필요 없는 키는 생략한다. 연출 설명은 대사 본문에 쓰지 않는다.
 
 [출력 형식]
 타이틀 : 이벤트 제목
@@ -80,12 +94,11 @@ endEvent
 selection : (1)"갑자기 웬 고래 얘기?" (2)"도움이 필요하다는 건 뭐야?"
 호시노(대책위원회) : 아아. 낭만이 없구만, 선생도. [emotion : hoshino_kidding.png]
 호시노(대책위원회) : 힘쓰는 일이 필요해서 말이지. [emotion : hoshino_getserious.png]
-deleteAll
-waitSecond = 2
-narration : (낡은 창고 문을 열었다.) [bg : BG_AbydosResidence.jpg]
+narration : (낡은 창고 문을 열었다.) [bg : BG_AbydosResidence.jpg, sound : SE_DoorSlowOpen_01.mp3]
 호시노(대책위원회) : 자, 여기야. [emotion : hoshino_yawn.png]
 selection : (1)"여기는?" (2)"창고?"
 호시노(대책위원회) : 응. 아무도 안 오는 낮잠 스팟이지. [emotion : hoshino_smallsmile.png]
+호시노(대책위원회) : 으헤, 그런 눈으로 보지 말라구. 아저씨도 조금은 일한다니까? [emotion : hoshino_difficult.png, animation : shakeX, expression : sweat.png]
 narration : (호시노는 순식간에 잠들었다.) [music : Aoharu.mp3]
 deleteAll
 narration : 결국 호시노의 낮잠 자리를 봐 주고 말았다.

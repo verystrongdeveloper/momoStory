@@ -16,7 +16,7 @@ function load(file) {
   }, module, module.exports);
   return module.exports;
 }
-const { eventEase, spriteMotionAt, expressionOpacityAt, shownEventDialogue, parseEventSpeaker } = load('utils/eventPresentation.ts');
+const { eventEase, spriteMotionAt, expressionLayoutAt, expressionOpacityAt, shownEventDialogue, parseEventSpeaker } = load('utils/eventPresentation.ts');
 const { buildVideoTimeline, videoDimensions } = load('services/videoExport/timeline.ts');
 const { paintVideo } = load('services/videoExport/paint.ts');
 const { sfxMap, expressionMap } = load('constants/eventAssets.ts');
@@ -42,6 +42,19 @@ for (const [time, offset] of [[0, 0], [0.04, 7.5], [0.08, 15], [0.12, 7.5], [0.1
 for (const [time, opacity] of [[0, 0], [0.15, 0.5], [0.3, 1], [1.9, 1], [2, 1], [2.25, 0.5], [2.5, 0], [3, 0]]) near(expressionOpacityAt(time), opacity);
 assert.deepEqual(parseEventSpeaker('호시노(아비도스)'), { name: '호시노', affiliation: '아비도스' });
 assert.deepEqual(parseEventSpeaker('선생'), { name: '선생', affiliation: '' });
+for (const [W, H] of [[360, 640], [390, 844], [320, 1000], [720, 1280], [1080, 1920]]) {
+  for (const aspect of [373 / 668, 572 / 1024]) {
+    const height = H * 0.98, width = height * aspect;
+    const layout = expressionLayoutAt(W, H, width, height);
+    const left = (W - width) / 2 + layout.left;
+    assert.ok(left - 15 >= 0, 'portrait icon stays visible while shaking left');
+    assert.ok(left + layout.size + 15 <= W, 'portrait icon stays visible while shaking right');
+    near((layout.top + layout.size / 2) / height, 0.13);
+    assert.ok(layout.size > 80 * W / 1280, 'portrait icon must remain legible beside the head');
+  }
+}
+const landscapeLayout = expressionLayoutAt(1280, 720, 400, 705.6);
+assert.deepEqual(landscapeLayout, { left: 294.4, top: 28.8, size: 80 });
 
 const story = { id: 'effects', title: 'effects', character: '호시노', createdAt: 0, script:
   '호시노(아비도스) : 안녕 [emotion : hoshino_smallsmile.png, bg : BG_AbydosCouncilRoom.jpg, expression : sweat.png, animation : shakeX, sound : SE_Confirm_01.mp3]\n'
@@ -84,6 +97,12 @@ for (const ratio of ['16:9', '9:16']) {
   const frame = render(initial, 0.15);
   near(frame.draws.find(draw => draw.image === effect).alpha, 0.5);
   near(frame.draws.find(draw => draw.image === sprite).width, H * 0.98 * (373 / 668));
+  const spriteDraw = frame.draws.find(draw => draw.image === sprite);
+  const effectDraw = frame.draws.find(draw => draw.image === effect);
+  const layout = expressionLayoutAt(W, H, spriteDraw.width, spriteDraw.height);
+  near(effectDraw.x, spriteDraw.x + layout.left);
+  near(effectDraw.y, spriteDraw.y + layout.top + layout.size / 4);
+  near(effectDraw.width, layout.size);
   assert.ok(frame.texts.some(item => item.text === '아비도스' && item.color === '#6fc5ee'));
   assert.ok(frame.texts.some(item => item.text === '▾'));
   assert.ok(!frame.texts.some(item => item.text === 'AUTO'));

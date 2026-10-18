@@ -1,6 +1,6 @@
 import type { VideoPayload } from './types';
 import type { VideoScene } from './timeline';
-import { EVENT_TIMING, eventEase, eventStoryFont, expressionOpacityAt, parseEventSpeaker, shownEventDialogue, spriteMotionAt } from '../../utils/eventPresentation';
+import { EVENT_TIMING, eventEase, eventStoryFont, expressionLayoutAt, expressionOpacityAt, parseEventSpeaker, shownEventDialogue, spriteMotionAt } from '../../utils/eventPresentation';
 
 type Context = CanvasRenderingContext2D;
 export type VideoImages = Map<string, HTMLImageElement>;
@@ -115,12 +115,13 @@ export function paintVideo(ctx: Context, payload: VideoPayload, scene: VideoScen
     const effectOpacity = expressionOpacityAt(effect ? scene.start + local - effect.start : local);
     if (expression && effectOpacity > 0) {
       ctx.globalAlpha *= effectOpacity;
-      const size = 80 * (W / 1280);
+      const layout = expressionLayoutAt(W, H, width, height);
+      const size = layout.size;
       const scale = Math.min(size / expression.naturalWidth, size / expression.naturalHeight);
       const effectWidth = expression.naturalWidth * scale;
       const effectHeight = expression.naturalHeight * scale;
-      const x = left + width - Math.min(W * 0.02, width * 0.08) - size;
-      const y = top + H * 0.04;
+      const x = left + layout.left;
+      const y = top + layout.top;
       ctx.drawImage(expression, x + (size - effectWidth) / 2, y + (size - effectHeight) / 2, effectWidth, effectHeight);
     }
     ctx.restore();

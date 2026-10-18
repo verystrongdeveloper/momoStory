@@ -7,6 +7,7 @@ import {
   SPRITE_HEIGHT_RATIO,
 } from '@/constants/spriteLayout';
 import { useLayout } from '@/hooks/useLayout';
+import { expressionLayoutAt } from '@/utils/eventPresentation';
 
 export interface SpriteAnimation {
   type: 'shake' | 'slide';
@@ -32,7 +33,7 @@ interface Props {
 type SpriteSlot = { key: string; src: any } | null;
 
 function CharacterSprite({ current, fadeAnim, expression, animation }: Props) {
-  const { eventWidth, eventHeight, scale } = useLayout();
+  const { eventWidth, eventHeight } = useLayout();
   const translate = useRef(new Animated.ValueXY({ x: 0, y: 0 })).current;
   const currentRef = useRef(current);
   currentRef.current = current;
@@ -54,8 +55,8 @@ function CharacterSprite({ current, fadeAnim, expression, animation }: Props) {
   const spriteWidth = spriteHeight * aspectRatio;
 
   const styles = useMemo(
-    () => makeStyles(eventWidth, eventHeight, spriteWidth, spriteHeight, scale),
-    [eventWidth, eventHeight, spriteWidth, spriteHeight, scale],
+    () => makeStyles(eventWidth, eventHeight, spriteWidth, spriteHeight),
+    [eventWidth, eventHeight, spriteWidth, spriteHeight],
   );
 
   useEffect(() => {
@@ -156,8 +157,9 @@ function CharacterSprite({ current, fadeAnim, expression, animation }: Props) {
 
 export default React.memo(CharacterSprite);
 
-const makeStyles = (W: number, H: number, spriteWidth: number, spriteHeight: number, scale: number) =>
-  StyleSheet.create({
+const makeStyles = (W: number, H: number, spriteWidth: number, spriteHeight: number) => {
+  const expression = expressionLayoutAt(W, H, spriteWidth, spriteHeight);
+  return StyleSheet.create({
     container: {
       position: 'absolute',
       left: (W - spriteWidth) / 2,
@@ -183,10 +185,11 @@ const makeStyles = (W: number, H: number, spriteWidth: number, spriteHeight: num
     },
     expression: {
       position: 'absolute',
-      top: H * 0.04,
-      right: Math.min(W * 0.02, spriteWidth * 0.08),
-      width: 80 * scale,
-      height: 80 * scale,
+      top: expression.top,
+      left: expression.left,
+      width: expression.size,
+      height: expression.size,
       zIndex: 2,
     },
   });
+};

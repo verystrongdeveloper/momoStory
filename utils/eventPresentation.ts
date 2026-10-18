@@ -31,6 +31,23 @@ export function expressionOpacityAt(seconds: number) {
     : 1 - eventEase((seconds - EVENT_TIMING.expressionShow) / EVENT_TIMING.expressionFade);
 }
 
+/** Expression box relative to the sprite, shared by playback and MP4 export. */
+export function expressionLayoutAt(W: number, H: number, spriteWidth: number, spriteHeight: number) {
+  if (W >= H) {
+    const size = 80 * (W / 1280);
+    return { left: spriteWidth - Math.min(W * 0.02, spriteWidth * 0.08) - size, top: H * 0.04, size };
+  }
+  // In portrait the full-body sprite can be wider than the viewport. Anchoring
+  // to its far edge puts the icon offscreen; use the upper-right head area and
+  // keep the complete icon inside the frame instead.
+  const size = Math.min(spriteHeight * 0.09, W * 0.18);
+  const spriteLeft = (W - spriteWidth) / 2;
+  const margin = Math.max(W * 0.025, EVENT_TIMING.motionDistance + W * 0.01);
+  const desiredLeft = spriteLeft + spriteWidth * 0.9 - size / 2;
+  const screenLeft = Math.max(margin, Math.min(W - size - margin, desiredLeft));
+  return { left: screenLeft - spriteLeft, top: Math.max(0, spriteHeight * 0.13 - size / 2), size };
+}
+
 export function spriteMotionAt(type: string | undefined, seconds: number) {
   if (!type || seconds < 0) return { x: 0, y: 0 };
   const raw = type.toLowerCase();

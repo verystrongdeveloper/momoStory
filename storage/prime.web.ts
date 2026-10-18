@@ -31,6 +31,7 @@ export function readInitialSync(): StorageSnapshot | null {
       rememberApiKey: apiKey.length > 0,
       bgmVolume: parseVolume(localStorage.getItem(OLD_VOLUME)),
       sfxVolume: DEFAULT_PREFERENCES.sfxVolume,
+      chatSound: DEFAULT_PREFERENCES.chatSound,
       greetMode: localStorage.getItem(OLD_GREET) === '1',
       termsAccepted: false,
       tutorialSeen: false,

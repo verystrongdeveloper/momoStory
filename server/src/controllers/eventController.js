@@ -92,7 +92,7 @@ exports.createEvent = async (req, res) => {
     const rawScript = typeof eventRes.response.text === 'function'
       ? await eventRes.response.text()
       : eventRes.response.text;
-    const script = keepAssetSpeakers(rawScript.trim(), getAvailableCharacters());
+    const script = keepAssetSpeakers(rawScript.trim(), getAvailableCharacters(), req.body.language);
 
     if (!script.includes('endEvent')) {
       console.warn(`[${character}] 이벤트 스크립트 형식 경고`);

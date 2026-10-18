@@ -13,7 +13,7 @@ export type VideoPayload = {
   labels: { bondEvent: string; bondStory: string };
 };
 export type ExportProgress = { progress: number; phase: 'preparing' | 'encoding' | 'saving' };
-export type ExportOptions = { signal: AbortSignal; onProgress: (value: ExportProgress) => void };
+export type ExportOptions = { signal: AbortSignal; onProgress: (value: ExportProgress) => void; includeChat?: boolean };
 
 export function checkAborted(signal: AbortSignal) {
   if (signal.aborted) throw new Error('EXPORT_CANCELED');

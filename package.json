@@ -1,7 +1,7 @@
 {
   "name": "momostory",
   "main": "expo-router/entry",
-  "version": "1.0.4",
+  "version": "1.0.5",
   "scripts": {
     "video:renderer": "node scripts/build-video-renderer.js",
     "test:video": "node scripts/test-video-timeline.cjs && node scripts/test-video-presentation.cjs && node scripts/test-video-assets.cjs && node scripts/test-video-ui.cjs && node scripts/test-background-transition.cjs",
@@ -9,6 +9,7 @@
     "test:language": "node scripts/test-generation-language.cjs",
     "test:update": "node scripts/test-app-update.cjs && node scripts/test-settings-version.cjs",
     "test:prompt": "node scripts/test-event-prompt.cjs",
+    "test:chat-audio": "node scripts/test-chat-audio.cjs && node scripts/test-chat-sound-picker.cjs",
     "postinstall": "node scripts/build-video-renderer.js",
     "start": "expo start",
     "server": "npm --prefix server start",

@@ -12,6 +12,7 @@ import VideoExportWorker from '@/platform/VideoExportWorker';
 export default function VideoExportModal({ story, onClose }: { story: SavedStory; onClose: () => void }) {
   const { language, t } = useI18n();
   const [ratio, setRatio] = useState<VideoRatio>('16:9');
+  const [includeChat, setIncludeChat] = useState(true);
   const [status, setStatus] = useState<'idle' | 'picking' | 'working' | 'done' | 'error'>('idle');
   const [progress, setProgress] = useState<ExportProgress>({ phase: 'preparing', progress: 0 });
   const [payload, setPayload] = useState<VideoPayload | null>(null);
@@ -62,7 +63,7 @@ export default function VideoExportModal({ story, onClose }: { story: SavedStory
       setStatus('working'); reportProgress({ phase: 'preparing', progress: 0 });
       const prepared = await prepareVideo(story, ratio, language, {
         bondEvent: t('bondEvent'), bondStory: t('bondStory', { name: story.character }),
-      }, { signal: abort.signal, onProgress: (value) => { if (alive.current && !abort.signal.aborted) reportProgress(value); } });
+      }, { signal: abort.signal, includeChat, onProgress: (value) => { if (alive.current && !abort.signal.aborted) reportProgress(value); } });
       if (alive.current && !abort.signal.aborted) { phase.current = 'encoding'; setPayload(prepared); }
     } catch (failure) { failed(failure instanceof Error ? failure : new Error(String(failure))); }
   };
@@ -84,8 +85,17 @@ export default function VideoExportModal({ story, onClose }: { story: SavedStory
             <Text style={styles.storyTitle} numberOfLines={2}>{story.title}</Text>
             {status === 'idle' || status === 'error' ? (
               <>
-                <Text style={styles.hint}>{t('videoExportHint')}</Text>
+                <Text style={styles.hint}>{t(includeChat ? 'videoExportHint' : 'videoStoryOnlyHint')}</Text>
                 <Text style={styles.hint}>{t('videoLimitHint')}</Text>
+                <View style={styles.chatModes} accessibilityRole="radiogroup" accessibilityLabel={t('videoChatMode')}>
+                  {[true, false].map(value => (
+                    <TouchableOpacity key={String(value)} accessibilityRole="radio" accessibilityState={{ checked: includeChat === value }}
+                      accessibilityLabel={t(value ? 'videoIncludeChat' : 'videoExcludeChat')} onPress={() => setIncludeChat(value)}
+                      style={[styles.chatMode, includeChat === value && styles.selectedRatio]}>
+                      <Text style={styles.ratioText}>{t(value ? 'videoIncludeChat' : 'videoExcludeChat')}</Text>
+                    </TouchableOpacity>
+                  ))}
+                </View>
                 <View style={styles.ratios} accessibilityRole="radiogroup" accessibilityLabel={t('videoRatio')}>
                   {(['16:9', '9:16'] as const).map((value) => (
                     <TouchableOpacity
@@ -133,6 +143,8 @@ export default function VideoExportModal({ story, onClose }: { story: SavedStory
 }
 
 const styles = StyleSheet.create({
+  chatModes: { flexDirection: 'row', gap: 8, marginTop: 16 },
+  chatMode: { flex: 1, alignItems: 'center', justifyContent: 'center', minHeight: 44, borderWidth: 2, borderColor: '#e6ebf0', borderRadius: 10, backgroundColor: '#f8fafc', padding: 8 },
   backdrop: { flex: 1, justifyContent: 'center', alignItems: 'center', backgroundColor: '#18202b88', padding: 20 },
   card: { width: 440, maxWidth: '100%', maxHeight: '90%', borderRadius: 20, backgroundColor: '#fff', overflow: 'hidden' },
   content: { padding: 24 },

@@ -47,6 +47,7 @@ export async function migrateLegacyStorage(): Promise<boolean> {
       chatSize: DEFAULT_PREFERENCES.chatSize,
       bgmVolume: parseVolume(oldVolumeRaw),
       sfxVolume: DEFAULT_PREFERENCES.sfxVolume,
+      chatSound: DEFAULT_PREFERENCES.chatSound,
       greetMode: oldGreetRaw === '1',
       rememberApiKey,
       termsAccepted: false,

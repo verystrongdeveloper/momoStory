@@ -4,8 +4,9 @@ import { readStoryRecords, writeStoryRecords } from './storyStorage';
 import { migrateLegacyStorage } from './migrate';
 import { readInitialSync } from './prime';
 import { AppLanguage, DEFAULT_PREFERENCES, Preferences, StoryRecord, clampChatSize, clampVolume } from './types';
+import { normalizeChatSound, type ChatSoundId } from '../utils/chatPresentation';
 
-type SettingKey = 'language' | 'chatSize' | 'bgmVolume' | 'sfxVolume' | 'greetMode' | 'rememberApiKey' | 'termsAccepted' | 'tutorialSeen';
+type SettingKey = 'language' | 'chatSound' | 'chatSize' | 'bgmVolume' | 'sfxVolume' | 'greetMode' | 'rememberApiKey' | 'termsAccepted' | 'tutorialSeen';
 
 let synced = readInitialSync() != null;
 
@@ -48,8 +49,9 @@ export function getRememberApiKey() {
 
 export function getSetting(key: 'chatSize' | 'bgmVolume' | 'sfxVolume'): number;
 export function getSetting(key: 'language'): AppLanguage;
+export function getSetting(key: 'chatSound'): ChatSoundId;
 export function getSetting(key: 'greetMode' | 'rememberApiKey' | 'termsAccepted' | 'tutorialSeen'): boolean;
-export function getSetting(key: SettingKey): number | boolean | AppLanguage {
+export function getSetting(key: SettingKey): number | boolean | AppLanguage | ChatSoundId {
   return memory[key];
 }
 
@@ -63,6 +65,7 @@ async function persistAll() {
     chatSize: memory.chatSize,
     bgmVolume: memory.bgmVolume,
     sfxVolume: memory.sfxVolume,
+    chatSound: memory.chatSound,
     greetMode: memory.greetMode,
     rememberApiKey: memory.rememberApiKey,
     termsAccepted: memory.termsAccepted,
@@ -81,11 +84,15 @@ export function saveApiKey(key: string, remember = memory.rememberApiKey) {
   if (hydrated) void persistAll().catch(() => undefined);
 }
 
-export function saveSetting(key: SettingKey, value: number | boolean | AppLanguage) {
+export function saveSetting(key: SettingKey, value: number | boolean | AppLanguage | ChatSoundId) {
   if (key === 'language') {
     if (value !== 'ko' && value !== 'en' && value !== 'ja' && value !== 'zh') return;
     if (value === memory.language) return;
     memory.language = value;
+  } else if (key === 'chatSound') {
+    const next = normalizeChatSound(value);
+    if (next === memory.chatSound) return;
+    memory.chatSound = next;
   } else if (key === 'chatSize') {
     if (typeof value !== 'number') return;
     const next = clampChatSize(value);
@@ -131,6 +138,7 @@ async function pullAll() {
     chatSize: prefs.chatSize,
     bgmVolume: prefs.bgmVolume,
     sfxVolume: prefs.sfxVolume,
+    chatSound: prefs.chatSound,
     greetMode: prefs.greetMode,
     rememberApiKey: prefs.rememberApiKey,
     termsAccepted: prefs.termsAccepted,

@@ -6,7 +6,7 @@ const SELECTION_KINDS: AssetKind[] = ['emotion', 'bg', 'sound', 'music'];
 
 function allowedKinds(line: string): AssetKind[] | null {
   const trimmed = line.trim();
-  if (!trimmed || /^(타이틀|deleteAll|deleteEmotion|endEvent|waitSecond)(\s|:|$)/.test(trimmed)) return null;
+  if (!trimmed || /^(타이틀|title|deleteAll|deleteEmotion|endEvent|waitSecond)(\s|[:：]|$)/i.test(trimmed)) return null;
   if (trimmed.startsWith('narration')) return NARRATION_KINDS;
   if (trimmed.startsWith('selection')) return SELECTION_KINDS;
   if (trimmed.includes(':')) return DIALOGUE_KINDS;

@@ -8,6 +8,7 @@ fs.mkdirSync(outputDir, { recursive: true });
 const code = buildSync({ entryPoints: [path.join(__dirname, 'video-export-smoke.ts')], bundle: true, platform: 'browser', format: 'iife', write: false }).outputFiles[0].contents;
 const assets = {
   '/font.ttf': ['assets/fonts/Pretendard-SemiBold.ttf', 'font/ttf'],
+  '/chat-pop.wav': ['assets/audio/chat-pop.wav', 'audio/wav'],
   '/bg.jpg': ['assets/images/background/BG_AbydosCouncilRoom.jpg', 'image/jpeg'],
   '/sprite.png': ['assets/images/hoshino/hoshino_smallsmile.png', 'image/png'],
   '/avatar.jpg': ['assets/images/hoshino.jpg', 'image/jpeg'],

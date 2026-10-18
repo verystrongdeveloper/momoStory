@@ -1,5 +1,6 @@
 import { loadStories, saveStories, subscribeStorage } from '@/storage';
 import type { SavedChatMessage, StoryRecord } from '@/storage/types';
+import { canonicalCharacterName } from '../shared/prompts/speakerNames';
 
 export type SavedStory = StoryRecord;
 
@@ -15,14 +16,14 @@ function writeStored(stories: SavedStory[]) {
   saveStories(stories);
 }
 
-const SKIP_SPEAKER = /^(타이틀|narration|selection|deleteAll|deleteEmotion|endEvent|waitSecond|bg|music|sound|animation)/;
+const SKIP_SPEAKER = /^(타이틀|title|narration|selection|deleteAll|deleteEmotion|endEvent|waitSecond|bg|music|sound|animation)(?:\s|[:：]|$)/i;
 
 function characterOf(script: string) {
   for (const raw of script.split('\n')) {
     const line = raw.trim();
     if (!line || SKIP_SPEAKER.test(line)) continue;
-    const name = line.split('(')[0].split(':')[0].trim();
-    if (name) return name;
+    const name = line.split(/[（(:：]/)[0].trim();
+    if (name) return canonicalCharacterName(name);
   }
   return '스토리';
 }
@@ -31,8 +32,8 @@ function titleOf(script: string, character: string) {
   const line = script
     .split('\n')
     .map((s) => s.trim())
-    .find((s) => s.startsWith('타이틀'));
-  const title = line?.replace(/^타이틀\s*:\s*/, '').trim();
+    .find((s) => /^(?:타이틀|title)\s*[:：]/i.test(s));
+  const title = line?.replace(/^(?:타이틀|title)\s*[:：]\s*/i, '').trim();
   return title || `${character}의 스토리`;
 }
 

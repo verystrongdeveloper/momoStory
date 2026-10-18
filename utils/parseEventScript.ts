@@ -15,8 +15,8 @@ export default function parseEventScript(script: string): EventLine[] {
       .map(l => l.trim())
       .filter(Boolean)
       .forEach(l => {
-        if (l.startsWith('타이틀')) {
-          const txt = l.replace(/^타이틀\s*:\s*/, '').trim();
+        if (/^(?:타이틀|title)\s*[:：]/i.test(l)) {
+          const txt = l.replace(/^(?:타이틀|title)\s*[:：]\s*/i, '').trim();
           out.push({ type: '타이틀', text: txt });
           return;
         }

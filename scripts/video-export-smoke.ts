@@ -1,5 +1,5 @@
 // Browser integration fixture. It only renders synthetic stories and posts artifacts to localhost.
-import { ALL_FORMATS, BufferSource, Input } from 'mediabunny';
+import { ALL_FORMATS, AudioBufferSink, BufferSource, Input } from 'mediabunny';
 import { encodeVideo } from '../services/videoExport/encode';
 import { buildVideoTimeline, videoDimensions, type VideoRatio } from '../services/videoExport/timeline';
 import { paintVideo } from '../services/videoExport/paint';
@@ -28,7 +28,7 @@ button.addEventListener('click', async () => {
         timeline: buildVideoTimeline(story, 0.3, 0.5),
         images: { 'bg:BG_AbydosCouncilRoom': '/bg.jpg', 'emotion:hoshino_smallsmile': '/sprite.png', 'expression:sweat.png': '/effect.png', avatar: '/avatar.jpg' },
         spriteAspects: { hoshino_smallsmile: 373 / 668 },
-        sounds: { 'music:Aira.mp3': '/music.mp3', 'sfx:SE_Confirm_01.mp3': '/sfx.mp3', 'sfx:SE_Crow_04.wav': '/sfx.wav' }, font: '/font.ttf',
+        sounds: { 'sfx:Chat_Pop.wav': '/chat-pop.wav', 'music:Aira.mp3': '/music.mp3', 'sfx:SE_Confirm_01.mp3': '/sfx.mp3', 'sfx:SE_Crow_04.wav': '/sfx.wav' }, font: '/font.ttf',
         labels: { bondEvent: '인연 이벤트', bondStory: '호시노의 인연 스토리로' },
       };
       status.textContent = `Encoding ${ratio}`;
@@ -38,6 +38,14 @@ button.addEventListener('click', async () => {
       const audio = await input.getPrimaryAudioTrack();
       const { width, height } = videoDimensions(ratio);
       if (!video || await video.getCodedWidth() !== width || await video.getCodedHeight() !== height || await video.getCodec() !== 'avc' || !audio || await audio.getCodec() !== 'aac') throw new Error('Invalid video/audio metadata');
+      const sink = new AudioBufferSink(audio);
+      const pop = await sink.getBuffer(0.07);
+      const gap = await sink.getBuffer(0.5);
+      const rms = (buffer: AudioBuffer) => {
+        const data = buffer.getChannelData(0);
+        return Math.sqrt(data.reduce((sum, value) => sum + value * value, 0) / data.length);
+      };
+      if (!pop || !gap || rms(pop.buffer) < 0.001 || rms(gap.buffer) > rms(pop.buffer) * 0.2) throw new Error('Chat pop missing or playing outside the bubble cue in MP4');
       const duration = await input.computeDuration();
       if (Math.abs(duration - payload.timeline.duration) > 0.1) throw new Error('Duration mismatch');
       await fetch(`/result/${ratio === '16:9' ? 'landscape' : 'portrait'}.mp4`, { method: 'POST', body: output });

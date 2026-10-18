@@ -6,12 +6,14 @@ import { getSetting } from '@/storage';
 import type { AppLanguage, StoryRecord } from '@/storage/types';
 import { buildVideoTimeline, type VideoRatio } from './timeline';
 import { checkAborted, type ExportOptions, type VideoPayload } from './types';
+import { normalizeChatSound } from '../../utils/chatPresentation';
+import { chatSoundSources } from '@/constants/chatSounds';
 
 export async function prepareVideo(
   story: StoryRecord, ratio: VideoRatio, language: AppLanguage,
   labels: VideoPayload['labels'], options: ExportOptions,
 ): Promise<VideoPayload> {
-  const timeline = buildVideoTimeline(story, getSetting('bgmVolume'), getSetting('sfxVolume'));
+  const timeline = buildVideoTimeline(story, getSetting('bgmVolume'), getSetting('sfxVolume'), normalizeChatSound(getSetting('chatSound')), options.includeChat !== false);
   if (timeline.duration > 600) throw new Error('VIDEO_TOO_LONG');
   const images: Record<string, string> = {};
   const sounds: Record<string, string> = {};
@@ -26,11 +28,15 @@ export async function prepareVideo(
     image('expression', scene.expression?.key ?? scene.line?.expression, expressionMap);
     if (scene.emotion && emotionMap[scene.emotion]) spriteAspects[scene.emotion] = getSpriteAspectRatio(scene.emotion, emotionMap[scene.emotion]);
   }
-  const avatar = avatarOf(story.character);
+  const avatar = timeline.messages.length ? avatarOf(story.character) : undefined;
   if (typeof avatar === 'number' || (avatar && !Array.isArray(avatar) && 'uri' in avatar && typeof avatar.uri === 'string')) {
     tasks.set('avatar', { source: avatar as Parameters<typeof videoAssetUrl>[0], mime: 'image/jpeg', target: images });
   }
   for (const cue of timeline.audio) {
+    if (chatSoundSources[cue.key]) {
+      tasks.set(`sfx:${cue.key}`, { source: chatSoundSources[cue.key], mime: 'audio/wav', target: sounds });
+      continue;
+    }
     const map = cue.loop ? musicMap : sfxMap;
     if (map[cue.key]) tasks.set(`${cue.loop ? 'music' : 'sfx'}:${cue.key}`, { source: map[cue.key], mime: /\.wav$/i.test(cue.key) ? 'audio/wav' : 'audio/mpeg', target: sounds });
   }

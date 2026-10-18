@@ -13,6 +13,7 @@ for (const name of ['KeyboardAvoidingView', 'Pressable', 'ScrollView', 'Text', '
 const mocks = {
   'react': React, 'react-native': rn, 'expo-constants': constants,
   '../../app.json': appConfig, './GeminiKeyField': 'GeminiKeyField',
+  './ChatSoundPicker': 'ChatSoundPicker',
   '@/services/appUpdate': { checkAppUpdate: async (version) => {
     checkedVersion = version;
     calls++;

@@ -1,5 +1,6 @@
 const path = require('path');
 const { buildSync } = require('esbuild');
+require('./build-chat-pop');
 
 // Mechanical build output, consumed as an Expo asset by the native WebView.
 buildSync({

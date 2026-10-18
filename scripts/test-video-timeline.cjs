@@ -39,6 +39,13 @@ const story = {
   script: '타이틀 : 테스트\n호시노 : 안녕! [bg : BG_AbydosCouncilRoom.jpg, emotion : hoshino_smallsmile.png, music : Aira.mp3]\nselection : (1)"첫 번째" (2)(두 번째)\nwaitSecond : 2\n호시노 : 계속해! [music : Aira.mp3]\n호시노 : 다른 음악! [music : Aoharu.mp3]\ndeleteEmotion\n호시노 : 다시 나타나! [emotion : hoshino_smile.png]\ndeleteAll\nnarration : 마지막 문장\nendEvent\n호시노 : 이 대사는 나오면 안 된다.',
 };
 const timeline = buildVideoTimeline(story, 0.4, 0.5);
+for (const prefix of ['타이틀 :', 'title :', 'TITLE：']) {
+  const localized = buildVideoTimeline({ ...story, script: `${prefix} A new day\nホシノ(対策委員会) : Hello [emotion : hoshino_smile.png]\nendEvent` }, 0.4, 0.5);
+  const title = localized.scenes.find(scene => scene.line?.type === '타이틀');
+  assert.equal(title.line.text, 'A new day');
+  assert.equal(title.duration, timeline.scenes.find(scene => scene.line?.type === '타이틀').duration);
+  assert.ok(localized.scenes.some(scene => scene.line?.character === 'ホシノ(対策委員会)'));
+}
 assert.deepEqual(timeline.scenes.slice(0, 3).map((scene) => [scene.kind, scene.chatCount]), [['chat', 1], ['chat', 2], ['chat', 2]]);
 assert.deepEqual(timeline.scenes.slice(0, 3).map((scene) => !!scene.showStoryButton), [false, false, true]);
 // Verify rendered text, not just timeline flags, in both export aspect ratios.
@@ -87,10 +94,15 @@ assert.equal(afterSelection.start, selection.start + selection.duration);
 assert.equal(timeline.scenes.at(-1).line.type, 'narration');
 assert.equal(timeline.scenes.at(-1).emotion, undefined);
 assert.equal(timeline.scenes.at(-1).background, undefined);
-assert.equal(timeline.audio.length, 2);
-assert.equal(timeline.audio[0].key, 'Aira.mp3');
-assert.equal(timeline.audio[0].end, timeline.audio[1].start);
-assert.equal(timeline.audio[1].end, timeline.scenes.at(-1).start);
+const pops = timeline.audio.filter(cue => cue.key === 'Chat_Pop.wav');
+assert.equal(pops.length, story.chatMessages.length);
+assert.deepEqual(pops.map(cue => cue.start), timeline.scenes.slice(0, 2).map(scene => scene.start));
+assert.ok(pops.every(cue => cue.volume === 0.5 && Math.abs(cue.end - cue.start - 0.18) < 1e-9));
+const music = timeline.audio.filter(cue => cue.loop);
+assert.equal(music.length, 2);
+assert.equal(music[0].key, 'Aira.mp3');
+assert.equal(music[0].end, music[1].start);
+assert.equal(music[1].end, timeline.scenes.at(-1).start);
 for (let index = 0; index < timeline.scenes.length; index++) {
   const scene = timeline.scenes[index];
   assert.ok(Number.isFinite(scene.duration) && scene.duration > 0);
@@ -101,5 +113,14 @@ assert.equal(buildVideoTimeline({ ...story, chatMessages: undefined }, 0, 0).sce
 assert.throws(() => buildVideoTimeline({ ...story, script: '', chatMessages: [] }, 1, 1), /EMPTY_VIDEO/);
 assert.deepEqual(videoDimensions('16:9'), { width: 1280, height: 720 });
 assert.deepEqual(videoDimensions('9:16'), { width: 720, height: 1280 });
+const storyOnly = buildVideoTimeline(story, 0.4, 0.5, 'bell', false);
+assert.deepEqual(storyOnly.messages, []);
+assert.ok(storyOnly.scenes.every(scene => scene.kind === 'story' && !scene.showStoryButton));
+assert.equal(storyOnly.scenes[0].start, 0);
+assert.equal(storyOnly.scenes[0].line.type, '타이틀');
+assert.equal(storyOnly.audio.some(cue => cue.key.startsWith('Chat_')), false);
+assert.ok(storyOnly.audio.some(cue => cue.key === 'Aira.mp3'));
+assert.ok(storyOnly.duration < timeline.duration);
+assert.equal(story.chatMessages.length, 2, 'export preference must not modify saved chat');
 assert.equal(videoFileName('가/나:다?', '9:16'), '가 나 다_9x16.mp4');
 console.log('PASS timeline: chat-to-story continuity, automatic choices, command timing, music transitions, ending, missing history, dimensions, filenames');

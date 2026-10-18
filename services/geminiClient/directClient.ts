@@ -84,6 +84,7 @@ export const directClient = {
     const script = keepAssetSpeakers(
       (await sendWithFallback(character, 'event', eventPrompt, EVENT_WRITER_SYSTEM, apiKey, language)).trim(),
       getAvailableCharacters(),
+      language,
     );
     return { eventScript: script };
   },

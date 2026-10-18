@@ -23,6 +23,7 @@ import { useChatSize } from '@/services/chatSize';
 import { makeChatSizeStyles } from './chatSizeStyles';
 import { useI18n } from '@/i18n';
 import { splitChatReply } from '@/utils/splitChatReply';
+import useChatPop from '@/hooks/useChatPop';
 
 interface Props {
   characterName: string;
@@ -58,6 +59,7 @@ const CharacterChat: React.FC<Props> = ({ characterName, displayName, characterI
   const savedMessages = savedStory?.chatMessages;
   const replaying = !!savedStory && replayCount < (savedMessages?.length ?? 0);
   const shownMessages = savedStory ? (savedMessages ?? []).slice(0, replayCount) : messages;
+  useChatPop(shownMessages);
 
   const inputRef = useRef<TextInput>(null);
   const listRef = useRef<FlatList<Chat>>(null);

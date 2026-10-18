@@ -6,6 +6,8 @@ type Dictionary = Record<string, string>;
 
 const translations: Record<AppLanguage, Dictionary> = {
   ko: {
+    videoChatMode: '영상에 포함할 내용', videoIncludeChat: '채팅 포함', videoExcludeChat: '스토리만', videoStoryOnlyHint: '채팅 없이 인연 스토리만 영상으로 만듭니다. 선택지는 자동 진행하며 현재 BGM·효과음 볼륨을 사용합니다.',
+    chatSound: '채팅 효과음', chatSoundHint: '선택한 소리는 자동 저장되며 채팅과 영상 추출에 적용됩니다. 미리듣기는 음소거 중에도 기본 볼륨으로 재생됩니다.', previewSound: '미리듣기', previewChatSound: '{name} 미리듣기', soundPreviewFailed: '소리를 재생하지 못했습니다. 다시 시도해 주세요.', chatSound_pop: '물방울 뽁', chatSound_bloop: '전자 알림 뾰록', chatSound_bell: '맑은 벨', chatSound_click: '가벼운 톡', chatSound_soft: '부드러운 팝', chatSound_none: '사용 안 함',
     appVersion: '현재 버전',
     checkUpdate: '업데이트 확인', updateChecking: '확인 중…', updateCurrent: '최신 정식 버전 이상을 사용 중입니다.', updateAvailable: '새 버전 {version}이 있습니다.', openUpdateDownload: '다운로드 페이지', updateCheckFailed: '업데이트를 확인하지 못했습니다. 네트워크 연결을 확인하고 다시 시도해 주세요.', updateOpenFailed: '다운로드 페이지를 열지 못했습니다. 아래 주소를 이용해 주세요.',
     videoPrepareFailed: '영상에 필요한 이미지·음원·글꼴을 읽지 못했습니다. 앱을 다시 실행한 후 재시도해 주세요.',
@@ -33,6 +35,8 @@ const translations: Record<AppLanguage, Dictionary> = {
     termsTitle: '이용 약관', tutorialTitle: '사용 방법', agreeTerms: '위 내용을 확인했고, 이에 동의합니다.', agreeStart: '동의하고 시작', skip: '건너뛰기', previous: '이전', start: '시작하기', next: '다음', openAiStudio: 'Google AI Studio 열기',
   },
   en: {
+    videoChatMode: 'Video content', videoIncludeChat: 'Include chat', videoExcludeChat: 'Story only', videoStoryOnlyHint: 'Export only the story without chat. Choices advance automatically. Uses your current music and effects volumes.',
+    chatSound: 'Chat sound', chatSoundHint: 'Your choice is saved and used in chat and video exports. Preview uses a default volume when muted.', previewSound: 'Preview', previewChatSound: 'Preview {name}', soundPreviewFailed: 'Could not play the sound. Please try again.', chatSound_pop: 'Water drop', chatSound_bloop: 'Electronic bloop', chatSound_bell: 'Clear bell', chatSound_click: 'Light click', chatSound_soft: 'Soft pop', chatSound_none: 'Off',
     appVersion: 'App version',
     checkUpdate: 'Check for updates', updateChecking: 'Checking…', updateCurrent: 'You are running the latest stable version or newer.', updateAvailable: 'Version {version} is available.', openUpdateDownload: 'Download page', updateCheckFailed: 'Could not check for updates. Check your connection and try again.', updateOpenFailed: 'Could not open the download page. Use this address:',
     videoPrepareFailed: 'Could not read the images, audio, or font needed for the video. Restart the app and try again.',
@@ -60,6 +64,8 @@ const translations: Record<AppLanguage, Dictionary> = {
     termsTitle: 'Terms of use', tutorialTitle: 'How to use', agreeTerms: 'I have read and agree to the above.', agreeStart: 'Agree and start', skip: 'Skip', previous: 'Previous', start: 'Start', next: 'Next', openAiStudio: 'Open Google AI Studio',
   },
   ja: {
+    videoChatMode: '動画に含める内容', videoIncludeChat: 'チャットを含む', videoExcludeChat: 'ストーリーのみ', videoStoryOnlyHint: 'チャットを含めずストーリーのみを書き出します。選択肢は自動進行し、現在のBGM・効果音音量を使用します。',
+    chatSound: 'チャット効果音', chatSoundHint: '選択は自動保存され、チャットと動画に反映されます。試聴はミュート中でも標準音量で再生します。', previewSound: '試聴', previewChatSound: '{name}を試聴', soundPreviewFailed: '再生できませんでした。もう一度お試しください。', chatSound_pop: '水滴', chatSound_bloop: '電子通知音', chatSound_bell: '澄んだベル', chatSound_click: '軽いクリック', chatSound_soft: '柔らかいポップ', chatSound_none: '使用しない',
     appVersion: '現在のバージョン',
     checkUpdate: '更新を確認', updateChecking: '確認中…', updateCurrent: '最新の正式版以降を使用中です。', updateAvailable: '新しいバージョン {version} があります。', openUpdateDownload: 'ダウンロードページ', updateCheckFailed: '更新を確認できませんでした。接続を確認して再試行してください。', updateOpenFailed: 'ページを開けませんでした。次のURLをご利用ください。',
     videoPrepareFailed: '動画に必要な画像・音声・フォントを読み込めませんでした。アプリを再起動して再試行してください。',
@@ -87,6 +93,8 @@ const translations: Record<AppLanguage, Dictionary> = {
     termsTitle: '利用規約', tutorialTitle: '使い方', agreeTerms: '上記を確認し、同意します。', agreeStart: '同意して始める', skip: 'スキップ', previous: '戻る', start: '始める', next: '次へ', openAiStudio: 'Google AI Studio を開く',
   },
   zh: {
+    videoChatMode: '视频内容', videoIncludeChat: '包含聊天', videoExcludeChat: '仅故事', videoStoryOnlyHint: '仅导出故事，不包含聊天。选项自动推进，使用当前音乐和音效音量。',
+    chatSound: '聊天音效', chatSoundHint: '选择将自动保存并用于聊天和视频导出。静音时试听仍使用默认音量。', previewSound: '试听', previewChatSound: '试听{name}', soundPreviewFailed: '无法播放声音，请重试。', chatSound_pop: '水滴', chatSound_bloop: '电子提示音', chatSound_bell: '清脆铃声', chatSound_click: '轻点击', chatSound_soft: '柔和气泡', chatSound_none: '关闭',
     appVersion: '当前版本',
     checkUpdate: '检查更新', updateChecking: '检查中…', updateCurrent: '您正在使用最新正式版或更新版本。', updateAvailable: '发现新版本 {version}。', openUpdateDownload: '下载页面', updateCheckFailed: '无法检查更新。请检查网络连接后重试。', updateOpenFailed: '无法打开下载页面。请使用以下地址：',
     videoPrepareFailed: '无法读取视频所需的图片、音频或字体。请重启应用后重试。',

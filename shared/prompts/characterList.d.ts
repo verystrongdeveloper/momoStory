@@ -1,3 +1,3 @@
 export function getAvailableCharacters(): string[];
 export function hasStoryAssets(name: string): boolean;
-export function keepAssetSpeakers(script: string, allowedNames?: string[]): string;
+export function keepAssetSpeakers(script: string, allowedNames?: string[], language?: string): string;

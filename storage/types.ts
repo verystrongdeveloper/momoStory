@@ -1,3 +1,4 @@
+import { normalizeChatSound, type ChatSoundId } from '../utils/chatPresentation';
 export type AppLanguage = 'ko' | 'en' | 'ja' | 'zh';
 
 export type Preferences = {
@@ -5,6 +6,7 @@ export type Preferences = {
   chatSize: number;
   bgmVolume: number;
   sfxVolume: number;
+  chatSound: ChatSoundId;
   greetMode: boolean;
   rememberApiKey: boolean;
   termsAccepted: boolean;
@@ -36,6 +38,7 @@ export const DEFAULT_PREFERENCES: Preferences = {
   chatSize: 1,
   bgmVolume: 0.5,
   sfxVolume: 0.5,
+  chatSound: 'pop',
   greetMode: false,
   rememberApiKey: false,
   termsAccepted: false,
@@ -117,6 +120,7 @@ export function parsePreferences(raw: string | null): Preferences {
       chatSize: typeof parsed.chatSize === 'number' ? clampChatSize(parsed.chatSize) ?? DEFAULT_PREFERENCES.chatSize : DEFAULT_PREFERENCES.chatSize,
       bgmVolume: clampVolume(Number(parsed.bgmVolume)) ?? DEFAULT_PREFERENCES.bgmVolume,
       sfxVolume: clampVolume(Number(parsed.sfxVolume)) ?? DEFAULT_PREFERENCES.sfxVolume,
+      chatSound: normalizeChatSound(parsed.chatSound),
       greetMode: parsed.greetMode === true,
       rememberApiKey: parsed.rememberApiKey === true,
       termsAccepted: parsed.termsAccepted === true,

@@ -88,6 +88,7 @@ jobs:
     needs: [desktop, android]
     runs-on: ubuntu-latest
     steps:
+      - uses: actions/checkout@v4
       - uses: actions/download-artifact@v4
         with:
           path: release-assets
@@ -96,10 +97,4 @@ jobs:
           files: |
             release-assets/windows/*
             release-assets/android/*
-          body: |
-            ## MomoStory ${{ github.ref_name }}
-
-            - Windows: `MomoStory.exe` 또는 설치 파일
-            - Android: `MomoStory.apk`
-
-            Gemini 키는 들어 있지 않습니다. 설치한 뒤 설정에서 본인 키를 입력하세요.
+          body_path: docs/releases/${{ github.ref_name }}.md

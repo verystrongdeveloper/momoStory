@@ -30,7 +30,7 @@ export function buildStoryPrompt() {
 설명, 인사, 마크다운, 코드블록은 넣지 않는다. 아래 형식의 대본만 출력한다. 그 텍스트를 그대로 txt로 저장해 앱에 불러온다.
 
 [규칙]
-- 첫 줄은 "타이틀 : 제목".
+- 첫 줄은 "타이틀 : 제목" 또는 "title : 제목". 제목 내용은 출력 언어로 쓴다.
 - 캐릭터 대사는 "짧은이름(소속) : 대사 [emotion : 파일.png, bg : BG_이름.jpg, sound : SE_이름.mp3, music : 파일.mp3, expression : 파일.png]".
 - 선생의 말은 대사로 쓰지 않는다. 선생이 고르는 말은 selection만 쓴다.
 - 나레이션은 "narration : 내용 [bg : BG_이름.jpg, music : 파일.mp3, sound : SE_이름.mp3]". 선생 1인칭이거나 효과음이다.

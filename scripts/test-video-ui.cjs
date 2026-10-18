@@ -34,6 +34,7 @@ function load(file, mocks) {
   await React.act(async () => tree.root.findByProps({ accessibilityLabel: '9:16' }).props.onPress());
   await React.act(async () => { button('videoDownload').props.onPress(); button('videoDownload').props.onPress(); });
   assert.equal(prepared[1], '9:16');
+  assert.equal(prepared[4].includeChat, true, 'default keeps chat included');
   assert.equal(prepareCount, 1);
   assert.equal(tree.root.findByType('VideoExportWorker').props.payload.ratio, '9:16');
   await React.act(async () => tree.root.findByType('VideoExportWorker').props.options.onProgress({ phase: 'saving', progress: 0.97 }));
@@ -45,6 +46,12 @@ function load(file, mocks) {
   assert.equal(closed, 1);
   await React.act(async () => tree.unmount());
   assert.equal(prepared[4].signal.aborted, true);
+  await React.act(async () => { tree = Renderer.create(React.createElement(Modal, { story, onClose() {} })); });
+  await React.act(async () => tree.root.findByProps({ accessibilityLabel: 'videoExcludeChat' }).props.onPress());
+  assert.equal(tree.root.findByProps({ accessibilityLabel: 'videoExcludeChat' }).props.accessibilityState.checked, true);
+  await React.act(async () => button('videoDownload').props.onPress());
+  assert.equal(prepared[4].includeChat, false, 'story-only selection reaches export preparation');
+  await React.act(async () => tree.unmount());
 
   let canceledSignal;
   const Pending = load('components/chat/VideoExportModal.tsx', {

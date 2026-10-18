@@ -2,6 +2,7 @@ import type { EventLine } from '@/types/EventLine';
 import type { SavedChatMessage, StoryRecord } from '@/storage/types';
 import parseEventScript from '@/utils/parseEventScript';
 import { EVENT_TIMING } from '../../utils/eventPresentation';
+import { CHAT_POP_DURATION, chatSoundKey, type ChatSoundId } from '../../utils/chatPresentation';
 
 export type VideoRatio = '16:9' | '9:16';
 export type VideoScene = {
@@ -26,8 +27,8 @@ export type VideoTimeline = {
   messages: SavedChatMessage[];
 };
 
-export function buildVideoTimeline(story: StoryRecord, bgmVolume: number, sfxVolume: number): VideoTimeline {
-  const messages = story.chatMessages ?? [];
+export function buildVideoTimeline(story: StoryRecord, bgmVolume: number, sfxVolume: number, chatSound: ChatSoundId = 'pop', includeChat = true): VideoTimeline {
+  const messages = includeChat ? story.chatMessages ?? [] : [];
   const scenes: VideoScene[] = [];
   const audio: AudioCue[] = [];
   let time = 0;
@@ -46,6 +47,7 @@ export function buildVideoTimeline(story: StoryRecord, bgmVolume: number, sfxVol
     music = undefined;
   };
   for (let index = 0; index < messages.length; index++) {
+    if (chatSound !== 'none') audio.push({ key: chatSoundKey(chatSound), start: time, end: time + CHAT_POP_DURATION, loop: false, volume: sfxVolume });
     append({ kind: 'chat', chatCount: index + 1, duration: Math.max(1.5, messages[index].text.length * 0.03 + 1) });
   }
   if (messages.length) append({ kind: 'chat', chatCount: messages.length, showStoryButton: true, duration: 1.5 });

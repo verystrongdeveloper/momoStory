@@ -18,6 +18,7 @@ function load(file, mocks = {}, globals = {}) {
 }
 const { normalizeGenerationLanguage, withGenerationLanguage } = require('../shared/prompts/generationLanguage');
 const languages = { ko: 'Korean', en: 'English', ja: 'Japanese', zh: 'Simplified Chinese' };
+const names = { ko: '호시노', en: 'Hoshino', ja: 'ホシノ', zh: '星野' };
 const content = { ko: '안녕', en: 'Hello', ja: 'こんにちは', zh: '你好' };
 function output(instruction) {
   const code = Object.keys(languages).find(code => instruction.includes(`OUTPUT LANGUAGE: ${languages[code]}.`));
@@ -28,6 +29,39 @@ function output(instruction) {
 }
 (async () => {
   const { splitChatReply } = load('utils/splitChatReply.ts');
+  const { keepAssetSpeakers } = require('../shared/prompts/characterList');
+  const { canonicalCharacterName, localizeStoryScript } = require('../shared/prompts/speakerNames');
+  const parseScript = load('utils/parseEventScript.ts').default;
+  const { insertAssetIntoScript } = load('utils/insertStoryAsset.ts');
+  let stories = [];
+  const library = load('store/storyLibrary.ts', { '@/storage': {
+    loadStories: () => stories, saveStories: value => { stories = value; }, subscribeStorage() {},
+  } });
+  const departments = { ko: '대책위원회', en: 'Foreclosure Task Force', ja: '対策委員会', zh: '对策委员会' };
+  for (const code of Object.keys(languages)) {
+    const script = keepAssetSpeakers('타이틀 : 호시노\n호시노(대책위원회) : 호시노! [emotion : hoshino_smile.png, bg : BG_AbydosCouncilRoom.jpg, expression : Heart.png, music : Aira.mp3]\nselection : (1)"호시노" [speaker : 호시노, emotion : hoshino_smile.png]\nUnknown : excluded\nendEvent', ['호시노'], code);
+    assert.ok(script.includes(`${names[code]}(${departments[code]}) : ${names[code]}!`));
+    assert.ok(script.includes('[emotion : hoshino_smile.png, bg : BG_AbydosCouncilRoom.jpg, expression : Heart.png, music : Aira.mp3]'));
+    assert.equal(script.includes('Unknown'), false);
+    const lines = parseScript(script);
+    assert.equal(lines[0].type, '타이틀');
+    assert.equal(lines[0].text, names[code]);
+    assert.equal(lines[1].character, `${names[code]}(${departments[code]})`);
+    assert.equal(lines[2].character, names[code]);
+    assert.equal(canonicalCharacterName(names[code]), '호시노');
+    assert.ok(keepAssetSpeakers(`${names[code]} : hello`, ['호시노']).includes('hello'));
+    assert.ok(localizeStoryScript(`${names[code]} : hello`, code).includes(`${names[code]} : hello`));
+  }
+  for (const prefix of ['타이틀 :', 'title :', 'TITLE：']) {
+    const script = `${prefix} Test\nホシノ(対策委員会) : Hi\nendEvent`;
+    assert.deepEqual(parseScript(script)[0], { type: '타이틀', text: 'Test' });
+    const saved = library.importStory(script);
+    assert.equal(saved.title, 'Test');
+    assert.equal(saved.character, '호시노');
+    assert.equal(library.updateStory(saved.id, `${prefix} Updated\nHoshino : hi`).title, 'Updated');
+    const title = `${prefix} Test []`;
+    assert.equal(insertAssetIntoScript(title, title.length - 1, 'bg', 'BG_Test.jpg').ok, false);
+  }
   assert.deepEqual(splitChatReply('안녕. 선생!'), ['안녕.', '선생!']);
   assert.deepEqual(splitChatReply('Hello. Sensei!'), ['Hello.', 'Sensei!']);
   assert.deepEqual(splitChatReply('こんにちは。先生！元気？'), ['こんにちは。', '先生！', '元気？']);
@@ -59,8 +93,8 @@ function output(instruction) {
     await direct.chat('호시노', '한국어 입력이어도 설정 언어로');
     assert.equal((await direct.chat('호시노', 'continue')).reply, content[code]);
     const script = (await direct.createEvent('호시노')).eventScript;
-    assert.ok(script.includes(`타이틀 : ${content[code]}`));
-    assert.ok(script.includes(`호시노 : ${content[code]}`));
+    assert.ok(script.includes(`${code === 'ko' ? '타이틀' : 'title'} : ${content[code]}`));
+    assert.ok(script.includes(`${names[code]} : ${content[code]}`));
     assert.ok(script.includes('emotion : hoshino_smile.png'));
     assert.ok(script.includes('endEvent'));
   }
@@ -137,7 +171,8 @@ function output(instruction) {
     await invoke(chat.sendChat, code, { message: 'one' });
     assert.equal((await invoke(chat.sendChat, code, { message: 'two' })).reply, content[code]);
     const result = await invoke(event.createEvent, code);
-    assert.ok(result.eventScript.includes(`호시노 : ${content[code]}`));
+    assert.ok(result.eventScript.includes(`${names[code]} : ${content[code]}`));
+    assert.ok(result.eventScript.includes(`${code === 'ko' ? '타이틀' : 'title'} : ${content[code]}`));
   }
   assert.ok(models.some(model => model.instruction.includes('OUTPUT LANGUAGE: English.') && model.history.length >= 6), 'SDK language switch keeps history');
   const fallback = await invoke(chat.sendChat, 'invalid', { message: 'continue' });

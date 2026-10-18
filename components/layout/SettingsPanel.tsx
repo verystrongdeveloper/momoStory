@@ -12,6 +12,7 @@ import {
   View,
 } from 'react-native';
 import GeminiKeyField from './GeminiKeyField';
+import ChatSoundPicker from './ChatSoundPicker';
 import Constants from 'expo-constants';
 import appConfig from '../../app.json';
 import { checkAppUpdate, type UpdateResult } from '@/services/appUpdate';
@@ -205,6 +206,7 @@ export default function SettingsPanel({
         <VolumeControl label={t('bgm')} value={volume} onChange={(next) => setVolume(setBgmVolume(next))} />
         <VolumeControl label={t('sfx')} value={sfx} onChange={(next) => setSfx(setSfxVolume(next))} />
         <Text style={styles.hint}>{t('volumeHint')}</Text>
+        <ChatSoundPicker />
       </View>
 
       <View style={styles.keyWrap} onLayout={(event) => setKeyOffset(event.nativeEvent.layout.y)}>

@@ -150,6 +150,7 @@ function load(file, mocks) {
   }
 
   const List = load('components/chat/StoryLibraryList.tsx', {
+    '@/components/community/PublishStoryModal': 'PublishStoryModal',
     'react-native': rn, '@expo/vector-icons': { Ionicons: 'Ionicons' }, '@/constants/characters': { avatarOf: () => undefined, displayCharacterName: (name) => name },
     '@/hooks/useLayout': { useLayout: () => ({ isCompact: true }) }, '@/components/chat/StoryAssetPanel': 'StoryAssetPanel', './VideoExportModal': 'VideoExportModal',
     '@/store/storyLibrary': { listStories: () => [story], subscribeStories: () => () => {} }, '@/utils/insertStoryAsset': {}, '@/platform/clipboard': {}, '@/utils/storyFile': {}, '@/utils/storyPrompt': {}, '@/i18n': i18n,

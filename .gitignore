@@ -82,6 +82,10 @@ ios/Pods/
 # EAS
 .eas/
 
+# Supabase CLI local state
+supabase/.temp/
+supabase/.branches/
+
 # Database
 *.db
 *.sqlite

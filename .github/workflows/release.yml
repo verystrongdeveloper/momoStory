@@ -9,6 +9,10 @@ on:
 permissions:
   contents: write
 
+env:
+  EXPO_PUBLIC_SUPABASE_URL: ${{ vars.EXPO_PUBLIC_SUPABASE_URL }}
+  EXPO_PUBLIC_SUPABASE_PUBLISHABLE_KEY: ${{ vars.EXPO_PUBLIC_SUPABASE_PUBLISHABLE_KEY }}
+
 jobs:
   desktop:
     runs-on: windows-latest

@@ -36,6 +36,8 @@ MomoStory는 캐릭터의 말투와 성격을 반영한 1:1 대화, 그리고 �
 | 🌐 다국어 | 한국어(기본), English, 日本語, 中文(간체) UI와 해당 언어의 새 채팅·스토리 생성을 지원합니다. 기존 저장본은 자동 번역하지 않습니다. |
 | ⚙️ 개인 설정 | 채팅 크기·사운드·언어·API 키를 앱 설정에서 관리합니다. |
 
+커뮤니티 기능은 별도 Supabase 연결이 필요합니다. 익명 게시·좋아요 목록·댓글과 서버 제한의 설정 방법은 [커뮤니티 연결 안내](docs/community-setup.md)를 참고하세요.
+
 ## 다운로드
 
 최신 Windows 프로그램과 Android APK는 [GitHub Releases](https://github.com/verystrongdeveloper/momoAI/releases/latest)에서 받을 수 있습니다.

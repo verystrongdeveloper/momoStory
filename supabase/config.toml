@@ -1,0 +1,5 @@
+project_id = "momostory"
+
+[functions.community]
+# Handler verifies the user token with Auth. Supports Supabase's newer signing keys.
+verify_jwt = false

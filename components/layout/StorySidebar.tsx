@@ -1,13 +1,15 @@
 import React from 'react';
 import { StyleSheet, TouchableOpacity, View } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
+import { useI18n } from '@/i18n';
 
 interface Props {
   /** 좁은 화면에서는 아래쪽 가로 탭 바로 표시 */
   horizontal?: boolean;
-  active: 'characters' | 'library' | 'settings';
+  active: 'characters' | 'library' | 'community' | 'settings';
   onOpenCharacterList: () => void;
   onOpenLibrary: () => void;
+  onOpenCommunity: () => void;
   onOpenSettings: () => void;
 }
 
@@ -16,8 +18,10 @@ const StorySidebar: React.FC<Props> = ({
   active,
   onOpenCharacterList,
   onOpenLibrary,
+  onOpenCommunity,
   onOpenSettings,
 }) => {
+  const { t } = useI18n();
   return (
     <View style={[styles.sidebar, horizontal && styles.sidebarHorizontal]}>
       <TouchableOpacity
@@ -36,6 +40,14 @@ const StorySidebar: React.FC<Props> = ({
         <View style={styles.iconWrap}>
           <Ionicons name="library-outline" size={28} color="#ffffff" />
         </View>
+      </TouchableOpacity>
+
+      <TouchableOpacity
+        accessibilityLabel={t('community')}
+        onPress={onOpenCommunity}
+        style={[styles.iconBtn, active === 'community' && styles.iconBtnActive]}
+      >
+        <View style={styles.iconWrap}><Ionicons name="people-outline" size={28} color="#ffffff" /></View>
       </TouchableOpacity>
 
       <TouchableOpacity

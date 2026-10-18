@@ -3,6 +3,8 @@
   "main": "expo-router/entry",
   "version": "1.0.5",
   "scripts": {
+    "community:assets": "node scripts/build-community-assets.cjs",
+    "test:community": "node scripts/build-community-assets.cjs --check && node scripts/test-community.cjs && node scripts/test-community-client.cjs && node scripts/test-community-ui.cjs",
     "video:renderer": "node scripts/build-video-renderer.js",
     "test:video": "node scripts/test-video-timeline.cjs && node scripts/test-video-presentation.cjs && node scripts/test-video-assets.cjs && node scripts/test-video-ui.cjs && node scripts/test-background-transition.cjs",
     "test:file-save": "node scripts/test-file-save.cjs && node scripts/test-local-file-save.cjs",
@@ -32,6 +34,7 @@
     "@react-native-async-storage/async-storage": "2.2.0",
     "@react-navigation/bottom-tabs": "^7.2.0",
     "@react-navigation/native": "^7.0.14",
+    "@supabase/supabase-js": "^2.118.0",
     "@tauri-apps/plugin-dialog": "^2.8.3",
     "@tauri-apps/plugin-fs": "^2.7.1",
     "expo": "~57.0.1",
@@ -64,12 +67,14 @@
     "react-native-reanimated": "4.5.1",
     "react-native-safe-area-context": "~5.7.0",
     "react-native-screens": "~4.26.0",
+    "react-native-url-polyfill": "^4.0.0",
     "react-native-web": "^0.21.2",
     "react-native-webview": "13.16.1",
     "react-native-worklets": "^0.10.1"
   },
   "devDependencies": {
     "@babel/core": "^7.29.0",
+    "@electric-sql/pglite": "^0.5.10",
     "@tauri-apps/cli": "^2.12.1",
     "@types/jest": "^29.5.12",
     "@types/react": "~19.2.4",

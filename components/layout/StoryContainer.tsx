@@ -7,6 +7,7 @@ import ChatEntry from '@/components/chat/ChatEntry';
 import CharacterChat from '@/components/chat/CharacterChat';
 import StoryLibraryList from '@/components/chat/StoryLibraryList';
 import SettingsPanel from './SettingsPanel';
+import CommunityPanel from '@/components/community/CommunityPanel';
 import AppGuide, { GuideMode } from '@/components/guide/AppGuide';
 import { avatarOf, CHARACTERS, Character, displayCharacterName } from '@/constants/characters';
 import type { SavedStory } from '@/store/storyLibrary';
@@ -14,7 +15,7 @@ import { useLayout } from '@/hooks/useLayout';
 import { useI18n } from '@/i18n';
 
 /** characters: 1:1 캐릭터 목록  |  library: 저장된 스토리  |  settings: 설정 */
-type ListPanel = 'characters' | 'library' | 'settings';
+type ListPanel = 'characters' | 'library' | 'community' | 'settings';
 
 const StoryContainer: React.FC = () => {
   const { language, t } = useI18n();
@@ -55,13 +56,19 @@ const StoryContainer: React.FC = () => {
         setListPanel('settings');
         if (isCompact) closeDetail();
       }}
+      onOpenCommunity={() => {
+        setSavedStory(null);
+        setListPanel('community');
+        if (isCompact) closeDetail();
+      }}
     />
   );
 
   const libraryOpen = listPanel === 'library';
   const settingsOpen = listPanel === 'settings';
-  const fullPane = libraryOpen || settingsOpen;
-  const fullPaneView = settingsOpen ? (
+  const communityOpen = listPanel === 'community';
+  const fullPane = libraryOpen || settingsOpen || communityOpen;
+  const fullPaneView = communityOpen ? <CommunityPanel /> : settingsOpen ? (
     <SettingsPanel onOpenTutorial={() => setGuide('tutorial')} onOpenTerms={() => setGuide('terms')} />
   ) : savedStory ? (
     <CharacterChat

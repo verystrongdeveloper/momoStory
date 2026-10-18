@@ -5,6 +5,7 @@ export const EVENT_TIMING = {
   expressionReveal: 0.3, expressionShow: 2, expressionFade: 0.5,
   deleteFade: 0.3, typewriter: 0.03, autoRead: 2.1,
   backgroundFade: 0.4,
+  selectionFeedback: 0.6,
   motionStep: 0.08, motionDistance: 15, motionIterations: 3,
 };
 

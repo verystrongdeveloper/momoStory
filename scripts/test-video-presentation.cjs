@@ -66,8 +66,10 @@ const command = timeline.scenes[1];
 assert.equal(command.line.soundFile, 'SE_Crow_04.wav');
 assert.equal(command.expression.key, 'sweat.png');
 assert.equal(command.expression.start, 0);
-assert.deepEqual(timeline.audio.map(cue => cue.key), ['SE_Confirm_01.mp3', 'SE_Crow_04.wav']);
-assert.ok(timeline.audio.every(cue => cue.volume === 0.4 && cue.end === timeline.duration));
+assert.deepEqual(timeline.audio.map(cue => cue.key), ['SE_Confirm_01.mp3', 'SE_Crow_04.wav', 'Chat_Pop.wav']);
+assert.ok(timeline.audio.every(cue => cue.volume === 0.4));
+assert.ok(timeline.audio.slice(0, 2).every(cue => cue.end === timeline.duration));
+assert.ok(Math.abs(timeline.audio[2].end - timeline.audio[2].start - 0.18) < 1e-9);
 for (const scene of timeline.scenes) {
   if (scene.line.type === 'command' || scene.line.type === 'animation') assert.equal(shownEventDialogue(scene.line, initial.line), null);
 }

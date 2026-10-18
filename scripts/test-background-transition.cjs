@@ -72,13 +72,23 @@ for (const ratio of ['16:9', '9:16']) {
     { type: 'dialogue', text: 'three', bg: 'B.jpg' },
     { type: 'dialogue', text: 'four' },
     { type: 'selection', options: ['one', 'two'] },
+    ...Array.from({ length: 6 }, () => ({ type: 'selection', options: ['one', 'two'] })),
+    { type: 'dialogue', text: 'done' },
   ];
+  const sounds = [];
+  let selectedSound = 'bell', sfxVolume = 0.35, storyMuted = false, failSound = false;
   const stop = () => {};
   const mocks = { 'react': React,
     'react-native': { Platform: { OS: 'web' }, Animated, View: 'View', Pressable: 'Pressable', TouchableOpacity: 'TouchableOpacity', StyleSheet: { absoluteFill: {}, create: s => s } },
-    'expo-asset': { Asset: { loadAsync() {} } }, 'expo-audio': {}, 'expo-router': { useRouter: () => ({ replace() {} }) },
+    'expo-asset': { Asset: { loadAsync() {} } }, 'expo-audio': { createAudioPlayer(source) {
+      const record = { source, plays: 0, removed: 0, unsubscribed: 0, status: null };
+      const player = { volume: 1, play() { if (failSound) throw new Error('audio unavailable'); record.plays++; }, remove() { record.removed++; }, addListener(_type, callback) { record.status = callback; return { remove() { record.unsubscribed++; } }; } };
+      record.player = player; sounds.push(record); return player;
+    } }, 'expo-router': { useRouter: () => ({ replace() {} }) },
     '@/constants/eventAssets': { bgMap: {}, emotionMap: {}, expressionMap: {}, sfxMap: {} },
-    '@/services/sfxVolume': {}, '@/hooks/useBGM': () => ({ stop, setMusic() {} }),
+    '@/services/sfxVolume': { getSfxVolume: () => sfxVolume }, '@/hooks/useBGM': () => ({ stop, setMusic() {}, muted: storyMuted }),
+    '@/services/chatSound': { getChatSound: () => selectedSound },
+    '@/constants/chatSounds': { chatSoundSources: { 'Chat_bell.wav': 21, 'Chat_Pop.wav': 22, 'Chat_soft.wav': 23 } },
     '@/hooks/useEventParser': () => lines, '@/hooks/useLayout': { EventFrame: 'EventFrame' }, '@/i18n': { useI18n: () => ({ t: key => key }) },
   };
   for (const name of ['CharacterSprite', 'EventBackground', 'EventHud', 'EventSelection', 'EventVolumeModal', 'TextBox', 'TitleBanner']) mocks['./' + name] = name;
@@ -136,7 +146,38 @@ for (const ratio of ['16:9', '9:16']) {
   assert.equal(tree.root.findAllByType('EventSelection').length, 1);
   await React.act(async () => space());
   assert.equal(tree.root.findAllByType('EventSelection').length, 1, 'space must not auto-select a choice');
+  assert.equal(sounds.length, 0, 'showing choices does not play the selection sound');
+  const choose = () => tree.root.findByType('EventSelection').props.onSelect;
+  const firstChoice = choose();
+  await React.act(async () => { firstChoice('one'); firstChoice('two'); });
+  assert.equal(sounds.length, 1, 'one sound and one advance for a double press');
+  assert.equal(sounds[0].source, 21); assert.equal(sounds[0].player.volume, 0.35); assert.equal(sounds[0].plays, 1);
+  selectedSound = 'none'; await React.act(async () => choose()('one'));
+  assert.equal(sounds.length, 1, 'disabled chat sound also disables choice sounds');
+  selectedSound = 'pop'; sfxVolume = 0; await React.act(async () => choose()('one'));
+  assert.equal(sounds.length, 1, 'zero SFX volume is silent');
+  sfxVolume = 0.8; storyMuted = true;
+  await React.act(async () => tree.update(React.createElement(Player, { script: '' })));
+  await React.act(async () => choose()('one')); assert.equal(sounds.length, 1, 'story mute is respected');
+  storyMuted = false;
+  await React.act(async () => tree.update(React.createElement(Player, { script: '' })));
+  await React.act(async () => choose()('not-a-choice')); assert.equal(sounds.length, 1);
+  await React.act(async () => tree.root.findByType('EventHud').props.onMenu());
+  await React.act(async () => choose()('one')); assert.equal(sounds.length, 1, 'no choosing behind a menu');
+  await React.act(async () => tree.root.findByType('EventVolumeModal').props.onClose());
+  failSound = true;
+  await React.act(async () => choose()('one'));
+  assert.equal(sounds[1].removed, 1, 'failed audio is released without blocking the next choice');
+  failSound = false;
+  await React.act(async () => choose()('one'));
+  assert.equal(sounds[2].source, 22); assert.equal(sounds[2].player.volume, 0.8);
+  selectedSound = 'soft'; await React.act(async () => choose()('one'));
+  assert.equal(sounds[3].source, 23, 'changing the setting applies to the next selection');
+  assert.equal(tree.root.findByType('TextBox').props.currentLine.text, 'done');
+  sounds[0].status({ didJustFinish: true });
+  assert.equal(sounds[0].removed, 1, 'finished audio is released');
   await React.act(async () => tree.unmount());
+  assert.ok(sounds.every(sound => sound.removed === 1 && sound.unsubscribed === 1), 'no leaked players/listeners or double release on exit');
   assert.equal(keys.size, 0, 'keyboard listener removed when leaving story');
   global.document = originalDocument;
   // Real dialogue components opt out of native selection and web user-select,

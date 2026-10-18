@@ -91,6 +91,6 @@ export function communityErrorKey(error: unknown) {
   if (code === 'INVALID_COMMENT') return 'communityCommentLimit';
   if (code === 'NOT_FOUND') return 'communityNotFound';
   if (code === 'AUTH_FAILED' || code === 'UNAUTHORIZED') return 'communityAuthFailed';
-  if (code.startsWith('INVALID_') || code === 'STORY_TOO_LONG') return 'communityInvalidStory';
+  if (code.startsWith('INVALID_') || code === 'STORY_TOO_LONG' || code === 'MISSING_END') return 'communityInvalidStory';
   return 'communityFailed';
 }

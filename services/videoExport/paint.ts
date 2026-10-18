@@ -179,7 +179,7 @@ export function paintVideo(ctx: Context, payload: VideoPayload, scene: VideoScen
     const top = H / 2 - (height * line.options.length + gap * (line.options.length - 1)) / 2;
     ctx.font = `${optionFont}px MomoExport`;
     line.options.forEach((option, index) => {
-      const chosen = index === 0 && local >= scene.duration - 0.6;
+      const chosen = index === 0 && local >= scene.duration - EVENT_TIMING.selectionFeedback;
       const x = (W - width) / 2;
       const y = top + index * (height + gap);
       const gradient = ctx.createLinearGradient(x, y, x + width, y);

@@ -59,6 +59,9 @@ assert.equal(hashes.size, 5, 'all five sounds must actually differ');
     const payload = await prepareVideo({ title: 'test', character: '호시노', script: '', chatMessages: [{ sender: 'character', text: 'hello' }] }, '9:16', 'ko', {}, { signal: new AbortController().signal, onProgress() {} });
     assert.equal(payload.timeline.audio.length, id === 'none' ? 0 : 1);
     if (id !== 'none') assert.ok(payload.sounds[`sfx:${catalog.chatSoundKey(id)}`].endsWith(`chat-${id}.wav`));
+    const selectionPayload = await prepareVideo({ title: 'test', character: '호시노', script: 'selection : (1)"One" (2)"Two"\nendEvent', chatMessages: [{ sender: 'user', text: 'excluded' }] }, '16:9', 'ko', {}, { signal: new AbortController().signal, onProgress() {}, includeChat: false });
+    assert.equal(selectionPayload.timeline.audio.length, id === 'none' ? 0 : 1);
+    if (id !== 'none') assert.ok(selectionPayload.sounds[`sfx:${catalog.chatSoundKey(id)}`].endsWith(`chat-${id}.wav`), 'selection audio asset loads even without chat');
   }
   const { prepareVideo: prepareWithoutChat } = load('services/videoExport/prepare.ts', {
     '@/storage': { getSetting: key => key === 'chatSound' ? 'bell' : 0.5 },

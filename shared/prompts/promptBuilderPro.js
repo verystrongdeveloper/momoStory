@@ -84,6 +84,7 @@ deleteEmotion
 deleteAll
 waitSecond = 숫자
 endEvent
+- waitSecond는 waitSecond = 숫자와 waitSecond : 숫자 모두 지원한다.
 - 캐릭터명은 짧은 이름만 (소라사키 히나 X → 히나).
 - emotion/bg/sound/music/expression/animation은 반드시 [ ] 안에 넣고, 대사 본문에는 쓰지 않는다.
 - selection은 반드시 selection으로 적는다.

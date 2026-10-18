@@ -92,6 +92,7 @@ const has = (tree, key) => tree.root.findAllByType('Text').some(text => text.pro
   await React.act(async () => tree.unmount());
   // Verify the library menu opens the actual publish modal path.
   const Library = load('components/chat/StoryLibraryList.tsx', {
+    './StoryScriptEditor': 'StoryScriptEditor',
     react: React, 'react-native': { ...rn, Platform: { OS: 'web' } }, '@expo/vector-icons': { Ionicons: 'Ionicons' }, '@/constants/characters': chars,
     '@/hooks/useLayout': { useLayout: () => ({ isCompact: true }) }, '@/components/chat/StoryAssetPanel': 'StoryAssetPanel', './VideoExportModal': 'VideoExportModal', '@/components/community/PublishStoryModal': 'PublishStoryModal',
     '@/store/storyLibrary': { listStories: () => [{ ...detail, createdAt: Date.now() }], subscribeStories: () => () => {} }, '@/utils/insertStoryAsset': {}, '@/platform/clipboard': {}, '@/utils/storyFile': {}, '@/utils/storyPrompt': {}, '@/i18n': i18n,

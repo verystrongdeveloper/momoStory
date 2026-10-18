@@ -26,7 +26,7 @@ export function validatePublicStory(value: unknown, assets: AssetManifest): Publ
   if (!value || typeof value !== 'object') return fail('INVALID_STORY');
   const raw = value as Record<string, unknown>;
   if (typeof raw.title !== 'string' || !raw.title.trim() || charCount(raw.title) > 100 || /[\r\n]/.test(raw.title)) return fail('INVALID_TITLE');
-  if (typeof raw.script !== 'string' || controls.test(raw.script) || typeof raw.character !== 'string' || !assets.emotions[raw.character]) return fail('INVALID_STORY');
+  if (typeof raw.script !== 'string' || typeof raw.character !== 'string' || !assets.emotions[raw.character]) return fail('INVALID_STORY');
   if (typeof raw.clientId !== 'string' || !/^[a-zA-Z0-9_-]{1,100}$/.test(raw.clientId)) return fail('INVALID_STORY');
   if (raw.script.length > 100_000 || !Array.isArray(raw.chatMessages) || raw.chatMessages.length > 300) return fail('STORY_TOO_LONG');
   const chatMessages: CommunityChat[] = raw.chatMessages.map((message: unknown) => {
@@ -37,26 +37,52 @@ export function validatePublicStory(value: unknown, assets: AssetManifest): Publ
   });
   const content = raw.script + chatMessages.map(message => message.text).join('');
   if (charCount(content) > 50_000 || new TextEncoder().encode(content).length > 200_000) return fail('STORY_TOO_LONG');
-  const script = raw.script.trim();
-  const lines = script.split(/\r?\n/).map(line => line.trim()).filter(Boolean);
-  if (lines.length > 1_000) return fail('STORY_TOO_LONG');
-  const title = lines[0]?.match(/^(?:타이틀|title)\s*[:：]\s*(.+)$/i)?.[1]?.trim();
-  if (!title || title !== raw.title.trim() || lines.at(-1) !== 'endEvent') return fail('INVALID_STRUCTURE');
+  const issues = diagnoseStoryScript(raw.script, assets, raw.title.trim());
+  if (issues.length) return fail(issues[0].code, issues[0].line);
+  // Explicit whitelist: API keys, local paths and preferences can never hitchhike on an upload.
+  return { title: raw.title.trim(), character: raw.character, script: raw.script.trim(), chatMessages, clientId: raw.clientId };
+}
+
+export type ScriptIssue = { code: string; line: number; start: number; end: number };
+
+/** UTF-16 ranges match textarea/TextInput selection offsets; line numbers include blank lines. */
+export function diagnoseStoryScript(script: string, assets: AssetManifest, expectedTitle?: string): ScriptIssue[] {
+  const issues: ScriptIssue[] = [];
+  let offset = 0;
+  const rows = script.split('\n').map((raw, index) => {
+    const row = { text: raw.trim(), line: index + 1, start: offset + Math.max(0, raw.search(/\S/)), end: offset + raw.replace(/\r$/, '').length };
+    offset += raw.length + 1;
+    return row;
+  });
+  const lines = rows.filter(row => !!row.text);
+  const add = (code: string, row = rows[0]) => {
+    if (issues.length < 100 && !issues.some(issue => issue.line === row.line && issue.code === code)) issues.push({ code, line: row.line, start: row.start, end: Math.max(row.start, row.end) });
+  };
+  if (script.length > 100_000 || charCount(script) > 50_000 || new TextEncoder().encode(script).length > 200_000 || lines.length > 1_000 || rows.length > 10_000) {
+    add('STORY_TOO_LONG'); return issues;
+  }
+  const title = lines[0]?.text.match(/^(?:타이틀|title)\s*[:：]\s*(.+)$/i)?.[1]?.trim();
+  if (!title || (expectedTitle !== undefined && title !== expectedTitle)) add('INVALID_TITLE_LINE', lines[0]);
+  else if (charCount(title) > 100) add('INVALID_TITLE', lines[0]);
+  const hasEnd = lines.at(-1)?.text === 'endEvent';
+  if (!hasEnd) add('MISSING_END', lines.at(-1));
+  for (const row of rows) if (controls.test(row.text)) add('INVALID_STORY', row);
   let readable = 0, waitTotal = 0;
   const usedCharacters = new Set<string>();
-  for (let i = 1; i < lines.length - 1; i++) {
-    const line = lines[i];
-    const lineNo = i + 1;
+  const checkLine = (line: string, lineNo: number) => {
     if (line.length > 4_000) return fail('STORY_TOO_LONG', lineNo);
-    if (/^(deleteAll|deleteEmotion)$/.test(line)) continue;
-    if (/^waitSecond\s*:\s*(?:[1-9]|[12]\d|30)$/.test(line)) {
-      waitTotal += Number(line.split(':')[1]);
+    if (controls.test(line)) return fail('INVALID_STORY', lineNo);
+    if (/^(deleteAll|deleteEmotion)$/.test(line)) return;
+    if (/^waitSecond\b/.test(line)) {
+      const wait = line.match(/^waitSecond\s*[:=]\s*([1-9]|[12]\d|30)$/);
+      if (!wait) return fail('INVALID_COMMAND', lineNo);
+      waitTotal += Number(wait[1]);
       if (waitTotal > 120) return fail('INVALID_COMMAND', lineNo);
-      continue;
+      return;
     }
     if (/^animation\s*:\s*\w+$/.test(line)) {
       if (!animations.has(line.split(':')[1].trim())) return fail('INVALID_COMMAND', lineNo);
-      continue;
+      return;
     }
     const assetOnly = /^(?:bg|music|sound)\s*:/.test(line);
     const metaAt = line.indexOf('[');
@@ -103,8 +129,15 @@ export function validatePublicStory(value: unknown, assets: AssetManifest): Publ
         if (!Object.values(assets.emotions).some(files => files.includes(text))) return fail('INVALID_ASSET', lineNo);
       } else if (!(key === 'music' && text === 'none') && !assets[key as 'bg' | 'music' | 'sound' | 'expression'].includes(text)) return fail('INVALID_ASSET', lineNo);
     }
+  };
+  for (const row of lines.slice(1, hasEnd ? -1 : undefined)) {
+    if (issues.length >= 100) break;
+    try { checkLine(row.text, row.line); }
+    catch (error) {
+      if (error instanceof CommunityValidationError) add(error.code, row);
+      else throw error;
+    }
   }
-  if (!readable || usedCharacters.size > 3) return fail('INVALID_STRUCTURE');
-  // Explicit whitelist: API keys, local paths and preferences can never hitchhike on an upload.
-  return { title, character: raw.character, script, chatMessages, clientId: raw.clientId };
+  if ((!readable && !issues.length) || usedCharacters.size > 3) add('INVALID_STRUCTURE', lines[0]);
+  return issues.sort((a, b) => a.line - b.line);
 }

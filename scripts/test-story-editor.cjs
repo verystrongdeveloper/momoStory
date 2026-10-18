@@ -1,0 +1,73 @@
+const assert = require('node:assert/strict');
+const fs = require('node:fs');
+const path = require('node:path');
+const ts = require('typescript');
+const React = require('react');
+const Renderer = require('react-test-renderer');
+global.IS_REACT_ACT_ENVIRONMENT = true;
+const root = path.resolve(__dirname, '..');
+function load(file, mocks = {}) {
+  if (file.endsWith('.json')) return JSON.parse(fs.readFileSync(path.join(root, file), 'utf8'));
+  const mod = { exports: {} };
+  const code = ts.transpileModule(fs.readFileSync(path.join(root, file), 'utf8'), { compilerOptions: { module: ts.ModuleKind.CommonJS, target: ts.ScriptTarget.ES2022, jsx: ts.JsxEmit.React, esModuleInterop: true } }).outputText;
+  new Function('require', 'module', 'exports', code)(id => {
+    if (Object.hasOwn(mocks, id)) return mocks[id];
+    if (id.startsWith('@/') || id.startsWith('.')) {
+      const base = id.startsWith('@/') ? id.slice(2) : path.relative(root, path.resolve(root, path.dirname(file), id));
+      return load(fs.existsSync(path.join(root, base)) && fs.statSync(path.join(root, base)).isFile() ? base : fs.existsSync(path.join(root, base + '.ts')) ? base + '.ts' : base + '.tsx', mocks);
+    }
+    return require(id);
+  }, mod, mod.exports);
+  return mod.exports;
+}
+const translate = (key, values) => `${key}${values?.line ? ':' + values.line : ''}`;
+const rn = Object.fromEntries(['View', 'Text', 'TouchableOpacity', 'ScrollView', 'TextInput'].map(name => [name, name]));
+rn.StyleSheet = { create: value => value };
+const mocks = { react: React, 'react-native': rn, '@/i18n': { useI18n: () => ({ t: translate, language: 'ko' }) } };
+const bad = 'title : Test\n\n호시노 : hello [emotion : missing.png]\n\nwaitSecond = 31\n\nendEvent';
+const fixed = bad.replace('missing.png', 'hoshino_smile.png').replace('= 31', '= 2');
+const { diagnoseStoryScript } = load('shared/community/validation.ts');
+const assets = require('../shared/community/assets.json');
+const problems = diagnoseStoryScript(bad, assets);
+assert.deepEqual(problems.map(issue => issue.line), [3, 5]);
+const parser = load('utils/parseEventScript.ts').default;
+for (const separator of [':', '=']) assert.equal(parser(`waitSecond ${separator} 2`)[0].waitSecond, 2);
+(async () => {
+  const Web = load('components/chat/StoryScriptEditor.web.tsx', mocks).default;
+  let tree, selection, chosenRange, focusCount = 0;
+  const textarea = { clientWidth: 300, clientHeight: 180, scrollTop: 20, scrollLeft: 0, selectionStart: 0, selectionEnd: 0, focus() { focusCount++; }, setSelectionRange(start, end) { chosenRange = { start, end }; this.selectionStart = start; this.selectionEnd = end; } };
+  const mirror = { style: {}, scrollTop: 0, scrollLeft: 0, getBoundingClientRect: () => ({ top: 0 }), querySelector: () => ({ getBoundingClientRect: () => ({ top: 300 }) }) };
+  const props = value => ({ value, onChangeText() {}, onSelectionChange: next => { selection = next; } });
+  await React.act(async () => { tree = Renderer.create(React.createElement(Web, props(bad)), { createNodeMock: element => element.type === 'textarea' ? textarea : element.type === 'div' && element.props['aria-hidden'] ? mirror : null }); });
+  assert.equal(tree.root.findByType('textarea').props['aria-invalid'], true);
+  const highlighted = () => tree.root.findAllByType('span').filter(span => span.props.style?.textDecorationStyle === 'wavy');
+  assert.deepEqual(highlighted().map(span => span.props['data-script-line']), [3, 5]);
+  assert.equal(highlighted()[0].props.style.textDecorationColor, '#d72f48');
+  assert.equal(mirror.style.width, '300px'); assert.equal(mirror.scrollTop, 20);
+  textarea.scrollTop = 100; textarea.scrollLeft = 8;
+  tree.root.findByType('textarea').props.onScroll();
+  assert.equal(mirror.scrollTop, 100); assert.equal(mirror.scrollLeft, 8);
+  const firstError = tree.root.findAllByType('TouchableOpacity')[0];
+  await React.act(async () => firstError.props.onPress());
+  assert.equal(focusCount, 1); assert.deepEqual(chosenRange, { start: problems[0].start, end: problems[0].end }); assert.deepEqual(selection, chosenRange);
+  const areaStyle = tree.root.findByType('textarea').props.style;
+  const mirrorStyle = tree.root.findByProps({ 'aria-hidden': 'true' }).props.style;
+  for (const key of ['padding', 'lineHeight', 'fontFamily', 'fontSize', 'whiteSpace', 'overflowWrap', 'tabSize']) assert.equal(areaStyle[key], mirrorStyle[key], `${key}: overlay metrics must match native textarea`);
+  await React.act(async () => tree.update(React.createElement(Web, props(fixed))));
+  assert.equal(highlighted().length, 0, 'stale underlines are hidden immediately while rechecking');
+  await React.act(async () => new Promise(resolve => setTimeout(resolve, 230)));
+  assert.equal(tree.root.findByType('textarea').props['aria-invalid'], false);
+  assert.equal(highlighted().length, 0);
+  assert.equal(tree.root.findByType('textarea').props.value, fixed);
+  await React.act(async () => tree.unmount());
+  const Native = load('components/chat/StoryScriptEditor.tsx', mocks).default;
+  let nativeRange;
+  await React.act(async () => { tree = Renderer.create(React.createElement(Native, props(bad)), { createNodeMock: element => element.type === 'TextInput' ? { focus() {}, setNativeProps: value => { nativeRange = value.selection; } } : null }); });
+  await React.act(async () => tree.root.findAllByType('TouchableOpacity')[1].props.onPress());
+  assert.deepEqual(nativeRange, { start: problems[1].start, end: problems[1].end });
+  assert.equal(tree.root.findByType('TextInput').props.autoCorrect, false);
+  await React.act(async () => tree.unmount());
+  const translations = load('i18n/scriptEditor.ts').scriptEditorTranslations;
+  for (const lang of ['en', 'ja', 'zh']) assert.deepEqual(Object.keys(translations[lang]).sort(), Object.keys(translations.ko).sort());
+  console.log('PASS colon/equal wait parsing, multiple diagnostics/real line offsets, web red squiggles/scroll metrics/jump/recheck, native line selection and localized errors');
+})().catch(error => { console.error(error); process.exitCode = 1; });

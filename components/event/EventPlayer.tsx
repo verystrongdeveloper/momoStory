@@ -5,6 +5,9 @@ import { createAudioPlayer } from 'expo-audio';
 import { useRouter } from 'expo-router';
 import { bgMap, emotionMap, expressionMap, sfxMap } from '@/constants/eventAssets';
 import { getSfxVolume } from '@/services/sfxVolume';
+import { getChatSound } from '@/services/chatSound';
+import { chatSoundSources } from '@/constants/chatSounds';
+import { chatSoundKey } from '@/utils/chatPresentation';
 import useBGM from '@/hooks/useBGM';
 import useEventParser from '@/hooks/useEventParser';
 import { EventFrame } from '@/hooks/useLayout';
@@ -70,6 +73,11 @@ const EventPlayer: React.FC<Props> = ({ script }) => {
   const bgOpacity = useRef(new Animated.Value(1)).current;
   const emoOpacity = useRef(new Animated.Value(1)).current;
   const dialogueRef = useRef<DialogueHandle>(null);
+  const chosenIndex = useRef<number | null>(null);
+  const soundCleanups = useRef(new Set<() => void>());
+  useEffect(() => () => {
+    for (const cleanup of [...soundCleanups.current]) cleanup();
+  }, []);
 
   const { setMusic, stop, volume, setVolume, muted, setMuted } = useBGM();
   const mutedRef = useRef(muted);
@@ -154,17 +162,35 @@ const EventPlayer: React.FC<Props> = ({ script }) => {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [auto, menuOpen, idx, line, transitioning]);
 
-  const playSFX = async (key: string) => {
-    const src = sfxMap[key];
-    if (!src) return;
-    const player = createAudioPlayer(src, { keepAudioSessionActive: true });
-    player.volume = mutedRef.current ? 0 : getSfxVolume();
-    const subscription = player.addListener('playbackStatusUpdate', (status) => {
-      if (!status.didJustFinish) return;
-      subscription.remove();
-      player.remove();
-    });
-    player.play();
+  const playSFX = (key: string) => {
+    const src = sfxMap[key] ?? chatSoundSources[key];
+    const soundVolume = mutedRef.current ? 0 : getSfxVolume();
+    if (!src || soundVolume <= 0) return;
+    let cleanup = () => {};
+    try {
+      const player = createAudioPlayer(src, { keepAudioSessionActive: true });
+      let subscription: { remove: () => void } | undefined;
+      let removed = false;
+      cleanup = () => {
+        if (removed) return;
+        removed = true;
+        soundCleanups.current.delete(cleanup);
+        try { subscription?.remove(); } catch { /* already released */ }
+        try { player.remove(); } catch { /* already released */ }
+      };
+      soundCleanups.current.add(cleanup);
+      player.volume = soundVolume;
+      subscription = player.addListener('playbackStatusUpdate', status => { if (status.didJustFinish) cleanup(); });
+      player.play();
+    } catch { cleanup(); /* A failed effect must not stop story progression. */ }
+  };
+
+  const chooseOption = (option: string) => {
+    if (menuOpen || transitioning || line?.type !== 'selection' || !line.options?.includes(option) || chosenIndex.current === idx) return;
+    chosenIndex.current = idx;
+    const sound = getChatSound();
+    if (sound !== 'none') playSFX(chatSoundKey(sound));
+    nextLine();
   };
 
   /* 에셋 선로딩 */
@@ -315,7 +341,7 @@ const EventPlayer: React.FC<Props> = ({ script }) => {
 
         {!transitioning && line?.type === 'selection' && (
           <View pointerEvents="box-none" style={styles.selection}>
-            <EventSelection options={line.options ?? []} onSelect={nextLine} />
+            <EventSelection options={line.options ?? []} onSelect={chooseOption} />
           </View>
         )}
         {menuOpen && (

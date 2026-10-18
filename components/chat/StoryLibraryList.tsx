@@ -6,6 +6,7 @@ import { useLayout } from '@/hooks/useLayout';
 import StoryAssetPanel from '@/components/chat/StoryAssetPanel';
 import VideoExportModal from './VideoExportModal';
 import PublishStoryModal from '@/components/community/PublishStoryModal';
+import StoryScriptEditor from './StoryScriptEditor';
 import { deleteStory, importStory, listStories, SavedStory, subscribeStories, updateStory } from '@/store/storyLibrary';
 import { insertAssetIntoScript, AssetKind } from '@/utils/insertStoryAsset';
 import { copyText } from '@/platform/clipboard';
@@ -95,7 +96,7 @@ export default function StoryLibraryList({ onOpenStory }: { onOpenStory: (story:
   const startEdit = (story: SavedStory | 'new') => {
     setMenuId(null);
     setEditing(story);
-    setDraft(story === 'new' ? '' : story.script);
+    setDraft(story === 'new' ? '' : story.script.replace(/\r\n?/g, '\n'));
     setEditorTab('story');
     setNotice('');
     selectionRef.current = { start: 0, end: 0 };
@@ -210,17 +211,13 @@ export default function StoryLibraryList({ onOpenStory }: { onOpenStory: (story:
             </View>
           )}
           {(!isCompact || editorTab === 'story') && (
-            <TextInput
+            <StoryScriptEditor
               style={[styles.editor, isCompact && styles.editorCompact]}
               value={draft}
               onChangeText={setDraft}
-              onSelectionChange={(e) => {
-                selectionRef.current = e.nativeEvent.selection;
+              onSelectionChange={(selection) => {
+                selectionRef.current = selection;
               }}
-              multiline
-              textAlignVertical="top"
-              autoCapitalize="none"
-              autoCorrect={false}
             />
           )}
           {(!isCompact || editorTab === 'assets') && (
@@ -737,14 +734,6 @@ const styles = StyleSheet.create({
   },
   editor: {
     flex: 1,
-    padding: 16,
-    borderRadius: 12,
-    borderWidth: 1,
-    borderColor: '#e2e6ea',
-    backgroundColor: '#fff',
-    fontSize: 15,
-    lineHeight: 22,
-    color: '#222',
   },
   editorCompact: {
     width: '100%',

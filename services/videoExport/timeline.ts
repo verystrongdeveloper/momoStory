@@ -71,13 +71,18 @@ export function buildVideoTimeline(story: StoryRecord, bgmVolume: number, sfxVol
     if (line.commandType === 'endEvent') { stopMusic(); break; }
     let duration = (line.text?.length ?? 0) * EVENT_TIMING.typewriter + EVENT_TIMING.autoRead;
     if (line.type === '타이틀') duration = EVENT_TIMING.titleShow + EVENT_TIMING.titleGap;
-    if (line.type === 'selection') duration = Math.max(duration, 3) + 0.6;
+    if (line.type === 'selection') duration = Math.max(duration, 3) + EVENT_TIMING.selectionFeedback;
     if (line.type === 'command') {
       duration = line.commandType === 'waitSecond' ? Math.max(0.1, line.waitSecond ?? 1)
         : line.commandType === 'backgroundOnly' ? 1 : EVENT_TIMING.deleteFade;
     }
     if (line.type === 'narration' && lines[index + 1]?.commandType === 'endEvent') stopMusic();
     if (line.soundFile) audio.push({ key: line.soundFile, start: time, end: Infinity, loop: false, volume: sfxVolume });
+    if (line.type === 'selection' && line.options?.length && chatSound !== 'none') {
+      // Match the first option's highlight, not the moment the choice menu appears.
+      const start = time + duration - EVENT_TIMING.selectionFeedback;
+      audio.push({ key: chatSoundKey(chatSound), start, end: start + CHAT_POP_DURATION, loop: false, volume: sfxVolume });
+    }
     if (line.expression) expression = { key: line.expression, start: time };
     if (line.type === 'animation' || (line.type === 'dialogue' && line.animationType)) animation = { type: line.animationType ?? '', start: time };
     append({ kind: 'story', duration, line, background, emotion, previous, expression, animation });

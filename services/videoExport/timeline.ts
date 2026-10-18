@@ -16,6 +16,7 @@ export type VideoScene = {
   previous?: EventLine;
   expression?: { key: string; start: number };
   animation?: { type: string; start: number };
+  backgroundTransition?: 'out' | 'in';
 };
 export type AudioCue = { key: string; start: number; end: number; loop: boolean; volume: number };
 export type VideoTimeline = {
@@ -51,6 +52,11 @@ export function buildVideoTimeline(story: StoryRecord, bgmVolume: number, sfxVol
   const lines = parseEventScript(story.script);
   for (let index = 0; index < lines.length; index++) {
     const line = lines[index];
+    if (line.bg && background && line.bg !== background) {
+      const transition = { kind: 'story' as const, duration: EVENT_TIMING.backgroundFade, line: { type: 'command' as const }, previous, expression, animation };
+      append({ ...transition, background, emotion, backgroundTransition: 'out' });
+      append({ ...transition, background: line.bg, emotion: line.emotion ?? emotion, backgroundTransition: 'in' });
+    }
     if (line.bg) background = line.bg;
     if (line.emotion) emotion = line.emotion;
     if (line.music !== undefined && line.music !== music?.key) {

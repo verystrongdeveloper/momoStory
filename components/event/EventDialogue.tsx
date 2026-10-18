@@ -55,12 +55,12 @@ const EventDialogue = forwardRef<DialogueHandle, Props>(function EventDialogue({
     <View style={styles.wrap}>
       {!!name && (
         <View style={styles.nameRow}>
-          <Text style={styles.name}>{name}</Text>
-          {!!affiliation && <Text style={styles.affiliation}>{affiliation}</Text>}
+          <Text selectable={false} style={styles.name}>{name}</Text>
+          {!!affiliation && <Text selectable={false} style={styles.affiliation}>{affiliation}</Text>}
         </View>
       )}
       {!!name && <View style={styles.rule} />}
-      <Text style={styles.text}>{text.slice(0, shown)}</Text>
+      <Text selectable={false} style={styles.text}>{text.slice(0, shown)}</Text>
     </View>
   );
 });

@@ -1,0 +1,166 @@
+const assert = require('node:assert/strict');
+const fs = require('node:fs');
+const path = require('node:path');
+const ts = require('typescript');
+const React = require('react');
+const Renderer = require('react-test-renderer');
+global.IS_REACT_ACT_ENVIRONMENT = true;
+const root = path.resolve(__dirname, '..');
+function load(file, mocks = {}) {
+  const mod = { exports: {} };
+  const code = ts.transpileModule(fs.readFileSync(path.join(root, file), 'utf8'), {
+    compilerOptions: { module: ts.ModuleKind.CommonJS, target: ts.ScriptTarget.ES2022, jsx: ts.JsxEmit.React, esModuleInterop: true },
+  }).outputText;
+  new Function('require', 'module', 'exports', code)(id => {
+    if (Object.hasOwn(mocks, id)) return mocks[id];
+    if (id.startsWith('@/')) return load(id.slice(2) + '.ts', mocks);
+    if (id.startsWith('.')) return load(path.relative(root, path.resolve(root, path.dirname(file), id + '.ts')), mocks);
+    return require(id);
+  }, mod, mod.exports);
+  return mod.exports;
+}
+const { EVENT_TIMING } = load('utils/eventPresentation.ts');
+const { buildVideoTimeline, videoDimensions } = load('services/videoExport/timeline.ts');
+const { paintVideo } = load('services/videoExport/paint.ts');
+const story = { script: '호시노 : 하나 [bg : BG_A.jpg]\n호시노 : 둘 [bg : BG_A.jpg]\n호시노 : 셋 [bg : BG_B.jpg, sound : bell.wav]', chatMessages: [] };
+const timeline = buildVideoTimeline(story, 1, 1);
+const transitions = timeline.scenes.filter(scene => scene.backgroundTransition);
+assert.deepEqual(transitions.map(s => [s.backgroundTransition, s.background]), [['out', 'BG_A'], ['in', 'BG_B']]);
+assert.ok(transitions.every(scene => scene.duration === EVENT_TIMING.backgroundFade));
+const last = timeline.scenes.at(-1);
+assert.equal(last.start, transitions[1].start + transitions[1].duration);
+assert.equal(timeline.audio[0].start, last.start, 'new line sound starts after transition');
+for (const ratio of ['16:9', '9:16']) {
+  const { width, height } = videoDimensions(ratio);
+  let stack = [], draws = [], texts = [];
+  const ctx = { globalAlpha: 1, save() { stack.push(this.globalAlpha); }, restore() { this.globalAlpha = stack.pop(); },
+    fillRect() {}, beginPath() {}, rect() {}, clip() {}, drawImage(image) { draws.push([image.id, this.globalAlpha]); },
+    fillText(value) { texts.push(value); }, measureText() { return { width: 1 }; },
+  };
+  const images = new Map(['BG_A', 'BG_B'].map(id => [`bg:${id}`, { id, naturalWidth: width, naturalHeight: height }]));
+  for (const scene of transitions) {
+    for (const [fraction, opacity] of [[0, scene.backgroundTransition === 'out' ? 1 : 0], [0.5, 0.5], [1, scene.backgroundTransition === 'out' ? 0 : 1]]) {
+      draws = []; texts = [];
+      paintVideo(ctx, { timeline }, scene, fraction * EVENT_TIMING.backgroundFade, images, width, height);
+      assert.equal(draws[0][0], scene.background);
+      assert.ok(Math.abs(draws[0][1] - opacity) < 1e-6);
+      assert.deepEqual(texts, [], 'no dialogue, caret, choice or HUD during transition');
+    }
+  }
+}
+
+(async () => {
+  const originalDocument = global.document;
+  const keys = new Set();
+  global.document = {
+    addEventListener(type, handler) { if (type === 'keydown') keys.add(handler); },
+    removeEventListener(type, handler) { if (type === 'keydown') keys.delete(handler); },
+  };
+  const space = (overrides = {}) => {
+    const event = { code: 'Space', key: ' ', preventDefault() { this.defaultPrevented = true; }, ...overrides };
+    for (const handler of [...keys]) handler(event);
+    return event;
+  };
+  const animations = [];
+  class Value { constructor(value) { this.value = value; } setValue(value) { this.value = value; } }
+  const Animated = { Value, View: 'AnimatedView', timing(value, config) {
+    return { start(callback) { animations.push({ value, config, finish() { value.setValue(config.toValue); callback?.({ finished: true }); } }); }, stop() {} };
+  } };
+  const lines = [
+    { type: 'dialogue', text: 'one', bg: 'A.jpg' },
+    { type: 'dialogue', text: 'two', bg: 'B.jpg' },
+    { type: 'dialogue', text: 'three', bg: 'B.jpg' },
+    { type: 'dialogue', text: 'four' },
+    { type: 'selection', options: ['one', 'two'] },
+  ];
+  const stop = () => {};
+  const mocks = { 'react': React,
+    'react-native': { Platform: { OS: 'web' }, Animated, View: 'View', Pressable: 'Pressable', TouchableOpacity: 'TouchableOpacity', StyleSheet: { absoluteFill: {}, create: s => s } },
+    'expo-asset': { Asset: { loadAsync() {} } }, 'expo-audio': {}, 'expo-router': { useRouter: () => ({ replace() {} }) },
+    '@/constants/eventAssets': { bgMap: {}, emotionMap: {}, expressionMap: {}, sfxMap: {} },
+    '@/services/sfxVolume': {}, '@/hooks/useBGM': () => ({ stop, setMusic() {} }),
+    '@/hooks/useEventParser': () => lines, '@/hooks/useLayout': { EventFrame: 'EventFrame' }, '@/i18n': { useI18n: () => ({ t: key => key }) },
+  };
+  for (const name of ['CharacterSprite', 'EventBackground', 'EventHud', 'EventSelection', 'EventVolumeModal', 'TextBox', 'TitleBanner']) mocks['./' + name] = name;
+  let dialogueMounts = 0, dialogueUnmounts = 0;
+  let typing = false;
+  mocks['./TextBox'] = React.forwardRef(function Dialogue(props, ref) {
+    React.useImperativeHandle(ref, () => ({ finish() { const wasTyping = typing; typing = false; return wasTyping; } }));
+    React.useEffect(() => { dialogueMounts++; return () => { dialogueUnmounts++; }; }, []);
+    return React.createElement('TextBox', props);
+  });
+  const Player = load('components/event/EventPlayer.tsx', mocks).default;
+  let tree;
+  await React.act(async () => { tree = Renderer.create(React.createElement(Player, { script: '' })); });
+  const advance = () => tree.root.findByType('Pressable').props.onPress();
+  assert.equal(tree.root.findByType('Pressable').props.style.outlineWidth, 0, 'advance surface must not flash a focus outline');
+  assert.equal(tree.root.findByType('Pressable').props.style.outlineStyle, 'none', 'zero width alone does not disable Chromium auto outlines');
+  await React.act(async () => space());
+  assert.equal(tree.root.findAllByType('TextBox').length, 0);
+  assert.equal(animations.length, 1);
+  await React.act(async () => advance());
+  assert.equal(animations.length, 1, 'taps during transition must not skip lines');
+  await React.act(async () => space());
+  assert.equal(animations.length, 1, 'space during transition must not skip lines');
+  await React.act(async () => animations[0].finish());
+  assert.equal(tree.root.findByType('EventBackground').props.bgKey, 'B.jpg');
+  assert.equal(animations.length, 1, 'wait for image load before revealing');
+  await React.act(async () => tree.root.findByType('EventBackground').props.onReady('B.jpg'));
+  assert.equal(animations.length, 2);
+  await React.act(async () => animations[1].finish());
+  assert.equal(tree.root.findByType('TextBox').props.currentLine.text, 'two');
+  const mountsBeforeNext = dialogueMounts;
+  const unmountsBeforeNext = dialogueUnmounts;
+  for (const ignored of [{ repeat: true }, { isComposing: true }, { ctrlKey: true }, { target: { closest: () => ({}) } }, { target: { isContentEditable: true } }]) {
+    await React.act(async () => space(ignored));
+    assert.equal(tree.root.findByType('TextBox').props.currentLine.text, 'two');
+  }
+  await React.act(async () => tree.root.findByType('EventHud').props.onMenu());
+  await React.act(async () => space());
+  assert.equal(tree.root.findByType('TextBox').props.currentLine.text, 'two', 'space does not advance behind menus');
+  await React.act(async () => tree.root.findByType('EventVolumeModal').props.onClose());
+  typing = true;
+  await React.act(async () => assert.equal(space().defaultPrevented, true));
+  assert.equal(typing, false);
+  assert.equal(tree.root.findByType('TextBox').props.currentLine.text, 'two', 'first space finishes typing');
+  await React.act(async () => space());
+  assert.equal(tree.root.findByType('TextBox').props.currentLine.text, 'three');
+  assert.equal(dialogueMounts, mountsBeforeNext, 'same-background dialogue must stay mounted');
+  assert.equal(dialogueUnmounts, unmountsBeforeNext, 'same-background dialogue must never disappear between frames');
+  await React.act(async () => advance());
+  assert.equal(tree.root.findByType('TextBox').props.currentLine.text, 'four');
+  assert.equal(dialogueMounts, mountsBeforeNext, 'lines without a background directive must stay mounted');
+  assert.equal(dialogueUnmounts, unmountsBeforeNext);
+  assert.equal(animations.length, 2, 'unchanged background must not transition');
+  await React.act(async () => space());
+  assert.equal(tree.root.findAllByType('EventSelection').length, 1);
+  await React.act(async () => space());
+  assert.equal(tree.root.findAllByType('EventSelection').length, 1, 'space must not auto-select a choice');
+  await React.act(async () => tree.unmount());
+  assert.equal(keys.size, 0, 'keyboard listener removed when leaving story');
+  global.document = originalDocument;
+  // Real dialogue components opt out of native selection and web user-select,
+  // while retaining the press handler and typewriter completion API.
+  const dialogueMocks = {
+    react: React,
+    'react-native': { Platform: { OS: 'web' }, View: 'View', Text: 'Text', Pressable: 'Pressable', StyleSheet: { absoluteFill: {}, create: s => s } },
+    'expo-linear-gradient': { LinearGradient: 'LinearGradient' },
+    '@/hooks/useLayout': { useLayout: () => ({ eventWidth: 1280, eventHeight: 720 }), storyFont: (_w, h, fraction) => h * fraction },
+  };
+  const RealDialogue = load('components/event/EventDialogue.tsx', dialogueMocks).default;
+  const RealTextBox = load('components/event/TextBox.tsx', { ...dialogueMocks, './EventDialogue': RealDialogue }).default;
+  const dialogueRef = React.createRef();
+  let presses = 0;
+  const spoken = { type: 'dialogue', character: '호시노(아비도스)', text: '안녕하세요' };
+  await React.act(async () => { tree = Renderer.create(React.createElement(RealTextBox, { ref: dialogueRef, currentLine: spoken, lastSpoken: spoken, onPress: () => presses++ })); });
+  assert.ok(tree.root.findAllByType('Text').length >= 4);
+  assert.equal(tree.root.findByType('Pressable').props.style.outlineWidth, 0, 'dialogue surface must not flash a focus outline');
+  assert.equal(tree.root.findByType('Pressable').props.style.outlineStyle, 'none');
+  for (const text of tree.root.findAllByType('Text')) assert.equal(text.props.selectable, false);
+  await React.act(async () => assert.equal(dialogueRef.current.finish(), true));
+  assert.ok(tree.root.findAllByType('Text').some(text => text.props.children === spoken.text));
+  await React.act(async () => tree.root.findByType('Pressable').props.onPress());
+  assert.equal(presses, 1);
+  await React.act(async () => tree.unmount());
+  console.log('PASS live background fade/load gating, hidden dialogue, tap guard, unchanged background, MP4 timing and opacity in both ratios');
+})().catch(error => { console.error(error); process.exitCode = 1; });

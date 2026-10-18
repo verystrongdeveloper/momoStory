@@ -5,6 +5,7 @@ import { bgMap } from '@/constants/eventAssets';
 interface Props {
   bgKey: string | null;
   fadeAnim: Animated.Value;
+  onReady?: (key: string) => void;
 }
 
 const sourceOf = (key: string) => bgMap[key as keyof typeof bgMap];
@@ -14,7 +15,7 @@ const sourceOf = (key: string) => bgMap[key as keyof typeof bgMap];
  * 한 프레임이 비면서 검은 화면이 번쩍인다.
  * 이전 그림을 남겨 두고, 새 그림이 로드된 뒤에만 그 위로 올린다.
  */
-export default function EventBackground({ bgKey, fadeAnim }: Props) {
+export default function EventBackground({ bgKey, fadeAnim, onReady }: Props) {
   const [current, setCurrent] = useState<string | null>(null);
   const [next, setNext] = useState<string | null>(null);
   const incomingRef = useRef<string | null>(null);
@@ -56,6 +57,8 @@ export default function EventBackground({ bgKey, fadeAnim }: Props) {
           style={styles.fill}
           resizeMode="cover"
           fadeDuration={0}
+          onLoad={() => onReady?.(current)}
+          onError={() => onReady?.(current)}
         />
       ) : null}
       {next && nextSource ? (
@@ -65,7 +68,8 @@ export default function EventBackground({ bgKey, fadeAnim }: Props) {
           style={styles.fill}
           resizeMode="cover"
           fadeDuration={0}
-          onLoad={() => commit(next)}
+          onLoad={() => { commit(next); onReady?.(next); }}
+          onError={() => { commit(next); onReady?.(next); }}
         />
       ) : null}
     </Animated.View>

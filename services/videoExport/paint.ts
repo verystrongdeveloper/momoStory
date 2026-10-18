@@ -89,6 +89,11 @@ export function paintVideo(ctx: Context, payload: VideoPayload, scene: VideoScen
   ctx.fillStyle = '#000'; ctx.fillRect(0, 0, W, H);
   if (scene.kind === 'chat') { chat(ctx, payload, scene, images, W, H); ctx.restore(); return; }
   const line = scene.line!;
+  if (scene.backgroundTransition) {
+    ctx.globalAlpha *= scene.backgroundTransition === 'out'
+      ? 1 - eventEase(local / EVENT_TIMING.backgroundFade)
+      : eventEase(local / EVENT_TIMING.backgroundFade);
+  }
   const fade = line.commandType === 'deleteAll' || line.commandType === 'deleteEmotion' ? 1 - eventEase(local / EVENT_TIMING.deleteFade) : 1;
   const background = images.get(`bg:${scene.background}`);
   if (background) {
@@ -99,7 +104,7 @@ export function paintVideo(ctx: Context, payload: VideoPayload, scene: VideoScen
   const motion = scene.animation;
   const offset = spriteMotionAt(motion?.type ?? line.animationType, motion ? scene.start + local - motion.start : local);
   if (sprite) {
-    ctx.save(); ctx.globalAlpha = fade;
+    ctx.save(); ctx.globalAlpha *= fade;
     const height = H * 0.98;
     const width = height * (payload.spriteAspects?.[scene.emotion!] ?? sprite.naturalWidth / sprite.naturalHeight);
     const left = (W - width) / 2 + offset.x;
@@ -109,7 +114,7 @@ export function paintVideo(ctx: Context, payload: VideoPayload, scene: VideoScen
     const expression = images.get(`expression:${effect?.key ?? line.expression}`);
     const effectOpacity = expressionOpacityAt(effect ? scene.start + local - effect.start : local);
     if (expression && effectOpacity > 0) {
-      ctx.globalAlpha = fade * effectOpacity;
+      ctx.globalAlpha *= effectOpacity;
       const size = 80 * (W / 1280);
       const scale = Math.min(size / expression.naturalWidth, size / expression.naturalHeight);
       const effectWidth = expression.naturalWidth * scale;
@@ -120,6 +125,8 @@ export function paintVideo(ctx: Context, payload: VideoPayload, scene: VideoScen
     }
     ctx.restore();
   }
+  // Transition scenes contain only the stage: no dialogue, choices or HUD.
+  if (scene.backgroundTransition) { ctx.restore(); return; }
   if (line.type === 'selection') {
     ctx.fillStyle = 'rgba(5,13,36,0.24)'; ctx.fillRect(0, 0, W, H);
   }

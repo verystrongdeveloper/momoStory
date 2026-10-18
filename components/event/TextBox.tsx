@@ -1,5 +1,5 @@
 import React, { forwardRef, useMemo } from 'react';
-import { Pressable, StyleSheet, Text, View } from 'react-native';
+import { Platform, Pressable, StyleSheet, Text, View, type ViewStyle } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import EventDialogue, { DialogueHandle } from './EventDialogue';
 import { EventLine } from '@/types/EventLine';
@@ -30,7 +30,7 @@ const TextBox = forwardRef<DialogueHandle, Props>(function TextBox({ currentLine
       />
       <EventDialogue ref={ref} character={shown.character ?? ''} text={shown.text} />
       <View style={styles.caretWrap} pointerEvents="none">
-        <Text style={styles.caret}>▾</Text>
+        <Text selectable={false} style={styles.caret}>▾</Text>
       </View>
     </Pressable>
   );
@@ -41,6 +41,11 @@ export default TextBox;
 const makeStyles = (W: number, H: number) =>
   StyleSheet.create({
     box: {
+      // The large advance surface is focusable on web. Its default browser
+      // focus outline looked like a flashing white border above the dialogue.
+      // CSS `auto` outlines may still paint at 0px in Chromium. Disable the
+      // style itself; RN's native typings omit the web-only `none` value.
+      ...(Platform.OS === 'web' ? { outlineStyle: 'none' as ViewStyle['outlineStyle'], outlineWidth: 0, outlineColor: 'transparent' } : {}),
       position: 'absolute',
       bottom: 0,
       width: '100%',

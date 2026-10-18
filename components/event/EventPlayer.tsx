@@ -1,5 +1,5 @@
 import React, { useEffect, useRef, useState } from 'react';
-import { Animated, Pressable, StyleSheet, TouchableOpacity, View } from 'react-native';
+import { Animated, Platform, Pressable, StyleSheet, TouchableOpacity, View, type ViewStyle } from 'react-native';
 import { Asset } from 'expo-asset';
 import { createAudioPlayer } from 'expo-audio';
 import { useRouter } from 'expo-router';
@@ -48,7 +48,9 @@ const EventPlayer: React.FC<Props> = ({ script }) => {
   const router = useRouter();
   const lines = useEventParser(script);
   const [idx, setIdx] = useState(0);
-  const line = lines[idx] ?? null;
+  const [presentedIdx, setPresentedIdx] = useState(0);
+  const line = lines[presentedIdx] ?? null;
+  const transitioning = idx !== presentedIdx;
   const [last, setLast] = useState<EventLine | null>(null);
   const [auto, setAuto] = useState(false);
   const [menuOpen, setMenuOpen] = useState(false);
@@ -56,6 +58,9 @@ const EventPlayer: React.FC<Props> = ({ script }) => {
   const [title, setTitle] = useState('');
   const [showTitle, setShowTitle] = useState(false);
   const [bg, setBg] = useState<string | null>(null);
+  const bgRef = useRef<string | null>(null);
+  const sceneOpacity = useRef(new Animated.Value(1)).current;
+  const backgroundReady = useRef<(() => void) | null>(null);
   const [emo, setEmo] = useState<string | null>(null);
   const emoRef = useRef<string | null>(null);
   /** deleteEmotion으로 숨긴 뒤에만 투명도를 되돌린다. 대사마다 리셋하면 초상이 깜빡인다. */
@@ -71,13 +76,44 @@ const EventPlayer: React.FC<Props> = ({ script }) => {
   mutedRef.current = muted;
 
   const nextLine = () => {
-    if (idx + 1 < lines.length) setIdx((i) => i + 1);
+    const next = idx + 1;
+    if (next >= lines.length) return;
+    const nextBackground = lines[next]?.bg;
+    // Keep ordinary dialogue updates in one render. Delaying presentedIdx
+    // for every line unmounted the entire dialogue section for one frame.
+    if (!nextBackground || !bgRef.current || nextBackground === bgRef.current) {
+      setPresentedIdx(next);
+    }
+    setIdx(next);
   };
 
   const goHome = () => router.replace('/');
 
+  useEffect(() => {
+    const target = lines[idx];
+    if (!target?.bg || !bgRef.current || target.bg === bgRef.current) {
+      setPresentedIdx(idx);
+      return;
+    }
+    let active = true;
+    const out = Animated.timing(sceneOpacity, { toValue: 0, duration: EVENT_TIMING.backgroundFade * 1000, useNativeDriver: true });
+    let reveal: Animated.CompositeAnimation | undefined;
+    out.start(({ finished }) => {
+      if (!active || !finished) return;
+      backgroundReady.current = () => {
+        if (!active) return;
+        backgroundReady.current = null;
+        reveal = Animated.timing(sceneOpacity, { toValue: 1, duration: EVENT_TIMING.backgroundFade * 1000, useNativeDriver: true });
+        reveal.start(({ finished: revealed }) => { if (active && revealed) setPresentedIdx(idx); });
+      };
+      setBg(target.bg!); bgRef.current = target.bg!;
+      if (target.emotion) { setEmo(target.emotion); emoRef.current = target.emotion; }
+    });
+    return () => { active = false; backgroundReady.current = null; out.stop(); reveal?.stop(); sceneOpacity.setValue(1); };
+  }, [idx, lines, sceneOpacity]);
+
   const onAdvance = () => {
-    if (menuOpen) return;
+    if (menuOpen || transitioning) return;
     // 타이핑 중이면 문장만 끝까지 보여주고, 끝난 뒤에 누르면 다음으로 넘어간다.
     if (dialogueRef.current?.finish()) return;
     if (line?.type === 'selection' && (line.options?.length ?? 0) > 0) return;
@@ -90,7 +126,22 @@ const EventPlayer: React.FC<Props> = ({ script }) => {
   };
 
   useEffect(() => {
-    if (!auto || menuOpen) return;
+    // Desktop builds use the web player too; native touch playback is unchanged.
+    if (typeof document === 'undefined') return;
+    const onKeyDown = (event: KeyboardEvent) => {
+      if (event.code !== 'Space' && event.key !== ' ') return;
+      if (event.defaultPrevented || event.isComposing || event.ctrlKey || event.altKey || event.metaKey || menuOpen) return;
+      const target = event.target as HTMLElement | null;
+      if (target?.isContentEditable || target?.closest?.('input, textarea, select, button, a, [role="button"], [role="link"], [role="textbox"], [contenteditable="true"]')) return;
+      event.preventDefault(); // Space should advance, not scroll the page.
+      if (!event.repeat) onAdvance();
+    };
+    document.addEventListener('keydown', onKeyDown);
+    return () => document.removeEventListener('keydown', onKeyDown);
+  }, [onAdvance, menuOpen]);
+
+  useEffect(() => {
+    if (!auto || menuOpen || transitioning) return;
     // 선택지는 사용자가 고를 때까지 멈춘다. 타이틀·명령은 자체 타이머가 넘긴다.
     if (!line || line.type === 'selection' || line.type === '타이틀' || line.type === 'command') return;
     const ending = isEndingCaption(lines, idx);
@@ -101,7 +152,7 @@ const EventPlayer: React.FC<Props> = ({ script }) => {
     }, wait);
     return () => clearTimeout(t);
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [auto, menuOpen, idx, line]);
+  }, [auto, menuOpen, idx, line, transitioning]);
 
   const playSFX = async (key: string) => {
     const src = sfxMap[key];
@@ -131,7 +182,7 @@ const EventPlayer: React.FC<Props> = ({ script }) => {
 
   /* 현재 라인 처리 */
   useEffect(() => {
-    if (!line) return;
+    if (!line || transitioning) return;
 
     if (line.type === '타이틀') {
       setTitle(line.text ?? '');
@@ -155,7 +206,7 @@ const EventPlayer: React.FC<Props> = ({ script }) => {
     }
 
     if (line.soundFile) playSFX(line.soundFile);
-    if (line.bg) setBg(line.bg);
+    if (line.bg) { setBg(line.bg); bgRef.current = line.bg; }
     if (line.emotion) {
       if (emoRef.current !== line.emotion) {
         emoRef.current = line.emotion;
@@ -217,6 +268,7 @@ const EventPlayer: React.FC<Props> = ({ script }) => {
             Animated.timing(emoOpacity, { toValue: 0, duration: EVENT_TIMING.deleteFade * 1000, useNativeDriver: true }),
           ]).start(() => {
             setBg(null);
+            bgRef.current = null;
             setEmo(null);
             emoRef.current = null;
             spriteHiddenRef.current = false;
@@ -231,6 +283,7 @@ const EventPlayer: React.FC<Props> = ({ script }) => {
           return;
         case 'endEvent':
           setBg(null);
+          bgRef.current = null;
           setEmo(null);
           emoRef.current = null;
           setLast(null);
@@ -240,25 +293,27 @@ const EventPlayer: React.FC<Props> = ({ script }) => {
       }
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [line]);
+  }, [line, transitioning]);
 
   return (
     <EventFrame>
       <View style={styles.stage}>
-        <TitleBanner title={title} visible={showTitle} />
-        <EventBackground bgKey={bg} fadeAnim={bgOpacity} />
+        <TitleBanner title={title} visible={showTitle && !transitioning} />
+        <Animated.View pointerEvents="none" style={[StyleSheet.absoluteFill, { opacity: sceneOpacity }]}>
+        <EventBackground bgKey={bg} fadeAnim={bgOpacity} onReady={(key) => { if (key === bgRef.current) backgroundReady.current?.(); }} />
         <CharacterSprite
           current={emo ?? last?.emotion ?? line?.emotion ?? null}
           fadeAnim={emoOpacity}
           expression={expression}
           animation={animation}
         />
+        </Animated.View>
         <Pressable style={styles.tap} onPress={onAdvance} accessibilityLabel={t('nextLine')} />
-        {line?.type === 'selection' && <View style={styles.selectionDim} pointerEvents="none" />}
-        <TextBox ref={dialogueRef} currentLine={line} lastSpoken={last} onPress={onAdvance} />
+        {!transitioning && line?.type === 'selection' && <View style={styles.selectionDim} pointerEvents="none" />}
+        {!transitioning && <TextBox ref={dialogueRef} currentLine={line} lastSpoken={last} onPress={onAdvance} />}
         <EventHud auto={auto} onToggleAuto={() => setAuto((v) => !v)} onMenu={() => setMenuOpen(true)} />
 
-        {line?.type === 'selection' && (
+        {!transitioning && line?.type === 'selection' && (
           <View pointerEvents="box-none" style={styles.selection}>
             <EventSelection options={line.options ?? []} onSelect={nextLine} />
           </View>
@@ -303,6 +358,7 @@ const styles = StyleSheet.create({
     zIndex: 4,
   },
   tap: {
+    ...(Platform.OS === 'web' ? { outlineStyle: 'none' as ViewStyle['outlineStyle'], outlineWidth: 0, outlineColor: 'transparent' } : {}),
     ...StyleSheet.absoluteFill,
     zIndex: 7,
   },

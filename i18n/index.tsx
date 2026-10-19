@@ -8,6 +8,8 @@ type Dictionary = Record<string, string>;
 
 const translations: Record<AppLanguage, Dictionary> = {
   ko: {
+    storyChatLocked: '인연 스토리가 완성되었습니다. 새 대화는 채팅 새로고침 후 시작할 수 있습니다.',
+    unreadMessages: '안 읽은 메시지 {count}개',
     refreshChat: '채팅 새로고침', resetChatTitle: '대화를 새로 시작할까요?', resetChatNotice: '현재 캐릭터와의 채팅과 AI 대화 기억을 초기화합니다. 저장한 스토리와 커뮤니티 게시글은 유지됩니다.', resetChatFailed: '대화를 초기화하지 못했습니다. 연결을 확인하고 다시 시도해 주세요.',
     ...communityTranslations.ko,
     ...scriptEditorTranslations.ko,
@@ -40,6 +42,8 @@ const translations: Record<AppLanguage, Dictionary> = {
     termsTitle: '이용 약관', tutorialTitle: '사용 방법', agreeTerms: '위 내용을 확인했고, 이에 동의합니다.', agreeStart: '동의하고 시작', skip: '건너뛰기', previous: '이전', start: '시작하기', next: '다음', openAiStudio: 'Google AI Studio 열기',
   },
   en: {
+    storyChatLocked: 'Your bond story is complete. Reset this chat to start a new conversation.',
+    unreadMessages: '{count} unread messages',
     refreshChat: 'Reset chat', resetChatTitle: 'Start a new conversation?', resetChatNotice: 'This clears the current character’s chat and AI conversation history. Saved stories and community posts are kept.', resetChatFailed: 'Could not reset the chat. Check your connection and try again.',
     ...communityTranslations.en,
     ...scriptEditorTranslations.en,
@@ -72,6 +76,8 @@ const translations: Record<AppLanguage, Dictionary> = {
     termsTitle: 'Terms of use', tutorialTitle: 'How to use', agreeTerms: 'I have read and agree to the above.', agreeStart: 'Agree and start', skip: 'Skip', previous: 'Previous', start: 'Start', next: 'Next', openAiStudio: 'Open Google AI Studio',
   },
   ja: {
+    storyChatLocked: '絆ストーリーが完成しました。新しい会話を始めるにはチャットをリセットしてください。',
+    unreadMessages: '未読メッセージ {count}件',
     refreshChat: 'チャットをリセット', resetChatTitle: '新しい会話を始めますか？', resetChatNotice: '現在のキャラクターとのチャットとAIの会話履歴を初期化します。保存したストーリーとコミュニティの投稿は残ります。', resetChatFailed: '初期化できませんでした。接続を確認して再試行してください。',
     ...communityTranslations.ja,
     ...scriptEditorTranslations.ja,
@@ -104,6 +110,8 @@ const translations: Record<AppLanguage, Dictionary> = {
     termsTitle: '利用規約', tutorialTitle: '使い方', agreeTerms: '上記を確認し、同意します。', agreeStart: '同意して始める', skip: 'スキップ', previous: '戻る', start: '始める', next: '次へ', openAiStudio: 'Google AI Studio を開く',
   },
   zh: {
+    storyChatLocked: '羁绊故事已生成。重置此聊天后即可开始新的对话。',
+    unreadMessages: '{count} 条未读消息',
     refreshChat: '重置聊天', resetChatTitle: '开始新的对话？', resetChatNotice: '将清除当前角色的聊天和 AI 对话记录。保存的故事和社区帖子将保留。', resetChatFailed: '无法重置聊天，请检查连接后重试。',
     ...communityTranslations.zh,
     ...scriptEditorTranslations.zh,

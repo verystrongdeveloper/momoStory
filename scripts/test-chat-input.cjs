@@ -10,7 +10,8 @@ let apiKey = 'test-key', greet = false, chatCalls = [], triggerCalls = [], reset
 const pending = queue => new Promise((resolve, reject) => queue.push({ resolve, reject }));
 const timers = new Map();
 let timerId = 0;
-const rn = { StyleSheet: { create: value => value }, Keyboard: { addListener: () => ({ remove() {} }) } };
+const appStateListeners = new Set();
+const rn = { StyleSheet: { create: value => value }, Keyboard: { addListener: () => ({ remove() {} }) }, AppState: { currentState: 'active', addEventListener: (_event, listener) => { appStateListeners.add(listener); return { remove: () => appStateListeners.delete(listener) }; } } };
 const temporaryModule = { exports: {} };
 new Function('module', 'exports', ts.transpileModule(fs.readFileSync(path.join(__dirname, '../store/temporaryChats.ts'), 'utf8'), {
   compilerOptions: { module: ts.ModuleKind.CommonJS, target: ts.ScriptTarget.ES2022 },
@@ -18,7 +19,7 @@ new Function('module', 'exports', ts.transpileModule(fs.readFileSync(path.join(_
 const temporaryChats = temporaryModule.exports;
 for (const name of ['Button', 'FlatList', 'Image', 'Modal', 'Pressable', 'Text', 'TextInput', 'TouchableOpacity', 'View']) rn[name] = name;
 const mocks = {
-  react: React, 'react-native': rn, 'expo-router': { useRouter: () => ({ push() {} }) }, '@expo/vector-icons': { Ionicons: 'Ionicons' },
+  react: React, 'react-native': rn, 'expo-router': { useRouter: () => ({ push() {} }), useFocusEffect: callback => React.useEffect(callback, [callback]) }, '@expo/vector-icons': { Ionicons: 'Ionicons' },
   '@/services/geminiClient': { geminiClient: { chat: () => pending(chatCalls), trigger: () => pending(triggerCalls), reset: () => pending(resetCalls), createEvent: () => pending(eventCalls) }, geminiFailureText: () => 'API error' },
   '@/services/geminiKey': { getGeminiKey: () => apiKey, subscribeGeminiKey: () => () => {} },
   '@/services/greetMode': { getGreetMode: () => greet },
@@ -75,6 +76,7 @@ process.once('beforeExit', () => { if (!completed) { console.error('FAIL unfinis
   locked(true);
   await type('still blocked'); assert.equal(input().props.value, '');
   await delay(); await React.act(async () => sending);
+  assert.equal(temporaryChats.getTemporaryChat('호시노', apiKey).getSnapshot().unreadCount, 0, 'visible replies are read immediately');
   locked(false);
   await type('Next'); assert.equal(input().props.value, 'Next');
   await React.act(async () => { sending = send().props.onPress(); }); locked(true);
@@ -173,8 +175,10 @@ process.once('beforeExit', () => { if (!completed) { console.error('FAIL unfinis
   await React.act(async () => hinaRequest.resolve({ reply: 'Hina one|Hina two', eventReady: true }));
   assert.deepEqual(tree.root.findByType('FlatList').props.data, hoshinoMessages, 'background replies never enter another character chat');
   await delay(); await React.act(async () => sending);
+  assert.equal(temporaryChats.getTemporaryChat('히나', apiKey).getSnapshot().unreadCount, 2, 'offscreen character reply bubbles count as unread');
   await unmount();
   await mount({ characterName: '히나' });
+  assert.equal(temporaryChats.getTemporaryChat('히나', apiKey).getSnapshot().unreadCount, 0, 'opening a chat marks its messages read');
   locked(false);
   assert.deepEqual(tree.root.findByType('FlatList').props.data.map(message => message.text), ['Hina draft', 'Hina one', 'Hina two']);
   const storyButton = () => tree.root.findAllByType('TouchableOpacity').find(node => node.findAllByType('Text').some(text => text.props.children === 'bondStory'));
@@ -188,6 +192,7 @@ process.once('beforeExit', () => { if (!completed) { console.error('FAIL unfinis
     await React.act(async () => eventCalls.at(-1).resolve({ eventScript: 'title : Test\nendEvent' }));
   } finally { console.error = previousError; }
   assert.deepEqual(tree.root.findByType('FlatList').props.data.slice(0, beforeStory.length), beforeStory, 'failed story saving preserves temporary chat');
+  locked(false);
   failSave = false;
   await React.act(async () => { void storyButton().props.onPress(); });
   await React.act(async () => eventCalls.at(-1).resolve({ eventScript: 'title : Test\nendEvent' }));
@@ -196,13 +201,76 @@ process.once('beforeExit', () => { if (!completed) { console.error('FAIL unfinis
   assert.deepEqual(tree.root.findByType('FlatList').props.data, []);
   assert.equal(storyButton(), undefined);
   assert.deepEqual(temporaryChats.getTemporaryChat('호시노', apiKey).getSnapshot().messages, hoshinoMessages);
-  await type('Fresh after story');
+  locked(true);
+  assert.ok(tree.root.findAllByType('Text').some(node => node.props.children === 'storyChatLocked'));
+  assert.equal(refresh().props.disabled, false, 'completed story still allows explicit chat reset');
   const callsBeforeFreshChat = chatCalls.length;
-  await React.act(async () => { sending = send().props.onPress(); });
-  assert.equal(chatCalls.length, callsBeforeFreshChat, 'new conversation waits for old AI memory to reset');
+  await type('Blocked after story');
+  assert.equal(input().props.value, '');
+  await React.act(async () => { void send().props.onPress(); void input().props.onSubmitEditing(); });
+  assert.equal(chatCalls.length, callsBeforeFreshChat, 'completed character cannot send by button or Enter');
+  await unmount();
+  await mount({ characterName: '호시노' });
+  locked(false);
+  await unmount();
+  greet = true;
+  const previousGreetings = triggerCalls.length;
+  await mount({ characterName: '히나' });
+  locked(true);
+  assert.equal(triggerCalls.length, previousGreetings, 'completed character cannot auto-greet on return');
+  greet = false;
+  await React.act(async () => refresh().props.onPress());
+  await React.act(async () => confirmReset().props.onPress());
   await React.act(async () => resetCalls.at(-1).resolve());
+  locked(false);
+  assert.equal(temporaryChats.getTemporaryChat('히나', apiKey).getSnapshot().storyCompleted, false);
+  await type('Fresh after reset');
+  await React.act(async () => { sending = send().props.onPress(); });
   await React.act(async () => chatCalls.at(-1).resolve({ reply: 'Fresh reply', eventReady: false }));
   await React.act(async () => sending);
+  await type('Background request');
+  await React.act(async () => { sending = send().props.onPress(); });
+  await React.act(async () => { rn.AppState.currentState = 'background'; for (const listener of appStateListeners) listener('background'); });
+  await React.act(async () => chatCalls.at(-1).resolve({ reply: 'Background one|Background two', eventReady: false }));
+  await delay(); await React.act(async () => sending);
+  assert.equal(temporaryChats.getTemporaryChat('히나', apiKey).getSnapshot().unreadCount, 2, 'background app is not an active reader');
+  await React.act(async () => { rn.AppState.currentState = 'active'; for (const listener of appStateListeners) listener('active'); });
+  assert.equal(temporaryChats.getTemporaryChat('히나', apiKey).getSnapshot().unreadCount, 0);
+  await unmount();
+  assert.equal(appStateListeners.size, 0);
+
+  // Refreshing one character must not touch another character's draft or badge.
+  const untouched = temporaryChats.getTemporaryChat('호시노', apiKey);
+  untouched.update(previous => ({ input: 'keep Hoshino draft', eventReady: true, messages: [...previous.messages, { sender: 'character', text: 'unread Hoshino reply' }] }));
+  const untouchedSnapshot = untouched.getSnapshot();
+  await mount({ characterName: '히나' });
+  await React.act(async () => refresh().props.onPress());
+  await React.act(async () => confirmReset().props.onPress());
+  await React.act(async () => resetCalls.at(-1).resolve());
+  assert.deepEqual(tree.root.findByType('FlatList').props.data, []);
+  assert.deepEqual(untouched.getSnapshot(), untouchedSnapshot, 'reset preserves every other character field, including draft, readiness and unread count');
+  await unmount();
+  await mount({ characterName: '호시노' });
+  assert.deepEqual(tree.root.findByType('FlatList').props.data, untouchedSnapshot.messages);
+  assert.equal(input().props.value, 'keep Hoshino draft');
+  await unmount();
+
+  const entryModule = { exports: {} };
+  new Function('require', 'module', 'exports', ts.transpileModule(fs.readFileSync(path.join(__dirname, '../components/chat/ChatEntry.tsx'), 'utf8'), {
+    compilerOptions: { module: ts.ModuleKind.CommonJS, target: ts.ScriptTarget.ES2022, jsx: ts.JsxEmit.React, esModuleInterop: true },
+  }).outputText)(id => mocks[id], entryModule, entryModule.exports);
+  const badgeChat = temporaryChats.getTemporaryChat('badge-test', apiKey);
+  await React.act(async () => { tree = Renderer.create(React.createElement(entryModule.exports.default, { characterName: 'badge-test', name: 'Test', status: '', image: 1, onSelect() {} })); });
+  const badges = () => tree.root.findAllByProps({ accessibilityLabel: 'unreadMessages' });
+  assert.equal(badges().length, 0);
+  await React.act(async () => badgeChat.update({ messages: [{ sender: 'user', text: 'hi' }, { sender: 'typing', text: '...' }] }));
+  assert.equal(badges().length, 0, 'user messages and typing dots never count');
+  await React.act(async () => badgeChat.update(previous => ({ messages: [...previous.messages, { sender: 'character', text: 'reply' }] })));
+  assert.equal(badges()[0].props.children, 1);
+  await React.act(async () => badgeChat.update({ messages: Array.from({ length: 105 }, () => ({ sender: 'character', text: 'reply' })) }));
+  assert.equal(badges()[0].props.children, '99+');
+  await React.act(async () => badgeChat.clear());
+  assert.equal(badges().length, 0, 'reset clears unread badge');
   await unmount();
   completed = true;
   console.log('PASS input/send/Enter lock during requests and multi-sentence replies, rapid duplicate prevention, greeting lock, empty/error recovery, missing key and saved chat');

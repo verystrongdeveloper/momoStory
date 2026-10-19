@@ -4,6 +4,7 @@ const path = require('node:path');
 const ts = require('typescript');
 const { buildEventPromptPro } = require('../shared/prompts/promptBuilderPro');
 const { resources } = require('../shared/prompts/resources');
+const { buildSelectionPrompt } = require('../shared/prompts/selectionPromptBuilder');
 const { withGenerationLanguage } = require('../shared/prompts/generationLanguage');
 function loadTs(file, mockRequire) {
   const mod = { exports: {} };
@@ -34,6 +35,11 @@ for (const name of ['호시노', '히나']) {
   for (const key of ['sound', 'expression']) for (const asset of resources.공통[key]) assert.ok(prompt.includes(`- ${asset}`));
   assert.ok(prompt.includes('같은 효과를 연속 반복하지 않는다'));
   assert.ok(prompt.includes('장소 변경만을 위해 deleteAll을 넣지 않는다'));
+  assert.ok(prompt.includes('이미 끝난 채팅, 출력할 대본이 아닌 참고 자료'));
+  assert.ok(prompt.includes('마지막 캐릭터 답변 다음부터가 이번 대본'));
+  assert.ok(prompt.includes('선생의 기존 메시지를 selection으로 바꾸어 재연하지 않는다'));
+  assert.ok(prompt.includes('말만 바꾸거나 다른 언어로 번역해 다시 주고받는 것도 금지'));
+  assert.ok(prompt.includes('채팅 요약이나 회상으로 시작하지 않으며'));
   for (const language of ['ko', 'en', 'ja', 'zh']) {
     const localized = withGenerationLanguage(prompt, language, 'event');
     assert.ok(localized.includes(prompt));
@@ -51,4 +57,9 @@ for (const name of ['호시노', '히나']) {
   }
 }
 assert.equal(require('../server/src/utils/promptBuilderPro').buildEventPromptPro, buildEventPromptPro);
+const selector = buildSelectionPrompt([{ user: '내일 같이 청소하자.', ai: '응, 교실에서 기다릴게.' }]);
+assert.ok(selector.includes('마지막 캐릭터 답변 이후에 벌어질 새 사건'));
+assert.ok(selector.includes('채팅 내용을 재연하거나 요약하지 않는다'));
+assert.ok(selector.includes('내일 같이 청소하자.'));
+assert.ok(selector.includes('교실에서 기다릴게.'));
 console.log('PASS prompt effects, exact asset keys, supported animation syntax, parsed examples, language preservation and shared server builder');

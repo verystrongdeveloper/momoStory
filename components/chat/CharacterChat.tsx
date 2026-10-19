@@ -1,6 +1,7 @@
 import React, { useCallback, useEffect, useMemo, useRef, useState, useSyncExternalStore } from 'react';
 import {
   Button,
+  AppState,
   FlatList,
   Image,
   ImageSourcePropType,
@@ -13,7 +14,7 @@ import {
   TouchableOpacity,
   View,
 } from 'react-native';
-import { useRouter } from 'expo-router';
+import { useFocusEffect, useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { geminiClient, geminiFailureText } from '@/services/geminiClient';
 import { getGeminiKey, subscribeGeminiKey } from '@/services/geminiKey';
@@ -56,10 +57,21 @@ const CharacterChat: React.FC<Props> = ({ characterName, displayName, characterI
   const hasKey = apiKey.trim().length > 0;
   const session = useMemo(() => getTemporaryChat(characterName, apiKey), [characterName, apiKey]);
   const draft = useSyncExternalStore(session.subscribe, session.getSnapshot, session.getSnapshot);
-  const { messages, input, isWaiting, eventReady } = draft;
+  const { messages, input, isWaiting, eventReady, storyCompleted } = draft;
   const setMessages = (change: Chat[] | ((previous: Chat[]) => Chat[])) => session.update(previous => ({ messages: typeof change === 'function' ? change(previous.messages) : change }));
   const setInput = (value: string) => session.update({ input: value });
   const setEventReady = (value: boolean) => session.update({ eventReady: value });
+  useFocusEffect(useCallback(() => {
+    if (savedStory) return;
+    let closeReader: (() => void) | undefined;
+    const updateVisibility = (state: string | null) => {
+      closeReader?.();
+      closeReader = state === 'active' || state === null ? session.openReader() : undefined;
+    };
+    updateVisibility(AppState.currentState);
+    const subscription = AppState.addEventListener('change', updateVisibility);
+    return () => { subscription.remove(); closeReader?.(); };
+  }, [session, savedStory]));
   const [resetConfirm, setResetConfirm] = useState(false);
   const [resetError, setResetError] = useState(false);
   const [chatGeneration, setChatGeneration] = useState(0);
@@ -133,7 +145,7 @@ const CharacterChat: React.FC<Props> = ({ characterName, displayName, characterI
     if (savedStory || !getGreetMode() || !getGeminiKey().trim()) return;
 
     const current = session.getSnapshot();
-    if (current.greetingStarted || current.messages.length || current.isWaiting) return;
+    if (current.storyCompleted || current.greetingStarted || current.messages.length || current.isWaiting) return;
     session.update({ greetingStarted: true, isWaiting: true });
     // Finish and store the reply even when the user switches to another screen.
     (async () => {
@@ -172,7 +184,7 @@ const CharacterChat: React.FC<Props> = ({ characterName, displayName, characterI
 
   const handleSend = async () => {
     const text = input.trim();
-    if (savedStory || !hasKey || !text || session.getSnapshot().isWaiting) return;
+    if (savedStory || !hasKey || !text || session.getSnapshot().isWaiting || session.getSnapshot().storyCompleted) return;
 
     setWaiting(true);
     setMessages((prev) => [
@@ -203,14 +215,14 @@ const CharacterChat: React.FC<Props> = ({ characterName, displayName, characterI
       router.push('/event');
       return;
     }
-    if (session.getSnapshot().isWaiting) return;
+    if (session.getSnapshot().isWaiting || session.getSnapshot().storyCompleted) return;
     setWaiting(true);
     const chatSnapshot = messages.filter((message): message is SavedChatMessage => message.sender !== 'typing');
     setGlobalLoading?.(true);
     try {
       const { eventScript } = await geminiClient.createEvent(characterName);
       saveStory(characterName, eventScript, chatSnapshot);
-      session.clear({ isWaiting: true, needsReset: true });
+      session.clear({ isWaiting: true, needsReset: true, storyCompleted: true });
       setPendingEvent(eventScript);
       router.push('/event');
     } catch (e) {
@@ -272,20 +284,21 @@ const CharacterChat: React.FC<Props> = ({ characterName, displayName, characterI
         </View>
       )}
 
+      {!savedStory && storyCompleted && <Text style={styles.archiveNotice}>{t('storyChatLocked')}</Text>}
       {savedStory ? (
         <Text style={styles.archiveNotice}>{t(replaying ? 'chatReplayHint' : 'savedChatReadOnly')}</Text>
       ) : <View style={styles.inputArea}>
         <TextInput
           ref={inputRef}
-          style={[styles.input, sizeStyles.input, (!hasKey || isWaiting) && styles.inputLocked]}
+          style={[styles.input, sizeStyles.input, (!hasKey || isWaiting || storyCompleted) && styles.inputLocked]}
           placeholder={hasKey ? t('messagePlaceholder') : t('messageKeyRequired')}
           value={hasKey ? input : ''}
-          editable={hasKey && !isWaiting}
-          onChangeText={(value) => { if (hasKey && !session.getSnapshot().isWaiting) setInput(value); }}
+          editable={hasKey && !isWaiting && !storyCompleted}
+          onChangeText={(value) => { if (hasKey && !session.getSnapshot().isWaiting && !session.getSnapshot().storyCompleted) setInput(value); }}
           onSubmitEditing={handleSend}
           blurOnSubmit={false}
         />
-        <Button title={t('send')} onPress={handleSend} disabled={!hasKey || isWaiting} />
+        <Button title={t('send')} onPress={handleSend} disabled={!hasKey || isWaiting || storyCompleted} />
       </View>}
       {replaying && (
         <Pressable

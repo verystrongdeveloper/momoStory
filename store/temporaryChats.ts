@@ -8,21 +8,34 @@ type TemporaryChat = {
   eventReady: boolean;
   greetingStarted: boolean;
   needsReset: boolean;
+  storyCompleted: boolean;
+  unreadCount: number;
 };
 
-const empty = (): TemporaryChat => ({ messages: [], input: '', isWaiting: false, eventReady: false, greetingStarted: false, needsReset: false });
+const empty = (): TemporaryChat => ({ messages: [], input: '', isWaiting: false, eventReady: false, greetingStarted: false, needsReset: false, storyCompleted: false, unreadCount: 0 });
 
 function createChat() {
   let snapshot = empty();
   const listeners = new Set<() => void>();
+  let readers = 0;
   const update = (change: Partial<TemporaryChat> | ((previous: TemporaryChat) => Partial<TemporaryChat>)) => {
-    snapshot = { ...snapshot, ...(typeof change === 'function' ? change(snapshot) : change) };
+    const patch = typeof change === 'function' ? change(snapshot) : change;
+    const characterCount = (messages: TemporaryMessage[]) => messages.filter(message => message.sender === 'character').length;
+    const added = patch.messages ? Math.max(0, characterCount(patch.messages) - characterCount(snapshot.messages)) : 0;
+    const unreadCount = readers > 0 ? 0 : patch.unreadCount ?? snapshot.unreadCount + added;
+    snapshot = { ...snapshot, ...patch, unreadCount };
     listeners.forEach(listener => listener());
   };
   return {
     getSnapshot: () => snapshot,
     subscribe: (listener: () => void) => { listeners.add(listener); return () => { listeners.delete(listener); }; },
     update,
+    openReader: () => {
+      readers++;
+      if (snapshot.unreadCount) update({ unreadCount: 0 });
+      let active = true;
+      return () => { if (active) { active = false; readers--; } };
+    },
     clear: (change: Partial<TemporaryChat> = {}) => update({ ...empty(), ...change }),
   };
 }

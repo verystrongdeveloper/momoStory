@@ -94,6 +94,7 @@ const StoryContainer: React.FC = () => {
             key={char.name}
             image={char.image}
             name={char.displayName[language]}
+            characterName={char.name}
             status={char.displayStatus[language]}
             selected={selectedCharacter?.name === char.name}
             onSelect={() => openCharacter(char)}

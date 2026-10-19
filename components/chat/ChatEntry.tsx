@@ -1,15 +1,23 @@
-import React from 'react';
+import React, { useMemo, useSyncExternalStore } from 'react';
 import { Image, ImageSourcePropType, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import { getGeminiKey, subscribeGeminiKey } from '@/services/geminiKey';
+import { getTemporaryChat } from '@/store/temporaryChats';
+import { useI18n } from '@/i18n';
 
 interface Props {
   image: ImageSourcePropType;
   name: string;
+  characterName: string;
   status: string;
   selected?: boolean;
   onSelect: () => void;
 }
 
-const ChatEntry: React.FC<Props> = ({ image, name, status, selected, onSelect }) => {
+const ChatEntry: React.FC<Props> = ({ image, name, characterName, status, selected, onSelect }) => {
+  const { t } = useI18n();
+  const apiKey = useSyncExternalStore(subscribeGeminiKey, getGeminiKey, () => '');
+  const session = useMemo(() => getTemporaryChat(characterName, apiKey), [characterName, apiKey]);
+  const unreadCount = useSyncExternalStore(session.subscribe, () => session.getSnapshot().unreadCount, () => 0);
   return (
     <TouchableOpacity onPress={onSelect} style={[styles.entry, selected && styles.entrySelected]}>
       <Image source={image} style={styles.avatar} />
@@ -21,6 +29,9 @@ const ChatEntry: React.FC<Props> = ({ image, name, status, selected, onSelect })
           </Text>
         )}
       </View>
+      {unreadCount > 0 && <View style={styles.unreadBadge}>
+        <Text style={styles.unreadText} accessibilityLabel={t('unreadMessages', { count: unreadCount })}>{unreadCount > 99 ? '99+' : unreadCount}</Text>
+      </View>}
     </TouchableOpacity>
   );
 };
@@ -49,10 +60,13 @@ const styles = StyleSheet.create({
   },
   texts: {
     flex: 1,
+    minWidth: 0,
   },
   name: {
     fontWeight: 'bold',
   },
+  unreadBadge: { minWidth: 22, height: 22, paddingHorizontal: 6, borderRadius: 11, marginRight: 6, alignItems: 'center', justifyContent: 'center', backgroundColor: '#d64868' },
+  unreadText: { fontSize: 12, fontWeight: '700', color: '#fff' },
   status: {
     fontSize: 14,
     color: '#666',

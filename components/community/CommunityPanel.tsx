@@ -74,7 +74,7 @@ export default function CommunityPanel() {
           {avatar && <Image source={avatar} style={styles.avatar} />}
           <Text style={styles.storyTitle} numberOfLines={2}>{post.title}</Text>
           <Text style={styles.hint}>{displayCharacterName(post.character, language)}</Text>
-          <Text style={styles.hint}>{post.liked ? '♥' : '♡'} {post.likes} · {t('communityViews', { count: post.views })}</Text>
+          <Text style={styles.hint}>{post.liked ? '♥' : '♡'} {post.likes} · {t('communityViews', { count: post.views })} · {t('communityCommentCount', { count: post.comment_count ?? 0 })}</Text>
           {sort === 'popular' && period !== 'all' && <Text style={styles.hint}>{t('communityPeriodLikes', { count: post.period_likes ?? 0 })}</Text>}
         </TouchableOpacity>;
       })}</View>

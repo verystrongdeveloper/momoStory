@@ -17,12 +17,12 @@ const { isNewerRelease, checkAppUpdate } = mod.exports;
   const original = global.fetch;
   try {
     global.fetch = async (url, options) => {
-      assert.equal(url, 'https://api.github.com/repos/verystrongdeveloper/momoAI/releases/latest');
+      assert.equal(url, 'https://api.github.com/repos/verystrongdeveloper/momoStory/releases/latest');
       assert.equal(options.cache, 'no-store');
       assert.ok(options.signal);
       return { ok: true, json: async () => ({ tag_name: 'v1.0.4', draft: false, prerelease: false, html_url: 'https://evil.test' }) };
     };
-    assert.deepEqual(await checkAppUpdate('1.0.3'), { available: true, version: '1.0.4', url: 'https://github.com/verystrongdeveloper/momoAI/releases/tag/v1.0.4' });
+    assert.deepEqual(await checkAppUpdate('1.0.3'), { available: true, version: '1.0.4', url: 'https://github.com/verystrongdeveloper/momoStory/releases/tag/v1.0.4' });
     for (const response of [
       { ok: false, status: 403 }, { ok: false, status: 404 },
       { ok: true, json: async () => ({ tag_name: 'v2.0.0', draft: true, prerelease: false }) },

@@ -57,10 +57,10 @@ new Function('require', 'module', 'exports', code)(id => {
     assert.equal(calls, previous + 1);
     assert.equal(checkedVersion, expected, 'update check must use the same version as the display');
     assert.equal(button('updateChecking').props.disabled, true);
-    await React.act(async () => resolveUpdate({ available: true, version: '10.0.0', url: 'https://github.com/verystrongdeveloper/momoAI/releases/tag/v10.0.0' }));
+    await React.act(async () => resolveUpdate({ available: true, version: '10.0.0', url: 'https://github.com/verystrongdeveloper/momoStory/releases/tag/v10.0.0' }));
     assert.ok(tree.root.findAllByType('Text').some(text => text.props.children === 'updateAvailable'));
     await React.act(async () => button('openUpdateDownload').props.onPress());
-    assert.equal(opened, 'https://github.com/verystrongdeveloper/momoAI/releases/tag/v10.0.0');
+    assert.equal(opened, 'https://github.com/verystrongdeveloper/momoStory/releases/tag/v10.0.0');
     await React.act(async () => button('checkUpdate').props.onPress());
     await React.act(async () => resolveUpdate({ available: false, version: '1.0.3', url: '' }));
     assert.ok(tree.root.findAllByType('Text').some(text => text.props.children === 'updateCurrent'));

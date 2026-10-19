@@ -109,6 +109,7 @@ const invalid = (changes, code) => assert.throws(() => validatePublicStory({ ...
     await db.exec(`create role anon; create role authenticated; create role service_role bypassrls; create schema auth; create table auth.users(id uuid primary key);`);
     await db.exec(fs.readFileSync(path.join(root, 'supabase/migrations/202610180001_community.sql'), 'utf8'));
     await db.exec(fs.readFileSync(path.join(root, 'supabase/migrations/202610180002_community_rankings.sql'), 'utf8'));
+    await db.exec(fs.readFileSync(path.join(root, 'supabase/migrations/202610190001_community_comment_counts.sql'), 'utf8'));
     const actor = '11111111-1111-4111-8111-111111111111', other = '22222222-2222-4222-8222-222222222222';
     await db.query('insert into auth.users values($1),($2)', [actor, other]);
     const rpc = async (action, data = {}, user = actor) => (action === 'list'
@@ -124,6 +125,7 @@ const invalid = (changes, code) => assert.throws(() => validatePublicStory({ ...
     await assert.rejects(() => rpc('publish', { ...sample, clientId: 'six' }), /RATE_LIMIT/);
     const list = await rpc('list');
     assert.equal(list.length, 5); assert.equal(list[0].is_mine, true);
+    assert.ok(list.every(post => post.comment_count === 0), 'posts without comments report zero');
     assert.equal('author' in list[0], false); assert.equal('script' in list[0], false);
     await assert.rejects(() => rpc('deletePost', { id: first.id }, other), /NOT_FOUND/);
     await rpc('like', { id: first.id, liked: true }); await cooldown('like'); await rpc('like', { id: first.id, liked: true });
@@ -141,13 +143,20 @@ const invalid = (changes, code) => assert.throws(() => validatePublicStory({ ...
     await assert.rejects(() => rpc('comment', { id: first.id, body: 'eleventh' }), /RATE_LIMIT/);
     const detail = await rpc('detail', { id: first.id });
     assert.equal(detail.comments.length, 10); assert.equal('author' in detail.comments[0], false);
+    assert.equal((await rpc('list')).find(post => post.id === first.id).comment_count, 10);
+    assert.equal((await rpc('list', { liked: true, sort: 'popular', period: 'day' })).find(post => post.id === first.id).comment_count, 10);
     await assert.rejects(() => rpc('deleteComment', { id: first.id, commentId }, other), /NOT_FOUND/);
     await rpc('deleteComment', { id: first.id, commentId });
+    assert.equal((await rpc('list')).find(post => post.id === first.id).comment_count, 9, 'deleting comments updates card totals');
     await assert.rejects(() => rpc('comment', { id: first.id, body: 'after deletion' }), /RATE_LIMIT/);
     await rpc('like', { id: first.id, liked: true }, other);
     assert.equal((await rpc('detail', { id: first.id })).likes, 2);
+    await db.query("insert into public.community_comments(post_id, author, body) select $1, $2, 'Pagination fixture' from generate_series(1, 31)", [first.id, other]);
+    assert.equal((await rpc('detail', { id: first.id })).comments.length, 30);
+    assert.equal((await rpc('list')).find(post => post.id === first.id).comment_count, 40, 'card totals include comments beyond the first detail page');
     await db.query('delete from auth.users where id = $1', [other]);
     assert.equal((await rpc('detail', { id: first.id })).likes, 1, 'Auth cleanup cascades must not leave inflated likes');
+    assert.equal((await rpc('list')).find(post => post.id === first.id).comment_count, 9, 'account cleanup must not leave inflated comment counts');
     await rpc('deletePost', { id: first.id });
     await assert.rejects(() => rpc('publish', { ...sample, clientId: 'after-deletion' }), /RATE_LIMIT/);
     // A new Korea date restores quota, while yesterday's usage remains recorded until cleanup.

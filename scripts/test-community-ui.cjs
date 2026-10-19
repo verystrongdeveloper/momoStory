@@ -14,14 +14,15 @@ function load(file, mocks) {
 }
 const rn = Object.fromEntries(['View', 'Text', 'Modal', 'TextInput', 'ScrollView', 'TouchableOpacity', 'ActivityIndicator', 'Image'].map(name => [name, name]));
 rn.StyleSheet = { create: value => value };
-const translate = key => key;
+const translate = (key, values) => key === 'communityCommentCount' ? `${key}:${values.count}` : key;
 const i18n = { useI18n: () => ({ t: translate, language: 'ko' }) };
-const post = { id: '11111111-1111-4111-8111-111111111111', title: 'Public story', character: '호시노', created_at: new Date().toISOString(), likes: 0, views: 1, liked: false, is_mine: true };
+const post = { id: '11111111-1111-4111-8111-111111111111', title: 'Public story', character: '호시노', created_at: new Date().toISOString(), likes: 0, views: 1, comment_count: 0, liked: false, is_mine: true };
 const detail = { ...post, script: 'title : Public story\n호시노 : hi\nendEvent', chat_messages: [{ sender: 'user', text: 'hi' }], comments: [] };
 const validation = load('shared/community/validation.ts', {});
 const chars = { avatarOf: () => 'avatar', displayCharacterName: name => name };
 const button = (tree, key) => tree.root.findAllByType('TouchableOpacity').find(node => node.findAllByType('Text').some(text => text.props.children === key));
 const has = (tree, key) => tree.root.findAllByType('Text').some(text => text.props.children === key);
+const hasCount = (tree, count) => tree.root.findAllByType('Text').some(text => JSON.stringify(text.props.children).includes(`communityCommentCount:${count}`));
 (async () => {
   let tree, configured = true, published = 0, closed = 0, resolvePublish;
   const errors = error => error.code === 'RATE_LIMIT' ? 'communityRateLimit' : 'communityFailed';
@@ -50,7 +51,7 @@ const has = (tree, key) => tree.root.findAllByType('Text').some(text => text.pro
   api.community.detail = async () => ({ ...detail, liked: likes.at(-1)?.[1] ?? false });
   api.community.view = async id => { views.push(id); };
   api.community.like = async (...args) => { likes.push(args); };
-  api.community.comment = async (_id, text) => { if (failComment) throw { code: 'RATE_LIMIT' }; commentBodies.push(text); };
+  api.community.comment = async (_id, text) => { if (failComment) throw { code: 'RATE_LIMIT' }; commentBodies.push(text); post.comment_count++; };
   api.community.report = async () => {};
   api.communityStory = value => ({ ...value, chatMessages: value.chat_messages });
   const Panel = load('components/community/CommunityPanel.tsx', { react: React, 'react-native': rn, '@/i18n': i18n, '@/constants/characters': chars, '@/components/chat/CharacterChat': 'CharacterChat', '@/services/community/client': api, '@/shared/community/validation': validation }).default;
@@ -59,6 +60,10 @@ const has = (tree, key) => tree.root.findAllByType('Text').some(text => text.pro
   await React.act(async () => tree.unmount()); configured = true;
   await React.act(async () => { tree = Renderer.create(React.createElement(Panel)); });
   assert.equal(queries.at(-1).liked, false);
+  assert.ok(hasCount(tree, 0), 'cards explicitly show zero comments');
+  post.comment_count = 7;
+  await React.act(async () => button(tree, 'communityRefresh').props.onPress());
+  assert.ok(hasCount(tree, 7), 'refresh displays the server total');
   await React.act(async () => button(tree, 'communityLiked').props.onPress());
   assert.equal(queries.at(-1).liked, true);
   await React.act(async () => button(tree, 'communityPopular').props.onPress());
@@ -89,6 +94,8 @@ const has = (tree, key) => tree.root.findAllByType('Text').some(text => text.pro
   await React.act(async () => button(tree, 'send').props.onPress());
   assert.ok(has(tree, 'communityRateLimit')); assert.equal(commentInput().props.value, 'keep my draft');
   assert.equal(button(tree, 'save'), undefined, 'no save-to-library action');
+  await React.act(async () => button(tree, 'previous').props.onPress());
+  assert.ok(hasCount(tree, 8), 'returning from comments reloads the updated card count');
   await React.act(async () => tree.unmount());
   // Verify the library menu opens the actual publish modal path.
   const Library = load('components/chat/StoryLibraryList.tsx', {

@@ -19,7 +19,7 @@
 
 1. 본인 Supabase 계정에서 프로젝트 생성. 이 코드만으로 실제 DB가 생성되거나 과금 플랜이 활성화되지는 않는다.
 2. Authentication 설정에서 Anonymous Sign-ins 활성화. 이메일/닉네임 입력은 필요 없다.
-3. SQL Editor에서 `supabase/migrations/202610180001_community.sql`, `supabase/migrations/202610180002_community_rankings.sql` 순서로 각각 한 번씩 실행. 이미 001을 실행했다면 002만 추가 실행한다. 또는 CLI 마이그레이션 이력이 연결된 프로젝트는 `supabase db push` 실행.
+3. SQL Editor에서 `supabase/migrations/202610180001_community.sql`, `supabase/migrations/202610180002_community_rankings.sql`, `supabase/migrations/202610190001_community_comment_counts.sql` 순서로 각각 한 번씩 실행. 이미 적용한 파일은 건너뛴다. 또는 CLI 마이그레이션 이력이 연결된 프로젝트는 `supabase db push` 실행. 댓글 수는 현재 남아 있는 전체 댓글을 집계하므로 댓글 삭제와 계정 정리가 반영된다.
 4. CLI에서 `supabase functions deploy community --project-ref <PROJECT_REF>` 실행. 함수는 Auth 서버에 토큰을 검증한 다음에만 DB 함수를 호출한다. `verify_jwt = false`는 무인증 허용이 아니다.
 5. 프로젝트 URL과 **publishable key**를 `.env.example`에서 안내한 이름으로 `.env.local`에 입력. 기존 anon public key도 SDK에서 사용 가능하다. **secret/service_role key는 앱·EXPO_PUBLIC 변수·Git에 절대 넣지 않는다.** 함수 내부 service role 키는 Supabase 기본 환경에서만 읽는다.
 6. `npx expo start --clear`로 재시작. APK/Windows 배포본은 환경 변수가 포함되도록 다시 빌드해야 한다.

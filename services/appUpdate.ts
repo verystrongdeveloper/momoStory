@@ -1,5 +1,5 @@
-const RELEASES = 'https://github.com/verystrongdeveloper/momoAI/releases';
-const LATEST_API = 'https://api.github.com/repos/verystrongdeveloper/momoAI/releases/latest';
+const RELEASES = 'https://github.com/verystrongdeveloper/momoStory/releases';
+const LATEST_API = 'https://api.github.com/repos/verystrongdeveloper/momoStory/releases/latest';
 
 function parseVersion(value: string) {
   const match = /^v?(\d+)\.(\d+)\.(\d+)(-[0-9A-Za-z.-]+)?(?:\+[0-9A-Za-z.-]+)?$/.exec(value);

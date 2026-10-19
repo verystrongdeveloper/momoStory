@@ -54,6 +54,7 @@ const CharacterChat: React.FC<Props> = ({ characterName, displayName, characterI
   const hasKey = apiKey.trim().length > 0;
   const [messages, setMessages] = useState<Chat[]>([]);
   const [input, setInput] = useState('');
+  const [isWaiting, setIsWaiting] = useState(false);
   const [eventReady, setEventReady] = useState(false);
   const [replayCount, setReplayCount] = useState(1);
   const savedMessages = savedStory?.chatMessages;
@@ -64,6 +65,10 @@ const CharacterChat: React.FC<Props> = ({ characterName, displayName, characterI
   const inputRef = useRef<TextInput>(null);
   const listRef = useRef<FlatList<Chat>>(null);
   const waitingRef = useRef(false);
+  const setWaiting = (value: boolean) => {
+    waitingRef.current = value;
+    setIsWaiting(value);
+  };
 
   useEffect(() => {
     if (!replaying) return;
@@ -108,18 +113,18 @@ const CharacterChat: React.FC<Props> = ({ characterName, displayName, characterI
     if (savedStory || !getGreetMode() || !getGeminiKey().trim()) return;
 
     let cancelled = false;
-    waitingRef.current = true;
+    setWaiting(true);
     (async () => {
       setMessages((prev) => [...prev, { sender: 'typing', text: '···', showImage: true }]);
       try {
         const { triggerLine } = await geminiClient.trigger(characterName);
         await sleep(TYPING_DELAY_MS);
         if (!cancelled) await playReply(triggerLine ?? '');
-        if (!cancelled) waitingRef.current = false;
+        if (!cancelled) setWaiting(false);
       } catch (e) {
         console.error('[CharacterChat] trigger 실패:', e);
         if (!cancelled) {
-          waitingRef.current = false;
+          setWaiting(false);
           setMessages((prev) =>
             removeTyping(prev).concat({ sender: 'character', text: geminiFailureText(e), showImage: true }),
           );
@@ -129,6 +134,7 @@ const CharacterChat: React.FC<Props> = ({ characterName, displayName, characterI
 
     return () => {
       cancelled = true;
+      setWaiting(false);
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [characterName, hasKey, savedStory]);
@@ -137,23 +143,22 @@ const CharacterChat: React.FC<Props> = ({ characterName, displayName, characterI
     const text = input.trim();
     if (savedStory || !hasKey || !text || waitingRef.current) return;
 
-    waitingRef.current = true;
+    setWaiting(true);
     setMessages((prev) => [
       ...prev,
       { sender: 'user', text },
       { sender: 'typing', text: '···', showImage: true },
     ]);
     setInput('');
-    setTimeout(() => inputRef.current?.focus(), 100);
 
     try {
       const { reply, eventReady: ready } = await geminiClient.chat(characterName, text);
       await playReply(reply);
-      waitingRef.current = false;
+      setWaiting(false);
       setEventReady(ready);
     } catch (err) {
       console.error('[CharacterChat] chat 실패:', err);
-      waitingRef.current = false;
+      setWaiting(false);
       setMessages((prev) =>
         removeTyping(prev).concat({ sender: 'character', text: geminiFailureText(err), showImage: true }),
       );
@@ -167,7 +172,7 @@ const CharacterChat: React.FC<Props> = ({ characterName, displayName, characterI
       return;
     }
     if (waitingRef.current) return;
-    waitingRef.current = true;
+    setWaiting(true);
     const chatSnapshot = messages.filter((message): message is SavedChatMessage => message.sender !== 'typing');
     setGlobalLoading?.(true);
     try {
@@ -179,7 +184,7 @@ const CharacterChat: React.FC<Props> = ({ characterName, displayName, characterI
       console.error('[CharacterChat] 이벤트 생성 실패:', e);
       setMessages((prev) => [...prev, { sender: 'character', text: geminiFailureText(e) }]);
     } finally {
-      waitingRef.current = false;
+      setWaiting(false);
       setGlobalLoading?.(false);
     }
   };
@@ -234,15 +239,15 @@ const CharacterChat: React.FC<Props> = ({ characterName, displayName, characterI
       ) : <View style={styles.inputArea}>
         <TextInput
           ref={inputRef}
-          style={[styles.input, sizeStyles.input, !hasKey && styles.inputLocked]}
+          style={[styles.input, sizeStyles.input, (!hasKey || isWaiting) && styles.inputLocked]}
           placeholder={hasKey ? t('messagePlaceholder') : t('messageKeyRequired')}
           value={hasKey ? input : ''}
-          editable={hasKey}
-          onChangeText={setInput}
+          editable={hasKey && !isWaiting}
+          onChangeText={(value) => { if (hasKey && !waitingRef.current) setInput(value); }}
           onSubmitEditing={handleSend}
           blurOnSubmit={false}
         />
-        <Button title={t('send')} onPress={handleSend} disabled={!hasKey} />
+        <Button title={t('send')} onPress={handleSend} disabled={!hasKey || isWaiting} />
       </View>}
       {replaying && (
         <Pressable

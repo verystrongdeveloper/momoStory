@@ -12,6 +12,16 @@ function load(file, mocks = {}) {
   return mod.exports;
 }
 const content = load('components/guide/tutorialContent.ts');
+const onboarding = load('components/guide/onboardingContent.ts');
+const storageTypes = load('storage/types.ts', { '../utils/chatPresentation': { normalizeChatSound: () => 'pop' } });
+assert.equal(storageTypes.DEFAULT_PREFERENCES.language, 'en');
+for (const raw of [null, '{}', '{"language":"invalid"}', 'broken']) {
+  assert.equal(storageTypes.parsePreferences(raw).language, 'en');
+}
+for (const code of ['ko', 'en', 'ja', 'zh']) {
+  assert.equal(storageTypes.parsePreferences(JSON.stringify({ language: code })).language, code);
+  assert.equal(onboarding.onboardingContent[code].terms.length, 6);
+}
 const ids = ['welcome', 'api', 'key', 'chat', 'story', 'library', 'editor', 'video', 'community', 'publish', 'limits', 'settings'];
 for (const language of ['ko', 'en', 'ja', 'zh']) {
   const pages = content.getTutorialContent(language);
@@ -34,7 +44,12 @@ const rn = Object.fromEntries(['View', 'Text', 'ScrollView', 'TouchableOpacity',
 rn.StyleSheet = { absoluteFill: {}, create: value => value }; rn.Linking = { openURL: async url => { links.push(url); } };
 const Guide = load('components/guide/AppGuide.tsx', {
   react: React, 'react-native': rn, '@expo/vector-icons': { Ionicons: 'Ionicons' }, './tutorialContent': content,
-  '@/i18n': { useI18n: () => ({ language, t: key => key }) },
+  './onboardingContent': onboarding,
+  '@/services/appLanguage': {
+    APP_LANGUAGES: [{ code: 'ko', label: '한국어' }, { code: 'en', label: 'English' }, { code: 'ja', label: '日本語' }, { code: 'zh', label: '中文' }],
+    setAppLanguage: value => { language = value; for (const listener of [...listeners]) listener(); },
+  },
+  '@/i18n': { useI18n: () => ({ language: React.useSyncExternalStore(listener => { listeners.add(listener); return () => listeners.delete(listener); }, () => language), t: key => key }) },
   '@/storage': {
     getSetting: key => flags[key], isStorageSynced: () => true,
     subscribeStorage: listener => { listeners.add(listener); return () => listeners.delete(listener); },
@@ -73,8 +88,29 @@ const onManualClose = () => { closed++; };
   assert.equal(flags.tutorialSeen, true); assert.equal(tree.toJSON(), null);
   await React.act(async () => tree.unmount());
   flags = { termsAccepted: false, tutorialSeen: false };
+  language = 'en';
   await React.act(async () => { tree = Renderer.create(React.createElement(Guide, { manual: null, onManualClose })); });
+  assert.ok(button(tree, 'Continue'));
+  assert.equal(button(tree, 'agreeStart'), undefined, 'language selection must precede terms');
+  assert.equal(tree.root.findAllByType('TouchableOpacity').find(node => node.props.accessibilityState?.selected).findByType('Text').props.children, 'English');
+  for (const [code, label] of [['ko', '한국어'], ['ja', '日本語'], ['zh', '中文'], ['en', 'English']]) {
+    await React.act(async () => button(tree, label).props.onPress());
+    assert.ok(button(tree, onboarding.onboardingContent[code].continueLabel));
+    await React.act(async () => button(tree, onboarding.onboardingContent[code].continueLabel).props.onPress());
+    assert.ok(tree.root.findAllByType('Text').some(node => node.props.children === onboarding.onboardingContent[code].termsLead));
+    assert.equal(button(tree, 'agreeStart').props.disabled, true);
+    await React.act(async () => button(tree, onboarding.onboardingContent[code].changeLanguage).props.onPress());
+  }
+  await React.act(async () => button(tree, 'Continue').props.onPress());
   assert.equal(button(tree, 'agreeStart').props.disabled, true, 'consent is never accepted automatically');
+  await React.act(async () => tree.root.findByType('Pressable').props.onPress());
+  await React.act(async () => button(tree, 'Change language').props.onPress());
+  await React.act(async () => button(tree, 'Continue').props.onPress());
+  assert.equal(button(tree, 'agreeStart').props.disabled, true, 'changing language resets the consent checkbox');
+  await React.act(async () => tree.root.findByType('Pressable').props.onPress());
+  await React.act(async () => button(tree, 'agreeStart').props.onPress());
+  assert.equal(flags.termsAccepted, true);
+  assert.ok(button(tree, 'next'), 'tutorial follows explicit consent');
   await React.act(async () => tree.unmount());
   assert.equal(listeners.size, 0); assert.deepEqual(links, []);
   console.log('PASS 12 localized tutorial pages, community/privacy/quotas/rankings/editor/video/sound/version coverage, navigation and completion, no forced onboarding or automatic consent');

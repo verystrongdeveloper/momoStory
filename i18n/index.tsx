@@ -137,7 +137,7 @@ type I18nValue = { language: AppLanguage; t: (key: string, values?: Record<strin
 const I18nContext = createContext<I18nValue | null>(null);
 
 export function I18nProvider({ children }: { children: React.ReactNode }) {
-  const language = useSyncExternalStore(subscribeAppLanguage, getAppLanguage, () => 'ko');
+  const language = useSyncExternalStore<AppLanguage>(subscribeAppLanguage, getAppLanguage, () => 'en');
   const t = useCallback((key: string, values?: Record<string, string | number>) => {
     let text = translations[language][key] ?? translations.ko[key] ?? key;
     for (const [name, value] of Object.entries(values ?? {})) text = text.replaceAll(`{${name}}`, String(value));

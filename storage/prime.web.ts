@@ -26,7 +26,7 @@ export function readInitialSync(): StorageSnapshot | null {
     const apiKey = (localStorage.getItem(OLD_API_KEY) ?? '').trim();
     return {
       apiKey,
-      language: 'ko',
+      language: DEFAULT_PREFERENCES.language,
       chatSize: DEFAULT_PREFERENCES.chatSize,
       rememberApiKey: apiKey.length > 0,
       bgmVolume: parseVolume(localStorage.getItem(OLD_VOLUME)),

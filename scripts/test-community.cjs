@@ -24,6 +24,26 @@ const invalid = (changes, code) => assert.throws(() => validatePublicStory({ ...
   for (const speaker of ['호시노', 'Hoshino', 'ホシノ', '星野', 'Hina', 'ヒナ', '日奈']) validatePublicStory({ ...sample, script: `타이틀 : Test\n${speaker} : hi\nendEvent` }, assets);
   for (const animation of ['shakeX', 'shakeY', 'slideX', 'slideY']) validatePublicStory({ ...sample, script: `title : Test\nanimation : ${animation}\n호시노 : hi\nendEvent` }, assets);
   validatePublicStory({ ...sample, script: 'title : Test\nbg : BG_AbydosCouncilRoom.jpg\n[music : Aira.mp3]\n호시노 : hi\nendEvent' }, assets);
+  for (const row of [
+    'narration : (머리를 쓰다듬었다.) [expression : Headpat.png]',
+    'narration : 반응 [emotion : hoshino_smile, expression : sweat.png, animation : slideY, sound : SE_Crow_04.wav]',
+    'selection : (1)"Hi" [speaker : Hoshino, dialogue : Welcome, expression : sweat.png, animation : shakeX, sound : SE_Crow_04.wav]',
+    '호시노 : hi [emotion : hoshino_smile] [expression : sweat.png] [animation : shakeY]',
+    '[emotion : hoshino_smile] [expression : Headpat.png] [animation : slideY]',
+    'expression : Headpat.png',
+    'emotion : hoshino_smile',
+  ]) validatePublicStory({ ...sample, script: `title : Test\n호시노 : hi\n${row}\nendEvent` }, assets);
+  for (const row of [
+    'narration : hi [expression : missing.png]',
+    'selection : (1)"Hi" [expression : missing.png]',
+    '[expression : missing.png]',
+  ]) invalid({ script: `title : Test\n${row}\nendEvent` }, 'INVALID_ASSET');
+  for (const row of [
+    'narration : hi [animation : jump]',
+    'selection : (1)"Hi" [animation : jump]',
+    '[animation : jump]',
+  ]) invalid({ script: `title : Test\n${row}\nendEvent` }, 'INVALID_COMMAND');
+  invalid({ script: 'title : Test\n호시노 : hi [music : Aira.mp3] [music : none]\nendEvent' }, 'INVALID_METADATA');
   for (const separator of [':', '=']) validatePublicStory({ ...sample, script: `title : Test\n\n호시노 : hi\n\nwaitSecond ${separator} 2\n\nendEvent` }, assets);
   const broken = '\n\ntitle : Test\n\n호시노 : hi [emotion : missing.png]\n\nwaitSecond = 31\n\nendEvent';
   const diagnostics = validation.diagnoseStoryScript(broken, assets);

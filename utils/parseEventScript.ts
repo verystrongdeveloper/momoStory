@@ -29,9 +29,12 @@ export default function parseEventScript(script: string): EventLine[] {
           const emo = l.match(/emotion\s*:\s*([A-Za-z0-9_]+)(?:\.png)?/)?.[1];
           const bg = l.match(/bg\s*:\s*(BG_[\w]+\.jpg)/)?.[1]?.replace('.jpg', '');
           const mus = musicOf(l);
+          const snd = l.match(/sound\s*:\s*([\w'_.-]+\.(?:mp3|wav))/i)?.[1];
+          const exp = l.match(/expression\s*:\s*([\w_.-]+\.png)/)?.[1];
+          const anim = l.match(/animation\s*:\s*(\w+)/)?.[1];
           const speaker = l.match(/speaker\s*:\s*([^,\]]+)/)?.[1]?.trim();
           const dialogue = l
-            .match(/dialogue\s*:\s*(.*?)(?=,\s*(?:emotion|bg|music|sound|speaker)\s*:|\])/i)?.[1]
+            .match(/dialogue\s*:\s*(.*?)(?=,\s*(?:emotion|bg|music|sound|speaker|expression|animation)\s*:|\])/i)?.[1]
             ?.trim();
           out.push({
             type: 'selection',
@@ -41,6 +44,9 @@ export default function parseEventScript(script: string): EventLine[] {
             emotion: emo,
             bg,
             music: mus,
+            soundFile: snd,
+            expression: exp,
+            animationType: anim,
           });
           return;
         }
@@ -56,7 +62,10 @@ export default function parseEventScript(script: string): EventLine[] {
           const bg = l.match(/bg\s*:\s*(BG_[\w]+\.jpg)/)?.[1]?.replace('.jpg', '');
           const mus = musicOf(l);
           const snd = l.match(/sound\s*:\s*([\w'_.-]+\.(?:mp3|wav))/i)?.[1];
-          out.push({ type: 'narration', character: '', text: txt, bg, music: mus, soundFile: snd });
+          const emo = l.match(/emotion\s*:\s*([A-Za-z0-9_]+)(?:\.(?:png|jpg))?/)?.[1];
+          const exp = l.match(/expression\s*:\s*([\w_.-]+\.png)/)?.[1];
+          const anim = l.match(/animation\s*:\s*(\w+)/)?.[1];
+          out.push({ type: 'narration', character: '', text: txt, bg, music: mus, soundFile: snd, emotion: emo, expression: exp, animationType: anim });
           return;
         }
 
@@ -84,7 +93,7 @@ export default function parseEventScript(script: string): EventLine[] {
         if (i !== -1) {
           const speakerRaw = l.slice(0, i).trim();
           // 화자가 있고 narration, selection, animation 등의 키워드가 아닌 경우 대화로 처리
-          if (speakerRaw && !['narration', 'selection', 'animation', 'waitSecond', 'bg', 'music', 'sound'].includes(speakerRaw)) {
+          if (!l.startsWith('[') && speakerRaw && !['narration', 'selection', 'animation', 'waitSecond', 'bg', 'music', 'sound', 'emotion', 'expression'].includes(speakerRaw)) {
             const speakerMatch = speakerRaw.match(/^(.+?)\s*\((.+?)\)$/);
             const spk = speakerMatch ? `${speakerMatch[1]}(${speakerMatch[2]})` : speakerRaw;
             const rest = l.slice(i + 1).trim();
@@ -121,11 +130,15 @@ export default function parseEventScript(script: string): EventLine[] {
         if (
           /\bbg\s*:\s*BG_[\w]+\.jpg\b/i.test(l) ||
           /\bmusic\s*:\s*(?:none|[^,\]\n]+?\.mp3)/i.test(l) ||
-          /\bsound\s*:\s*[\w'_.-]+\.(?:mp3|wav)\b/i.test(l)
+          /\bsound\s*:\s*[\w'_.-]+\.(?:mp3|wav)\b/i.test(l) ||
+          /\b(?:emotion|expression|animation)\s*:/i.test(l)
         ) {
           const bg = l.match(/bg\s*:\s*(BG_[\w]+\.jpg)/)?.[1]?.replace('.jpg', '');
           const mus = musicOf(l);
           const snd = l.match(/sound\s*:\s*([\w'_.-]+\.(?:mp3|wav))/i)?.[1];
+          const emo = l.match(/emotion\s*:\s*([A-Za-z0-9_]+)(?:\.(?:png|jpg))?/)?.[1];
+          const exp = l.match(/expression\s*:\s*([\w_.-]+\.png)/)?.[1];
+          const anim = l.match(/animation\s*:\s*(\w+)/)?.[1];
           out.push({
             type: 'command',
             commandType: 'backgroundOnly',
@@ -133,6 +146,9 @@ export default function parseEventScript(script: string): EventLine[] {
             bg,
             music: mus,
             soundFile: snd,
+            emotion: emo,
+            expression: exp,
+            animationType: anim,
           });
           return;
         }

@@ -32,6 +32,36 @@ const problems = diagnoseStoryScript(bad, assets);
 assert.deepEqual(problems.map(issue => issue.line), [3, 5]);
 const parser = load('utils/parseEventScript.ts').default;
 for (const separator of [':', '=']) assert.equal(parser(`waitSecond ${separator} 2`)[0].waitSecond, 2);
+const effectsScript = 'title : Test\n호시노 : hi [emotion : hoshino_smile]\nnarration : (머리를 쓰다듬었다.) [expression : Headpat.png] [animation : slideY]\nselection : (1)"Hi" [speaker : Hoshino, dialogue : Welcome, expression : sweat.png, animation : shakeX, sound : SE_Crow_04.wav]\n[expression : Headpat.png] [animation : shakeY]\nexpression : sweat.png\nendEvent';
+assert.deepEqual(diagnoseStoryScript(effectsScript, assets), []);
+const parsedEffects = parser(effectsScript);
+assert.equal(parsedEffects[2].text, '(머리를 쓰다듬었다.)');
+assert.equal(parsedEffects[2].expression, 'Headpat.png');
+assert.equal(parsedEffects[2].animationType, 'slideY');
+assert.equal(parsedEffects[3].text, 'Welcome');
+assert.equal(parsedEffects[3].soundFile, 'SE_Crow_04.wav');
+assert.equal(parsedEffects[3].expression, 'sweat.png');
+assert.equal(parsedEffects[3].animationType, 'shakeX');
+assert.equal(parsedEffects[4].type, 'command');
+assert.equal(parsedEffects[4].expression, 'Headpat.png');
+assert.equal(parsedEffects[5].type, 'command');
+assert.equal(parsedEffects[5].expression, 'sweat.png');
+const { insertAssetIntoScript } = load('utils/insertStoryAsset.ts');
+for (const prefix of ['narration : hi', 'selection : (1)"Hi"']) {
+  const text = prefix + ' []';
+  const inserted = insertAssetIntoScript(text, text.length - 1, 'expression', 'Headpat.png');
+  assert.equal(inserted.ok, true);
+  assert.ok(inserted.script.includes('expression : Headpat.png'));
+}
+const effectsTimeline = load('services/videoExport/timeline.ts').buildVideoTimeline({ script: effectsScript, chatMessages: [] }, 1, 1);
+for (const [type, expression, animation] of [['narration', 'Headpat.png', 'slideY'], ['selection', 'sweat.png', 'shakeX']]) {
+  const scene = effectsTimeline.scenes.find(scene => scene.line?.type === type);
+  assert.equal(scene.expression.key, expression);
+  assert.equal(scene.animation.type, animation);
+  assert.equal(scene.expression.start, scene.start);
+  assert.equal(scene.animation.start, scene.start);
+}
+assert.ok(effectsTimeline.audio.some(cue => cue.key === 'SE_Crow_04.wav'));
 (async () => {
   const Web = load('components/chat/StoryScriptEditor.web.tsx', mocks).default;
   let tree, selection, chosenRange, focusCount = 0;

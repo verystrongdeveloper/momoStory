@@ -261,7 +261,7 @@ const EventPlayer: React.FC<Props> = ({ script }) => {
       }
     }
 
-    if (line.type === 'animation' || (line.type === 'dialogue' && line.animationType)) {
+    if (line.type === 'animation' || line.animationType) {
       const raw = (line.animationType ?? '').toLowerCase();
       const anim: SpriteAnimation = {
         type: raw.includes('slide') ? 'slide' : 'shake',
@@ -272,7 +272,7 @@ const EventPlayer: React.FC<Props> = ({ script }) => {
       };
       setAnimation(anim);
       setTimeout(() => setAnimation(null), anim.duration * anim.iterations * 2 + 100);
-      return;
+      if (line.type === 'animation') return;
     }
 
     if (line.type === 'command') {

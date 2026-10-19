@@ -1,8 +1,8 @@
 export type AssetKind = 'bg' | 'emotion' | 'music' | 'sound' | 'expression';
 
 const DIALOGUE_KINDS: AssetKind[] = ['emotion', 'bg', 'sound', 'music', 'expression'];
-const NARRATION_KINDS: AssetKind[] = ['bg', 'sound', 'music'];
-const SELECTION_KINDS: AssetKind[] = ['emotion', 'bg', 'sound', 'music'];
+const NARRATION_KINDS: AssetKind[] = DIALOGUE_KINDS;
+const SELECTION_KINDS: AssetKind[] = DIALOGUE_KINDS;
 
 function allowedKinds(line: string): AssetKind[] | null {
   const trimmed = line.trim();

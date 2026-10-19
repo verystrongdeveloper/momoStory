@@ -84,7 +84,7 @@ export function buildVideoTimeline(story: StoryRecord, bgmVolume: number, sfxVol
       audio.push({ key: chatSoundKey(chatSound), start, end: start + CHAT_POP_DURATION, loop: false, volume: sfxVolume });
     }
     if (line.expression) expression = { key: line.expression, start: time };
-    if (line.type === 'animation' || (line.type === 'dialogue' && line.animationType)) animation = { type: line.animationType ?? '', start: time };
+    if (line.type === 'animation' || line.animationType) animation = { type: line.animationType ?? '', start: time };
     append({ kind: 'story', duration, line, background, emotion, previous, expression, animation });
     if (line.type === 'dialogue' || line.type === 'narration') previous = line;
     if (line.commandType === 'deleteEmotion' || line.commandType === 'deleteAll') emotion = undefined;

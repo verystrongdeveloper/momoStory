@@ -34,7 +34,7 @@ export type StorageSnapshot = Preferences & {
 };
 
 export const DEFAULT_PREFERENCES: Preferences = {
-  language: 'ko',
+  language: 'en',
   chatSize: 1,
   bgmVolume: 0.5,
   sfxVolume: 0.5,
@@ -116,7 +116,7 @@ export function parsePreferences(raw: string | null): Preferences {
   try {
     const parsed = JSON.parse(raw) as Partial<Preferences>;
     return {
-      language: parsed.language === 'en' || parsed.language === 'ja' || parsed.language === 'zh' ? parsed.language : 'ko',
+      language: parsed.language === 'ko' || parsed.language === 'en' || parsed.language === 'ja' || parsed.language === 'zh' ? parsed.language : DEFAULT_PREFERENCES.language,
       chatSize: typeof parsed.chatSize === 'number' ? clampChatSize(parsed.chatSize) ?? DEFAULT_PREFERENCES.chatSize : DEFAULT_PREFERENCES.chatSize,
       bgmVolume: clampVolume(Number(parsed.bgmVolume)) ?? DEFAULT_PREFERENCES.bgmVolume,
       sfxVolume: clampVolume(Number(parsed.sfxVolume)) ?? DEFAULT_PREFERENCES.sfxVolume,

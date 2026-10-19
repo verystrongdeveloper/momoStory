@@ -5,6 +5,8 @@ import { getSetting, isStorageSynced, saveSetting, subscribeStorage } from '@/st
 import { useI18n } from '@/i18n';
 import type { AppLanguage } from '@/storage/types';
 import { getTutorialContent } from './tutorialContent';
+import { APP_LANGUAGES, setAppLanguage } from '@/services/appLanguage';
+import { onboardingContent } from './onboardingContent';
 
 const AI_STUDIO_URL = 'https://aistudio.google.com/apikey';
 
@@ -73,8 +75,10 @@ export default function AppGuide({
   const tutorialSeen = useSyncExternalStore(subscribeStorage, () => getSetting('tutorialSeen'), () => false);
   const [step, setStep] = useState(0);
   const [agreed, setAgreed] = useState(false);
+  const [languageConfirmed, setLanguageConfirmed] = useState(false);
+  const onboarding = onboardingContent[language];
 
-  const mode: GuideMode | null = manual ?? (!synced ? null : !termsAccepted ? 'terms' : !tutorialSeen ? 'tutorial' : null);
+  const mode: GuideMode | 'language' | null = manual ?? (!synced ? null : !termsAccepted ? (languageConfirmed ? 'terms' : 'language') : !tutorialSeen ? 'tutorial' : null);
 
   useEffect(() => {
     if (mode !== 'tutorial') return;
@@ -102,7 +106,7 @@ export default function AppGuide({
     <View style={styles.overlay}>
       <View style={styles.card}>
         <View style={styles.header}>
-          <Text style={styles.headerTitle}>{mode === 'terms' ? t('termsTitle') : t('tutorialTitle')}</Text>
+          <Text style={styles.headerTitle}>{mode === 'language' ? onboarding.languageTitle : mode === 'terms' ? t('termsTitle') : t('tutorialTitle')}</Text>
           {mode === 'tutorial' ? (
             <Text style={styles.headerCount}>
               {step + 1} / {steps.length}
@@ -110,33 +114,31 @@ export default function AppGuide({
           ) : null}
         </View>
 
-        {mode === 'terms' ? (
+        {mode === 'language' ? (
           <ScrollView style={styles.scroll} contentContainerStyle={styles.scrollContent}>
-            <Text style={styles.lead}>
-              MomoStory는 넥슨게임즈의 「블루 아카이브」를 바탕으로 한 비공식 2차 창작물입니다. 계속하려면 아래 내용을 확인하고 동의해 주세요.
-            </Text>
-            <Text style={styles.section}>2차 창작</Text>
-            <Text style={styles.body}>
-              이 프로그램은 팬이 만든 비상업적 2차 창작이며, 넥슨 또는 넥슨게임즈의 공식 서비스가 아닙니다. 개발사·배급사와 관련이 없습니다.
-            </Text>
-            <Text style={styles.section}>권리</Text>
-            <Text style={styles.body}>
-              블루 아카이브의 명칭, 캐릭터, 이미지, 음악, 설정에 대한 권리는 넥슨게임즈와 해당 권리자에게 있습니다.
-            </Text>
-            <Text style={styles.section}>이용</Text>
-            <Text style={styles.body}>
-              개인적인 감상과 팬 활동으로만 이용합니다. 판매하거나, 공식 자료인 것처럼 안내하거나, 상업적으로 이용하지 않습니다.
-            </Text>
-            <Text style={styles.section}>삭제</Text>
-            <Text style={styles.body}>
-              권리자의 요청이 있거나 문제가 될 경우, 이 프로그램과 관련 자료는 예고 없이 배포가 중단되고 삭제될 수 있습니다.
-            </Text>
-            <Text style={styles.section}>API 키와 대화</Text>
-            <Text style={styles.body}>
-              Gemini API 키는 이용자가 직접 발급해 입력합니다. 키 기억하기를 켜면 이 기기에만 저장됩니다. 대화와 스토리 생성 내용은 그 키를 통해 Google Gemini로 전달됩니다.
-            </Text>
-            <Text style={styles.section}>생성된 내용</Text>
-            <Text style={styles.body}>AI가 만든 대사와 스토리는 공식 설정과 다를 수 있습니다.</Text>
+            <Text style={styles.lead}>{onboarding.languageHint}</Text>
+            {APP_LANGUAGES.map(option => (
+              <TouchableOpacity
+                key={option.code}
+                accessibilityRole="radio"
+                accessibilityState={{ selected: language === option.code }}
+                style={[styles.languageOption, language === option.code && styles.languageOptionActive]}
+                onPress={() => setAppLanguage(option.code)}
+              >
+                <Text style={styles.languageLabel}>{option.label}</Text>
+                {language === option.code && <Ionicons name="checkmark-circle" size={22} color="#b84063" />}
+              </TouchableOpacity>
+            ))}
+          </ScrollView>
+        ) : mode === 'terms' ? (
+          <ScrollView style={styles.scroll} contentContainerStyle={styles.scrollContent}>
+            <Text style={styles.lead}>{onboarding.termsLead}</Text>
+            {onboarding.terms.map(section => (
+              <React.Fragment key={section.title}>
+                <Text style={styles.section}>{section.title}</Text>
+                <Text style={styles.body}>{section.body}</Text>
+              </React.Fragment>
+            ))}
           </ScrollView>
         ) : (
           <ScrollView key={current.id} style={styles.scroll} contentContainerStyle={styles.scrollContent}>
@@ -145,10 +147,21 @@ export default function AppGuide({
           </ScrollView>
         )}
 
-        {mode === 'terms' ? (
+        {mode === 'language' ? (
+          <View style={styles.footer}>
+            <TouchableOpacity style={styles.primary} onPress={() => setLanguageConfirmed(true)}>
+              <Text style={styles.primaryText}>{onboarding.continueLabel}</Text>
+            </TouchableOpacity>
+          </View>
+        ) : mode === 'terms' ? (
           <View style={styles.footer}>
             {!termsAccepted ? (
               <>
+                {!manual && (
+                  <TouchableOpacity style={styles.ghost} onPress={() => { setAgreed(false); setLanguageConfirmed(false); }}>
+                    <Text style={styles.ghostText}>{onboarding.changeLanguage}</Text>
+                  </TouchableOpacity>
+                )}
                 <Pressable style={styles.checkRow} onPress={() => setAgreed((value) => !value)}>
                   <View style={[styles.check, agreed && styles.checkOn]}>
                     {agreed ? <Ionicons name="checkmark" size={16} color="#ffffff" /> : null}
@@ -248,6 +261,13 @@ const styles = StyleSheet.create({
     paddingTop: 18,
     paddingBottom: 8,
   },
+  languageOption: {
+    flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between',
+    borderWidth: 1, borderColor: '#eadfe3', borderRadius: 12,
+    padding: 16, marginBottom: 10, minHeight: 56,
+  },
+  languageOptionActive: { borderColor: '#b84063', backgroundColor: '#fff0f4' },
+  languageLabel: { fontSize: 16, color: '#243044', fontWeight: '600' },
   lead: {
     fontSize: 15,
     lineHeight: 23,

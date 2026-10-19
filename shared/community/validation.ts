@@ -84,11 +84,12 @@ export function diagnoseStoryScript(script: string, assets: AssetManifest, expec
       if (!animations.has(line.split(':')[1].trim())) return fail('INVALID_COMMAND', lineNo);
       return;
     }
-    const assetOnly = /^(?:bg|music|sound)\s*:/.test(line);
+    const assetOnly = /^(?:bg|music|sound|emotion|expression)\s*:/.test(line);
     const metaAt = line.indexOf('[');
     const plain = assetOnly ? '' : (metaAt < 0 ? line : line.slice(0, metaAt)).trim();
     const metadata = assetOnly ? `[${line}]` : metaAt < 0 ? '' : line.slice(metaAt);
-    if (metadata && !/^\[[^\[\]\r\n]+\]$/.test(metadata)) return fail('INVALID_METADATA', lineNo);
+    // Generators and the editor may split effects across adjacent metadata blocks.
+    if (metadata && !/^(?:\[[^\[\]\r\n]+\]\s*)+$/.test(metadata)) return fail('INVALID_METADATA', lineNo);
     let kind: 'selection' | 'narration' | 'dialogue' | 'assets';
     if (plain.startsWith('selection :') || /^selection\s*:/.test(plain)) {
       kind = 'selection';
@@ -111,11 +112,13 @@ export function diagnoseStoryScript(script: string, assets: AssetManifest, expec
       readable++;
     }
     const seen = new Set<string>();
-    for (const entry of metadata ? metadata.slice(1, -1).split(/,\s*(?=[A-Za-z]+\s*:)/) : []) {
+    const entries = [...metadata.matchAll(/\[([^\[\]]+)\]/g)].flatMap(block => block[1].split(/,\s*(?=[A-Za-z]+\s*:)/));
+    for (const entry of entries) {
       const match = entry.match(/^\s*([A-Za-z]+)\s*:\s*(.+?)\s*$/);
       if (!match || seen.has(match[1])) return fail('INVALID_METADATA', lineNo);
       const [, key, text] = match; seen.add(key);
-      const allowed = kind === 'dialogue' ? ['emotion', 'bg', 'music', 'sound', 'expression', 'animation'] : kind === 'selection' ? ['emotion', 'bg', 'music', 'sound', 'speaker', 'dialogue'] : ['bg', 'music', 'sound'];
+      const effects = ['emotion', 'bg', 'music', 'sound', 'expression', 'animation'];
+      const allowed = kind === 'selection' ? [...effects, 'speaker', 'dialogue'] : effects;
       if (!allowed.includes(key)) return fail('INVALID_METADATA', lineNo);
       if (key === 'speaker') {
         const name = speaker(text);
@@ -126,7 +129,7 @@ export function diagnoseStoryScript(script: string, assets: AssetManifest, expec
       } else if (key === 'animation') {
         if (!animations.has(text)) return fail('INVALID_COMMAND', lineNo);
       } else if (key === 'emotion') {
-        if (!Object.values(assets.emotions).some(files => files.includes(text))) return fail('INVALID_ASSET', lineNo);
+        if (!Object.values(assets.emotions).some(files => files.some(file => file === text || file.replace(/\.(png|jpg)$/, '') === text))) return fail('INVALID_ASSET', lineNo);
       } else if (!(key === 'music' && text === 'none') && !assets[key as 'bg' | 'music' | 'sound' | 'expression'].includes(text)) return fail('INVALID_ASSET', lineNo);
     }
   };

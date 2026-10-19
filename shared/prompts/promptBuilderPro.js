@@ -68,7 +68,7 @@ ${historyTXT}
   - shakeY: 캐릭터가 위아래로 짧게 여러 번 흔들린 뒤 원위치로 돌아온다. 들뜸·웃음·강한 반응에 어울린다.
   - slideX: 캐릭터가 가로로 조금 움직였다가 원위치로 돌아온다. 짧게 몸을 기울이는 반응에 사용한다. 입장·퇴장이나 위치 이동을 뜻하지 않는다.
   - slideY: 캐릭터가 세로로 조금 움직였다가 원위치로 돌아온다. 가벼운 끄덕임 같은 짧은 반응에 사용한다. 실제 보행·퇴장 연출이 아니다.
-- animation과 expression은 초상이 있는 캐릭터 대사의 [ ] 안에만 넣는다. 그 줄에 화자에 맞는 emotion도 함께 지정한다. selection·narration에 붙이거나 별도 animation 줄로 쓰지 않는다.
+- emotion, expression, animation, sound는 캐릭터 대사뿐 아니라 narration·selection의 [ ] 안에도 넣을 수 있다. narration·selection의 효과는 현재 표시 중인 초상에 적용된다. 초상이 없거나 다른 캐릭터로 바꿀 때는 해당 emotion도 지정한다. 별도 animation 줄도 사용할 수 있다.
 - 중요한 감정 변화에 animation 또는 expression을 적절히 넣는다. 여러 장면의 긴 이야기라면 자연스러운 반응 지점에 분산하되 매 줄 넣거나 같은 효과를 연속 반복하지 않는다. 조용한 장면에 효과를 억지로 추가하지 않는다.
 - emotion은 캐릭터의 표정 이미지이며, expression은 초상 위에 잠깐 나타났다 사라지는 아이콘이다. 서로 혼동하지 않는다. 의문에는 question_mark.png 또는 Question2.png, 난처함·긴장에는 sweat.png, 실제로 머리를 쓰다듬는 맥락에는 Headpat.png를 사용할 수 있다.
 - sound는 목록의 파일명만 사용하고, 장면에서 실제로 일어나는 소리와 일치시킨다. 문을 열 때 SE_DoorSlowOpen_01.mp3, 닫을 때 SE_DoorClose_01.mp3, 책을 다룰 때 SE_Book_02.mp3처럼 필요한 순간에만 넣는다. 일상 대화에 총성·폭발음을 임의로 넣지 않는다. WAV 파일도 확장자를 그대로 유지한다.
@@ -78,7 +78,7 @@ ${historyTXT}
 [출력 형식]
 타이틀 : 이벤트 제목
 캐릭터명(소속) : 대사 [emotion : xx.png, bg : xx.jpg, sound : SE_xx.mp3, music : xx.mp3, expression : xx.png, animation : shakeX]
-narration : (내용) [bg : xx.jpg, music : xx.mp3]
+narration : (내용) [bg : xx.jpg, music : xx.mp3, expression : Headpat.png, animation : slideY]
 selection : (1)"선택지 A" (2)"선택지 B"
 deleteEmotion
 deleteAll

@@ -27,6 +27,7 @@ async function post<T>(path: string, body: Record<string, unknown>): Promise<T> 
 
 /** 기존 Express /api. 직접 호출이 production web에서 확인되기 전까지 기본 경로다. */
 export const expressTransport = {
+  reset: (character: string) => post<{ ok: boolean }>('/api/chat/reset', { character }),
   trigger: (character: string) =>
     post<{ triggerLine: string }>('/api/trigger', { character }),
 

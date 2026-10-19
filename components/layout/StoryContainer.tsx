@@ -1,10 +1,11 @@
 import React, { useState } from 'react';
-import { ActivityIndicator, Modal, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { ActivityIndicator, Modal, ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import { Ionicons } from '@expo/vector-icons';
 import GreetModeToggle from './GreetModeToggle';
 import StoryHeader from './StoryHeader';
 import StorySidebar from './StorySidebar';
 import ChatEntry from '@/components/chat/ChatEntry';
-import CharacterChat from '@/components/chat/CharacterChat';
+import CharacterChat, { type ChatRefreshAction } from '@/components/chat/CharacterChat';
 import StoryLibraryList from '@/components/chat/StoryLibraryList';
 import SettingsPanel from './SettingsPanel';
 import CommunityPanel from '@/components/community/CommunityPanel';
@@ -25,6 +26,7 @@ const StoryContainer: React.FC = () => {
   const [savedStory, setSavedStory] = useState<SavedStory | null>(null);
   const [globalLoading, setGlobalLoading] = useState(false);
   const [guide, setGuide] = useState<GuideMode | null>(null);
+  const [chatRefresh, setChatRefresh] = useState<ChatRefreshAction | null>(null);
 
   const hasDetail = selectedCharacter !== null;
   const detailTitle = selectedCharacter?.displayName[language];
@@ -112,6 +114,7 @@ const StoryContainer: React.FC = () => {
           displayName={selectedCharacter.displayName[language]}
           characterImage={selectedCharacter.image}
           setGlobalLoading={setGlobalLoading}
+          onRefreshActionChange={isCompact ? setChatRefresh : undefined}
         />
       )}
       {!hasDetail && (
@@ -127,6 +130,11 @@ const StoryContainer: React.FC = () => {
       <StoryHeader
         title={libraryOpen && savedStory ? displayCharacterName(savedStory.character, language) : isCompact ? detailTitle : undefined}
         onBack={libraryOpen && savedStory ? () => setSavedStory(null) : isCompact && hasDetail ? closeDetail : undefined}
+        rightAction={isCompact && !fullPane && hasDetail && chatRefresh ? (
+          <TouchableOpacity accessibilityRole="button" accessibilityLabel={t('refreshChat')} accessibilityState={{ disabled: chatRefresh.disabled }} disabled={chatRefresh.disabled} onPress={chatRefresh.onPress} style={[styles.headerRefresh, chatRefresh.disabled && styles.headerRefreshDisabled]}>
+            <Ionicons name="refresh-outline" size={22} color="#fff" />
+          </TouchableOpacity>
+        ) : undefined}
       />
 
       {isCompact ? (
@@ -164,6 +172,8 @@ const StoryContainer: React.FC = () => {
 export default StoryContainer;
 
 const styles = StyleSheet.create({
+  headerRefresh: { width: 44, height: 44, alignItems: 'center', justifyContent: 'center' },
+  headerRefreshDisabled: { opacity: 0.4 },
   container: {
     flex: 1,
     backgroundColor: '#FB94A7',

@@ -79,10 +79,19 @@ assert.equal(hashes.size, 5, 'all five sounds must actually differ');
   assert.equal(onlyStory.images.avatar, undefined);
   assert.equal(longChat.chatMessages.length, 20);
   let selected = 'pop'; const players = new Map();
+  let failSeek = false, deferSeek = false, resolveSeek, loaded = true;
   const audio = { useAudioPlayer(source) {
-    if (!players.has(source)) players.set(source, { source, volume: 1, paused: 0, played: 0, pause() { this.paused++; }, seekTo: async () => {}, play() { this.played++; } });
-    return players.get(source);
-  }, useAudioPlayerStatus: () => ({ isLoaded: true }) };
+    const player = React.useMemo(() => {
+      const value = { source, volume: 1, paused: 0, played: 0, released: false,
+        pause() { this.paused++; if (this.released) throw new Error('native player released'); },
+        seekTo() { if (this.released || failSeek) return Promise.reject(new Error('seek failed')); return deferSeek ? new Promise(resolve => { resolveSeek = resolve; }) : Promise.resolve(); },
+        play() { if (this.released) throw new Error('native player released'); this.played++; },
+      };
+      players.set(source, value); return value;
+    }, [source]);
+    React.useEffect(() => () => { player.released = true; }, [player]);
+    return player;
+  }, useAudioPlayerStatus: () => ({ isLoaded: loaded }) };
   const Picker = load('components/layout/ChatSoundPicker.tsx', {
     'react': React, 'react-native': { Modal: 'Modal', Pressable: 'Pressable', ScrollView: 'ScrollView', Text: 'Text', View: 'View', TouchableOpacity: 'TouchableOpacity', StyleSheet: { absoluteFill: {}, create: value => value } },
     'expo-audio': audio, '@/i18n': { useI18n: () => ({ t: (key, values) => values?.name ? `${key}:${values.name}` : key }) },
@@ -107,15 +116,57 @@ assert.equal(hashes.size, 5, 'all five sounds must actually differ');
   await choose('click');
   await React.act(async () => tree.root.findByProps({ accessibilityLabel: 'previewChatSound:chatSound_click' }).props.onPress());
   assert.ok(bell.paused > 0, 'preview must stop the previous sound');
+  const click = [...players.values()].find(player => String(player.source).endsWith('chat-click.wav'));
+  assert.equal(bell.released, true, 'changing sound releases the previous native player');
+  assert.equal(click.played, 1, 'a released previous player must not prevent the next preview');
+  assert.ok(!tree.root.findAllByType('Text').some(text => text.props.children === 'soundPreviewFailed'));
   await choose('soft');
   assert.equal(selected, 'soft');
   await React.act(async () => tree.update(React.createElement(Picker)));
   assert.ok(tree.root.findAllByType('Text').some(text => text.props.children === 'chatSound_soft'));
+  const preview = () => tree.root.findByProps({ accessibilityLabel: `previewChatSound:chatSound_${selected}` });
+  const hasPreviewError = () => tree.root.findAllByType('Text').some(text => text.props.children === 'soundPreviewFailed');
+  const soft = [...players.values()].find(player => String(player.source).endsWith('chat-soft.wav'));
+  failSeek = true;
+  await React.act(async () => preview().props.onPress());
+  assert.ok(hasPreviewError(), 'real seek failures still show feedback');
+  failSeek = false;
+  await React.act(async () => preview().props.onPress());
+  await React.act(async () => preview().props.onPress());
+  assert.equal(soft.played, 2, 'retry and repeated playback work');
+  assert.equal(hasPreviewError(), false);
+  loaded = false;
+  await React.act(async () => tree.update(React.createElement(Picker)));
+  assert.equal(preview().props.disabled, true);
+  await React.act(async () => preview().props.onPress());
+  assert.equal(soft.played, 2, 'unloaded sound never seeks or plays');
+  loaded = true;
+  await React.act(async () => tree.update(React.createElement(Picker)));
+  failSeek = true;
+  await React.act(async () => preview().props.onPress());
+  assert.ok(hasPreviewError());
+  await choose('bell');
+  assert.equal(hasPreviewError(), false, 'selecting another sound clears the previous error');
+  failSeek = false; deferSeek = true;
+  const nextBell = [...players.values()].find(player => String(player.source).endsWith('chat-bell.wav') && !player.released);
+  await React.act(async () => preview().props.onPress());
+  const oldSeek = resolveSeek;
+  await choose('click');
+  await React.act(async () => oldSeek());
+  assert.equal(nextBell.played, 0, 'switching sounds cancels an unfinished native seek');
+  assert.equal(hasPreviewError(), false);
+  deferSeek = false;
   await choose('none');
   assert.equal(tree.root.findByProps({ accessibilityLabel: 'previewChatSound:chatSound_none' }).props.disabled, true);
   await React.act(async () => tree.root.findByProps({ accessibilityLabel: 'chatSound' }).props.onPress());
   await React.act(async () => tree.root.findByType('Modal').props.onRequestClose());
   assert.equal(selected, 'none', 'closing the list must not change the selection');
+  await choose('soft');
+  deferSeek = true;
+  const lastSoft = [...players.values()].find(player => String(player.source).endsWith('chat-soft.wav') && !player.released);
+  await React.act(async () => preview().props.onPress());
   await React.act(async () => tree.unmount());
-  console.log('PASS five distinct sounds, migration defaults, restart persistence, chosen/off export assets, picker selection, preview, mute fallback and playback exclusivity');
+  await React.act(async () => resolveSeek());
+  assert.equal(lastSoft.played, 0, 'leaving settings cancels pending preview playback');
+  console.log('PASS five distinct sounds, persistence/export, native player release, repeated preview/retry, loading guard, error clearing, source switch/unmount cancellation and mute fallback');
 })().catch(error => { console.error(error); process.exitCode = 1; });

@@ -6,9 +6,10 @@ interface Props {
   title?: string;
   /** 지정되면 로고 대신 뒤로가기 버튼을 보여준다 */
   onBack?: () => void;
+  rightAction?: React.ReactNode;
 }
 
-const StoryHeader: React.FC<Props> = ({ title, onBack }) => {
+const StoryHeader: React.FC<Props> = ({ title, onBack, rightAction }) => {
   return (
     <View style={styles.header}>
       {onBack ? (
@@ -26,6 +27,7 @@ const StoryHeader: React.FC<Props> = ({ title, onBack }) => {
           MomoStory
         </Text>
       )}
+      {rightAction}
     </View>
   );
 };

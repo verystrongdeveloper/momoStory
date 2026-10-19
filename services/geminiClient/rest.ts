@@ -20,6 +20,10 @@ type Session = {
 };
 
 const sessions = new Map<string, Session>();
+export function resetChatSessions(character: string, apiKey: string) {
+  const prefix = `${keyId(apiKey)}:${character}:`;
+  for (const key of sessions.keys()) if (key.startsWith(prefix)) sessions.delete(key);
+}
 let activeModel = GEMINI_MODEL;
 
 function keyId(apiKey: string): string {

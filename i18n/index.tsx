@@ -8,6 +8,7 @@ type Dictionary = Record<string, string>;
 
 const translations: Record<AppLanguage, Dictionary> = {
   ko: {
+    refreshChat: '채팅 새로고침', resetChatTitle: '대화를 새로 시작할까요?', resetChatNotice: '현재 캐릭터와의 채팅과 AI 대화 기억을 초기화합니다. 저장한 스토리와 커뮤니티 게시글은 유지됩니다.', resetChatFailed: '대화를 초기화하지 못했습니다. 연결을 확인하고 다시 시도해 주세요.',
     ...communityTranslations.ko,
     ...scriptEditorTranslations.ko,
     videoChatMode: '영상에 포함할 내용', videoIncludeChat: '채팅 포함', videoExcludeChat: '스토리만', videoStoryOnlyHint: '채팅 없이 인연 스토리만 영상으로 만듭니다. 선택지는 자동 진행하며 현재 BGM·효과음 볼륨을 사용합니다.',
@@ -39,6 +40,7 @@ const translations: Record<AppLanguage, Dictionary> = {
     termsTitle: '이용 약관', tutorialTitle: '사용 방법', agreeTerms: '위 내용을 확인했고, 이에 동의합니다.', agreeStart: '동의하고 시작', skip: '건너뛰기', previous: '이전', start: '시작하기', next: '다음', openAiStudio: 'Google AI Studio 열기',
   },
   en: {
+    refreshChat: 'Reset chat', resetChatTitle: 'Start a new conversation?', resetChatNotice: 'This clears the current character’s chat and AI conversation history. Saved stories and community posts are kept.', resetChatFailed: 'Could not reset the chat. Check your connection and try again.',
     ...communityTranslations.en,
     ...scriptEditorTranslations.en,
     videoChatMode: 'Video content', videoIncludeChat: 'Include chat', videoExcludeChat: 'Story only', videoStoryOnlyHint: 'Export only the story without chat. Choices advance automatically. Uses your current music and effects volumes.',
@@ -70,6 +72,7 @@ const translations: Record<AppLanguage, Dictionary> = {
     termsTitle: 'Terms of use', tutorialTitle: 'How to use', agreeTerms: 'I have read and agree to the above.', agreeStart: 'Agree and start', skip: 'Skip', previous: 'Previous', start: 'Start', next: 'Next', openAiStudio: 'Open Google AI Studio',
   },
   ja: {
+    refreshChat: 'チャットをリセット', resetChatTitle: '新しい会話を始めますか？', resetChatNotice: '現在のキャラクターとのチャットとAIの会話履歴を初期化します。保存したストーリーとコミュニティの投稿は残ります。', resetChatFailed: '初期化できませんでした。接続を確認して再試行してください。',
     ...communityTranslations.ja,
     ...scriptEditorTranslations.ja,
     videoChatMode: '動画に含める内容', videoIncludeChat: 'チャットを含む', videoExcludeChat: 'ストーリーのみ', videoStoryOnlyHint: 'チャットを含めずストーリーのみを書き出します。選択肢は自動進行し、現在のBGM・効果音音量を使用します。',
@@ -101,6 +104,7 @@ const translations: Record<AppLanguage, Dictionary> = {
     termsTitle: '利用規約', tutorialTitle: '使い方', agreeTerms: '上記を確認し、同意します。', agreeStart: '同意して始める', skip: 'スキップ', previous: '戻る', start: '始める', next: '次へ', openAiStudio: 'Google AI Studio を開く',
   },
   zh: {
+    refreshChat: '重置聊天', resetChatTitle: '开始新的对话？', resetChatNotice: '将清除当前角色的聊天和 AI 对话记录。保存的故事和社区帖子将保留。', resetChatFailed: '无法重置聊天，请检查连接后重试。',
     ...communityTranslations.zh,
     ...scriptEditorTranslations.zh,
     videoChatMode: '视频内容', videoIncludeChat: '包含聊天', videoExcludeChat: '仅故事', videoStoryOnlyHint: '仅导出故事，不包含聊天。选项自动推进，使用当前音乐和音效音量。',

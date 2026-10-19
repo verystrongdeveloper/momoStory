@@ -1,4 +1,4 @@
-import React, { useEffect, useRef, useState } from 'react';
+import React, { useCallback, useEffect, useRef, useState } from 'react';
 import { Modal, Pressable, ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { useAudioPlayer, useAudioPlayerStatus, type AudioPlayer } from 'expo-audio';
 import { useI18n } from '@/i18n';
@@ -16,13 +16,22 @@ export default function ChatSoundPicker() {
   const current = useRef<AudioPlayer | null>(null);
   const request = useRef(0);
   const [error, setError] = useState(false);
-  useEffect(() => { request.current++; try { current.current?.pause(); } catch { /* released */ } }, [selected]);
-  useEffect(() => () => { request.current++; try { current.current?.pause(); } catch { /* released */ } }, []);
+  const stopPreview = useCallback(() => {
+    request.current++;
+    const previous = current.current;
+    current.current = null;
+    // useAudioPlayer releases its native player when the selected source changes.
+    // Stopping that old player must never prevent the next preview from playing.
+    try { previous?.pause(); } catch { /* already released */ }
+  }, []);
+  useEffect(() => { stopPreview(); setError(false); }, [selected, player, stopPreview]);
+  useEffect(() => stopPreview, [stopPreview]);
   const preview = async (player: AudioPlayer) => {
-    const token = ++request.current;
+    if (selected === 'none' || !isLoaded) return;
+    stopPreview();
+    const token = request.current;
     setError(false);
     try {
-      current.current?.pause();
       current.current = player;
       const volume = getSfxVolume();
       player.volume = volume > 0 ? volume : 0.5;

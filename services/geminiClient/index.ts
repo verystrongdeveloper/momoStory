@@ -23,6 +23,7 @@ function current() {
 }
 
 export const geminiClient = {
+  reset: (character: string) => current().reset(character),
   trigger: (character: string) => current().trigger(character),
   chat: (character: string, message: string) => current().chat(character, message),
   createEvent: (character: string) => current().createEvent(character),

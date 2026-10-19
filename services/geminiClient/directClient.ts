@@ -4,7 +4,7 @@ import { buildSelectionPrompt } from '../../shared/prompts/selectionPromptBuilde
 import { getAvailableCharacters, hasStoryAssets, keepAssetSpeakers } from '../../shared/prompts/characterList';
 import { getGeminiKey } from '@/services/geminiKey';
 import { getAppLanguage } from '@/services/appLanguage';
-import { dialogKey, sendWithFallback, userApiKey } from './rest';
+import { dialogKey, resetChatSessions, sendWithFallback, userApiKey } from './rest';
 
 type DialogPair = { user: string; ai: string };
 
@@ -31,6 +31,12 @@ function pushLog(character: string, apiKey: string, pair: DialogPair): boolean {
 }
 
 export const directClient = {
+  async reset(character: string) {
+    const apiKey = readKey();
+    if (!character) throw new Error('character 누락');
+    resetChatSessions(character, apiKey);
+    chatLogs.delete(dialogKey(character, apiKey));
+  },
   async trigger(character: string) {
     const language = getAppLanguage();
     const apiKey = readKey();

@@ -1,6 +1,6 @@
 // src/controllers/chatController.js
 const chatLogs = new Map(); // 키+캐릭터별 최근 3쌍
-const { getChat, apiKeyFrom, keyId } = require('../services/geminiService');
+const { getChat, apiKeyFrom, keyId, resetChatSessions } = require('../services/geminiService');
 
 function historyKey(character, apiKey) {
   return `${keyId(apiKey)}:${character}`;
@@ -58,3 +58,15 @@ exports.getDialogHistory = (character, apiKey) => chatLogs.get(historyKey(charac
 exports.chatLogs = chatLogs;
 exports.historyKey = historyKey;
 exports.readKey = readKey;
+
+exports.resetChat = (req, res) => {
+  const apiKey = readKey(req, res);
+  if (!apiKey) return;
+  const { character } = req.body;
+  if (typeof character !== 'string' || !character.trim() || character.length > 100) {
+    return res.status(400).json({ error: 'character 누락' });
+  }
+  resetChatSessions(character, apiKey);
+  chatLogs.delete(historyKey(character, apiKey));
+  res.json({ ok: true });
+};

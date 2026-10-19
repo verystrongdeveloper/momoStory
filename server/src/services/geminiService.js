@@ -106,4 +106,9 @@ async function getChat(character, _modelName = GEMINI_MODEL, sessionKey = '', sy
   };
 }
 
-module.exports = { getChat, GEMINI_MODEL, apiKeyFrom, keyId };
+function resetChatSessions(character, apiKey) {
+  const prefix = `${keyId(apiKey)}:${character}:`;
+  for (const key of sessions.keys()) if (key.startsWith(prefix)) sessions.delete(key);
+}
+
+module.exports = { getChat, GEMINI_MODEL, apiKeyFrom, keyId, resetChatSessions };

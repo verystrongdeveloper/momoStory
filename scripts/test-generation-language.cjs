@@ -99,6 +99,16 @@ function output(instruction) {
     assert.ok(script.includes('endEvent'));
   }
   assert.ok(requests[5].contents.length > 1, 'Language change retains direct conversation history');
+  await direct.chat('히나', 'keep other character');
+  await rest.sendWithFallback('호시노', '', 'keep other key', undefined, 'other-key', 'en');
+  await direct.reset('호시노');
+  await assert.rejects(direct.createEvent('호시노'), /dialogHistory/);
+  assert.equal((await direct.chat('호시노', 'fresh start')).eventReady, false);
+  assert.equal(requests.at(-1).contents.length, 1, 'direct reset clears model history');
+  await direct.chat('히나', 'continue other character');
+  assert.equal(requests.at(-1).contents.length, 3, 'other characters keep their model history');
+  await rest.sendWithFallback('호시노', '', 'continue other key', undefined, 'other-key', 'en');
+  assert.equal(requests.at(-1).contents.length, 3, 'other API keys keep their model history');
   let attempt = 0;
   const fallbackRequests = [];
   const retryRest = load('services/geminiClient/rest.ts', { './errors': { throwIfOffline() {} } }, {
@@ -136,6 +146,9 @@ function output(instruction) {
     await transport.trigger('호시노'); await transport.chat('호시노', 'hi'); await transport.createEvent('호시노');
     assert.ok(transportCalls.slice(-3).every(body => body.language === code));
   }
+  await transport.reset('호시노');
+  assert.equal(transportCalls.at(-1).character, '호시노');
+  assert.equal(transportCalls.at(-1).apiKey, 'test-only-key');
 
   const models = [], sdkRequests = [];
   class FakeSDK {
@@ -177,5 +190,13 @@ function output(instruction) {
   assert.ok(models.some(model => model.instruction.includes('OUTPUT LANGUAGE: English.') && model.history.length >= 6), 'SDK language switch keeps history');
   const fallback = await invoke(chat.sendChat, 'invalid', { message: 'continue' });
   assert.equal(fallback.reply, content.ko);
+  await invoke(chat.sendChat, 'en', { character: '히나', message: 'keep other character' });
+  await invoke(chat.sendChat, 'en', { apiKey: 'other-key', message: 'keep other key' });
+  assert.deepEqual(await invoke(chat.resetChat, 'en'), { ok: true });
+  assert.deepEqual(chat.getDialogHistory('호시노', 'test-only-key'), []);
+  assert.equal(chat.getDialogHistory('히나', 'test-only-key').length, 1);
+  assert.equal(chat.getDialogHistory('호시노', 'other-key').length, 1);
+  assert.equal((await invoke(chat.sendChat, 'en', { message: 'fresh start' })).eventReady, false);
+  assert.equal(models.at(-1).history.length, 0, 'Express reset clears cached SDK sessions');
   console.log('PASS ko/en/ja/zh: direct + Express greeting/chat/selection/story, mid-generation snapshot, language switching with history, invalid default, canonical script/asset preservation (mocked Gemini, no paid API calls)');
 })().catch(error => { console.error(error); process.exitCode = 1; });

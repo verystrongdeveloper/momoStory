@@ -1,10 +1,11 @@
-import React, { useEffect, useMemo, useRef, useState, useSyncExternalStore } from 'react';
+import React, { useCallback, useEffect, useMemo, useRef, useState, useSyncExternalStore } from 'react';
 import {
   Button,
   FlatList,
   Image,
   ImageSourcePropType,
   Keyboard,
+  Modal,
   Pressable,
   StyleSheet,
   Text,
@@ -13,17 +14,21 @@ import {
   View,
 } from 'react-native';
 import { useRouter } from 'expo-router';
+import { Ionicons } from '@expo/vector-icons';
 import { geminiClient, geminiFailureText } from '@/services/geminiClient';
 import { getGeminiKey, subscribeGeminiKey } from '@/services/geminiKey';
 import { getGreetMode } from '@/services/greetMode';
 import { setPendingEvent } from '@/store/eventStore';
 import { saveStory, type SavedStory } from '@/store/storyLibrary';
 import type { SavedChatMessage } from '@/storage/types';
+import { getTemporaryChat, type TemporaryMessage } from '@/store/temporaryChats';
 import { useChatSize } from '@/services/chatSize';
 import { makeChatSizeStyles } from './chatSizeStyles';
 import { useI18n } from '@/i18n';
 import { splitChatReply } from '@/utils/splitChatReply';
 import useChatPop from '@/hooks/useChatPop';
+
+export type ChatRefreshAction = { onPress: () => void; disabled: boolean };
 
 interface Props {
   characterName: string;
@@ -31,19 +36,16 @@ interface Props {
   characterImage?: ImageSourcePropType;
   setGlobalLoading?: (value: boolean) => void;
   savedStory?: SavedStory;
+  onRefreshActionChange?: (action: ChatRefreshAction | null) => void;
 }
 
-interface Chat {
-  sender: 'user' | 'character' | 'typing';
-  text: string;
-  showImage?: boolean;
-}
+type Chat = TemporaryMessage;
 
 const TYPING_DELAY_MS = 1500;
 
 const sleep = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
 
-const CharacterChat: React.FC<Props> = ({ characterName, displayName, characterImage, setGlobalLoading, savedStory }) => {
+const CharacterChat: React.FC<Props> = ({ characterName, displayName, characterImage, setGlobalLoading, savedStory, onRefreshActionChange }) => {
   const { t } = useI18n();
   const visibleName = displayName ?? characterName;
   const router = useRouter();
@@ -52,10 +54,15 @@ const CharacterChat: React.FC<Props> = ({ characterName, displayName, characterI
 
   const apiKey = useSyncExternalStore(subscribeGeminiKey, getGeminiKey, () => '');
   const hasKey = apiKey.trim().length > 0;
-  const [messages, setMessages] = useState<Chat[]>([]);
-  const [input, setInput] = useState('');
-  const [isWaiting, setIsWaiting] = useState(false);
-  const [eventReady, setEventReady] = useState(false);
+  const session = useMemo(() => getTemporaryChat(characterName, apiKey), [characterName, apiKey]);
+  const draft = useSyncExternalStore(session.subscribe, session.getSnapshot, session.getSnapshot);
+  const { messages, input, isWaiting, eventReady } = draft;
+  const setMessages = (change: Chat[] | ((previous: Chat[]) => Chat[])) => session.update(previous => ({ messages: typeof change === 'function' ? change(previous.messages) : change }));
+  const setInput = (value: string) => session.update({ input: value });
+  const setEventReady = (value: boolean) => session.update({ eventReady: value });
+  const [resetConfirm, setResetConfirm] = useState(false);
+  const [resetError, setResetError] = useState(false);
+  const [chatGeneration, setChatGeneration] = useState(0);
   const [replayCount, setReplayCount] = useState(1);
   const savedMessages = savedStory?.chatMessages;
   const replaying = !!savedStory && replayCount < (savedMessages?.length ?? 0);
@@ -64,11 +71,24 @@ const CharacterChat: React.FC<Props> = ({ characterName, displayName, characterI
 
   const inputRef = useRef<TextInput>(null);
   const listRef = useRef<FlatList<Chat>>(null);
-  const waitingRef = useRef(false);
-  const setWaiting = (value: boolean) => {
-    waitingRef.current = value;
-    setIsWaiting(value);
+  const setWaiting = (value: boolean) => session.update({ isWaiting: value });
+  const ensureFreshConversation = async () => {
+    if (!session.getSnapshot().needsReset) return;
+    await geminiClient.reset(characterName);
+    session.update({ needsReset: false });
   };
+
+  const requestReset = useCallback(() => {
+    if (savedStory || !hasKey || session.getSnapshot().isWaiting) return;
+    setResetError(false);
+    setResetConfirm(true);
+  }, [savedStory, hasKey, session]);
+
+  useEffect(() => {
+    if (!onRefreshActionChange || savedStory) return;
+    onRefreshActionChange({ onPress: requestReset, disabled: isWaiting || !hasKey });
+    return () => onRefreshActionChange(null);
+  }, [onRefreshActionChange, savedStory, requestReset, isWaiting, hasKey]);
 
   useEffect(() => {
     if (!replaying) return;
@@ -112,36 +132,47 @@ const CharacterChat: React.FC<Props> = ({ characterName, displayName, characterI
   useEffect(() => {
     if (savedStory || !getGreetMode() || !getGeminiKey().trim()) return;
 
-    let cancelled = false;
-    setWaiting(true);
+    const current = session.getSnapshot();
+    if (current.greetingStarted || current.messages.length || current.isWaiting) return;
+    session.update({ greetingStarted: true, isWaiting: true });
+    // Finish and store the reply even when the user switches to another screen.
     (async () => {
       setMessages((prev) => [...prev, { sender: 'typing', text: '···', showImage: true }]);
       try {
+        await ensureFreshConversation();
         const { triggerLine } = await geminiClient.trigger(characterName);
         await sleep(TYPING_DELAY_MS);
-        if (!cancelled) await playReply(triggerLine ?? '');
-        if (!cancelled) setWaiting(false);
+        await playReply(triggerLine ?? '');
       } catch (e) {
         console.error('[CharacterChat] trigger 실패:', e);
-        if (!cancelled) {
-          setWaiting(false);
-          setMessages((prev) =>
-            removeTyping(prev).concat({ sender: 'character', text: geminiFailureText(e), showImage: true }),
-          );
-        }
+        setMessages((prev) => removeTyping(prev).concat({ sender: 'character', text: geminiFailureText(e), showImage: true }));
+      } finally {
+        setWaiting(false);
       }
     })();
 
-    return () => {
-      cancelled = true;
-      setWaiting(false);
-    };
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [characterName, hasKey, savedStory]);
+  }, [session, characterName, hasKey, savedStory, chatGeneration]);
+
+  const handleReset = async () => {
+    if (savedStory || !hasKey || session.getSnapshot().isWaiting) return;
+    setWaiting(true);
+    setResetError(false);
+    try {
+      await geminiClient.reset(characterName);
+      session.clear();
+      setResetConfirm(false);
+      setChatGeneration(value => value + 1);
+    } catch {
+      setResetError(true);
+    } finally {
+      setWaiting(false);
+    }
+  };
 
   const handleSend = async () => {
     const text = input.trim();
-    if (savedStory || !hasKey || !text || waitingRef.current) return;
+    if (savedStory || !hasKey || !text || session.getSnapshot().isWaiting) return;
 
     setWaiting(true);
     setMessages((prev) => [
@@ -152,6 +183,7 @@ const CharacterChat: React.FC<Props> = ({ characterName, displayName, characterI
     setInput('');
 
     try {
+      await ensureFreshConversation();
       const { reply, eventReady: ready } = await geminiClient.chat(characterName, text);
       await playReply(reply);
       setWaiting(false);
@@ -171,13 +203,14 @@ const CharacterChat: React.FC<Props> = ({ characterName, displayName, characterI
       router.push('/event');
       return;
     }
-    if (waitingRef.current) return;
+    if (session.getSnapshot().isWaiting) return;
     setWaiting(true);
     const chatSnapshot = messages.filter((message): message is SavedChatMessage => message.sender !== 'typing');
     setGlobalLoading?.(true);
     try {
       const { eventScript } = await geminiClient.createEvent(characterName);
       saveStory(characterName, eventScript, chatSnapshot);
+      session.clear({ isWaiting: true, needsReset: true });
       setPendingEvent(eventScript);
       router.push('/event');
     } catch (e) {
@@ -212,6 +245,11 @@ const CharacterChat: React.FC<Props> = ({ characterName, displayName, characterI
 
   return (
     <View style={styles.container}>
+      {!savedStory && !onRefreshActionChange && <View style={styles.refreshBar}>
+        <TouchableOpacity accessibilityRole="button" accessibilityLabel={t('refreshChat')} accessibilityState={{ disabled: isWaiting || !hasKey }} disabled={isWaiting || !hasKey} style={[styles.refreshButton, (isWaiting || !hasKey) && styles.refreshDisabled]} onPress={requestReset}>
+          <Ionicons name="refresh-outline" size={22} color="#87616e" />
+        </TouchableOpacity>
+      </View>}
       <FlatList
         ref={listRef}
         data={shownMessages}
@@ -243,7 +281,7 @@ const CharacterChat: React.FC<Props> = ({ characterName, displayName, characterI
           placeholder={hasKey ? t('messagePlaceholder') : t('messageKeyRequired')}
           value={hasKey ? input : ''}
           editable={hasKey && !isWaiting}
-          onChangeText={(value) => { if (hasKey && !waitingRef.current) setInput(value); }}
+          onChangeText={(value) => { if (hasKey && !session.getSnapshot().isWaiting) setInput(value); }}
           onSubmitEditing={handleSend}
           blurOnSubmit={false}
         />
@@ -257,6 +295,17 @@ const CharacterChat: React.FC<Props> = ({ characterName, displayName, characterI
           onPress={() => setReplayCount(savedMessages?.length ?? 0)}
         />
       )}
+      {!savedStory && resetConfirm && <Modal transparent visible animationType="fade" onRequestClose={() => { if (!session.getSnapshot().isWaiting) setResetConfirm(false); }}>
+        <View style={styles.resetOverlay}><View style={styles.resetCard} accessibilityViewIsModal>
+          <Text style={styles.resetTitle}>{t('resetChatTitle')}</Text>
+          <Text style={styles.resetBody}>{t('resetChatNotice')}</Text>
+          {resetError && <Text accessibilityRole="alert" style={styles.resetError}>{t('resetChatFailed')}</Text>}
+          <View style={styles.resetActions}>
+            <Button title={t('cancel')} disabled={isWaiting} onPress={() => setResetConfirm(false)} />
+            <Button title={t('refreshChat')} disabled={isWaiting} onPress={() => void handleReset()} />
+          </View>
+        </View></View>
+      </Modal>}
     </View>
   );
 };
@@ -264,6 +313,15 @@ const CharacterChat: React.FC<Props> = ({ characterName, displayName, characterI
 export default CharacterChat;
 
 const styles = StyleSheet.create({
+  refreshBar: { alignItems: 'flex-end', paddingHorizontal: 12, paddingTop: 6 },
+  refreshButton: { width: 44, height: 44, alignItems: 'center', justifyContent: 'center' },
+  refreshDisabled: { opacity: 0.4 },
+  resetOverlay: { flex: 1, justifyContent: 'center', alignItems: 'center', padding: 20, backgroundColor: 'rgba(36,32,40,0.45)' },
+  resetCard: { width: '100%', maxWidth: 440, borderRadius: 18, padding: 24, gap: 16, backgroundColor: '#fff' },
+  resetTitle: { fontSize: 20, fontWeight: '700', color: '#243044' },
+  resetBody: { fontSize: 15, lineHeight: 23, color: '#3c4654' },
+  resetError: { color: '#a33a54', lineHeight: 22 },
+  resetActions: { flexDirection: 'row', justifyContent: 'flex-end', gap: 14 },
   container: {
     flex: 1,
     backgroundColor: 'white',

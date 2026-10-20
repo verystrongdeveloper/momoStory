@@ -21,7 +21,7 @@ begin
     group by l.post_id
   ), ranked as (
     select p.id, p.title, p.character,
-      substring(p.script from '(?i)(?:^|[[:space:]]|,|\[)[[:space:]]*bg[[:space:]]*:[[:space:]]*([A-Za-z0-9_]+)') as preview_bg,
+      substring(p.script from '(?i)bg[[:space:]]*:[[:space:]]*(BG_[A-Za-z0-9_]+)') as preview_bg,
       p.created_at, p.likes, p.views,
       case when v_since is null then p.likes else coalesce(s.score, 0) end as period_likes,
       exists(select 1 from public.community_likes l where l.post_id = p.id and l.actor = p_actor) as liked,

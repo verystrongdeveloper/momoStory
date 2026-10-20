@@ -29,13 +29,25 @@ jobs:
         with:
           workspaces: src-tauri
       - run: npm ci
-      - run: npx tauri build
+      - name: Build signed Windows update
+        env:
+          TAURI_SIGNING_PRIVATE_KEY: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY }}
+          TAURI_SIGNING_PRIVATE_KEY_PASSWORD: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY_PASSWORD }}
+        shell: pwsh
+        run: |
+          if (-not $env:TAURI_SIGNING_PRIVATE_KEY) { throw 'Missing TAURI_SIGNING_PRIVATE_KEY secret' }
+          npx tauri build
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
       - name: Collect Windows files
         shell: pwsh
         run: |
           New-Item -ItemType Directory -Force release-out | Out-Null
           Copy-Item src-tauri/target/release/momostory.exe release-out/MomoStory.exe
           Copy-Item src-tauri/target/release/bundle/nsis/*-setup.exe release-out/
+          Copy-Item src-tauri/target/release/bundle/nsis/*-setup.exe.sig release-out/
+      - name: Build updater manifest
+        if: startsWith(github.ref, 'refs/tags/v')
+        run: node scripts/build-update-manifest.cjs release-out ${{ github.ref_name }} docs/releases/${{ github.ref_name }}.md
       - uses: actions/upload-artifact@v4
         with:
           name: windows

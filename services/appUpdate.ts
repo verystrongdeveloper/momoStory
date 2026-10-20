@@ -19,7 +19,8 @@ export function isNewerRelease(current: string, latest: string): boolean {
   return a.prerelease;
 }
 
-export type UpdateResult = { available: boolean; version: string; url: string };
+export type AndroidUpdateAsset = { url: string; sha256: string; size: number };
+export type UpdateResult = { available: boolean; version: string; url: string; android?: AndroidUpdateAsset };
 
 export async function checkAppUpdate(currentVersion: string, signal?: AbortSignal): Promise<UpdateResult> {
   const controller = new AbortController();
@@ -38,11 +39,17 @@ export async function checkAppUpdate(currentVersion: string, signal?: AbortSigna
     if (release.draft !== false || release.prerelease !== false || typeof release.tag_name !== 'string') {
       throw new Error('UPDATE_INVALID_RELEASE');
     }
+    const apkUrl = `${RELEASES}/download/${encodeURIComponent(release.tag_name)}/MomoStory.apk`;
+    const apk = Array.isArray(release.assets) ? release.assets.find((asset: Record<string, unknown>) =>
+      asset.name === 'MomoStory.apk' && asset.browser_download_url === apkUrl &&
+      typeof asset.digest === 'string' && /^sha256:[a-f0-9]{64}$/.test(asset.digest) &&
+      Number.isSafeInteger(asset.size) && Number(asset.size) > 0 && Number(asset.size) <= 500 * 1024 * 1024) : undefined;
     return {
       available: isNewerRelease(currentVersion, release.tag_name),
       version: release.tag_name.replace(/^v/, ''),
       // Construct the URL ourselves; never open arbitrary URLs from a response.
       url: `${RELEASES}/tag/${encodeURIComponent(release.tag_name)}`,
+      ...(apk ? { android: { url: apkUrl, sha256: apk.digest.slice(7), size: apk.size } } : {}),
     };
   } finally {
     clearTimeout(timer);

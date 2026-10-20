@@ -11,6 +11,7 @@ let calls = 0, resolveUpdate, failUpdate = false, opened, checkedVersion;
 const rn = { Platform: { OS: 'android' }, StyleSheet: { create: value => value } };
 for (const name of ['KeyboardAvoidingView', 'Pressable', 'ScrollView', 'Text', 'TouchableOpacity', 'View', 'Modal']) rn[name] = name;
 const mocks = {
+  './InAppUpdate': 'InAppUpdate',
   'react': React, 'react-native': rn, 'expo-constants': constants,
   '../../app.json': appConfig, './GeminiKeyField': 'GeminiKeyField',
   './ChatSoundPicker': 'ChatSoundPicker',

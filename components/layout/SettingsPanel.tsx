@@ -12,6 +12,7 @@ import {
 } from 'react-native';
 import GeminiKeyField from './GeminiKeyField';
 import ChatSoundPicker from './ChatSoundPicker';
+import InAppUpdate from './InAppUpdate';
 import Constants from 'expo-constants';
 import appConfig from '../../app.json';
 import { checkAppUpdate, type UpdateResult } from '@/services/appUpdate';
@@ -243,6 +244,7 @@ export default function SettingsPanel({
             {t(updateResult.available ? 'updateAvailable' : 'updateCurrent', { version: updateResult.version })}
           </Text>
         )}
+        {updateResult?.available && <InAppUpdate release={updateResult} />}
         {updateStatus === 'error' && <Text style={styles.hint} accessibilityLiveRegion="polite">{t('updateCheckFailed')}</Text>}
         {linkError && <Text selectable style={styles.hint}>{t('updateOpenFailed')} {updateResult?.url}</Text>}
       </View>

@@ -1,0 +1,38 @@
+export const appUpdateTranslations = {
+  ko: {
+    inAppUpdateStart: '앱에서 업데이트', inAppUpdateDownload: '확인 · 다운로드', inAppUpdateInstall: '설치 계속하기',
+    inAppUpdateNotice: '브라우저 없이 업데이트 파일을 다운로드합니다. 완료 후 설치 버튼을 눌러 주세요.',
+    inAppUpdateConfirm: '설치하면 앱이 종료될 수 있으며 임시 채팅과 AI 대화 기억은 초기화될 수 있습니다. 저장한 스토리는 유지됩니다. 영상 추출 등 진행 중인 작업을 먼저 마쳐 주세요.',
+    inAppUpdateDownloading: '업데이트 다운로드 중', inAppUpdateInstalling: '설치 시작 중…',
+    inAppUpdatePermission: '시스템 설정에서 이 앱의 설치 허용을 켠 뒤 돌아와 설치 계속하기를 눌러 주세요.',
+    inAppUpdateOpened: '시스템 설치 화면에서 업데이트를 완료해 주세요. 취소했다면 설치 계속하기로 다시 열 수 있습니다.',
+    inAppUpdateFailed: '업데이트를 완료하지 못했습니다. 네트워크·여유 공간을 확인하고 다시 시도하거나 다운로드 페이지를 이용해 주세요.',
+  },
+  en: {
+    inAppUpdateStart: 'Update in app', inAppUpdateDownload: 'Confirm & download', inAppUpdateInstall: 'Continue installation',
+    inAppUpdateNotice: 'Download the update without a browser, then press the install button.',
+    inAppUpdateConfirm: 'Installation may close the app and reset temporary chats and AI conversation memory. Saved stories are kept. Finish video exports and other ongoing tasks first.',
+    inAppUpdateDownloading: 'Downloading update', inAppUpdateInstalling: 'Starting installation…',
+    inAppUpdatePermission: 'Allow this app to install packages in system settings, then return and press Continue installation.',
+    inAppUpdateOpened: 'Complete the update in the system installer. If canceled, press Continue installation to reopen it.',
+    inAppUpdateFailed: 'Update failed. Check your connection and free space, retry, or use the download page.',
+  },
+  ja: {
+    inAppUpdateStart: 'アプリ内で更新', inAppUpdateDownload: '確認してダウンロード', inAppUpdateInstall: 'インストールを続ける',
+    inAppUpdateNotice: 'ブラウザーを開かずに更新をダウンロードし、完了後にインストールボタンを押してください。',
+    inAppUpdateConfirm: 'インストールでアプリが終了し、一時チャットとAIの会話記憶がリセットされる場合があります。保存したストーリーは保持されます。動画出力などの処理を先に完了してください。',
+    inAppUpdateDownloading: '更新をダウンロード中', inAppUpdateInstalling: 'インストールを開始中…',
+    inAppUpdatePermission: 'システム設定でこのアプリのインストールを許可してから戻り、インストールを続けてください。',
+    inAppUpdateOpened: 'システムのインストール画面で更新してください。キャンセルした場合は再度開けます。',
+    inAppUpdateFailed: '更新できませんでした。接続と空き容量を確認して再試行するか、ダウンロードページを利用してください。',
+  },
+  zh: {
+    inAppUpdateStart: '在应用内更新', inAppUpdateDownload: '确认并下载', inAppUpdateInstall: '继续安装',
+    inAppUpdateNotice: '无需打开浏览器即可下载更新，完成后请点击安装按钮。',
+    inAppUpdateConfirm: '安装可能关闭应用并重置临时聊天和AI对话记忆，已保存的故事会保留。请先完成视频导出等任务。',
+    inAppUpdateDownloading: '正在下载更新', inAppUpdateInstalling: '正在启动安装…',
+    inAppUpdatePermission: '请在系统设置中允许此应用安装软件，然后返回并点击继续安装。',
+    inAppUpdateOpened: '请在系统安装界面完成更新。若已取消，可点击继续安装重新打开。',
+    inAppUpdateFailed: '更新失败，请检查网络和剩余空间后重试，或使用下载页面。',
+  },
+};

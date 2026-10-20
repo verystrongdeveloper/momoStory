@@ -14,8 +14,9 @@ const constants = { expoConfig: { version: '1.0.1' } };
 const rn = {
   Platform: { OS: 'web' }, StyleSheet: { create: value => value },
 };
-for (const name of ['Modal', 'View', 'Text', 'TouchableOpacity']) rn[name] = name;
+for (const name of ['Modal', 'View', 'Text', 'TouchableOpacity', 'ScrollView']) rn[name] = name;
 const mocks = {
+  './InAppUpdate': 'InAppUpdate',
   react: React, 'react-native': rn, 'expo-constants': constants, '../../app.json': appConfig,
   '@/platform/openExternalUrl': { openExternalUrl: async url => { opened.push(url); if (failOpen) throw new Error('cannot open'); } },
   '@/i18n': { useI18n: () => ({ t: (key, values) => `${language}:${key}${values?.version ? ':' + values.version : ''}` }) },

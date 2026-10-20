@@ -3,6 +3,7 @@ import { getAppLanguage, subscribeAppLanguage } from '@/services/appLanguage';
 import type { AppLanguage } from '@/storage/types';
 import { communityTranslations } from './community';
 import { scriptEditorTranslations } from './scriptEditor';
+import { appUpdateTranslations } from './appUpdate';
 
 type Dictionary = Record<string, string>;
 
@@ -15,6 +16,7 @@ const translations: Record<AppLanguage, Dictionary> = {
     refreshChat: '채팅 새로고침', resetChatTitle: '대화를 새로 시작할까요?', resetChatNotice: '이 채팅방의 대화와 AI 기억을 초기화합니다. 다른 채팅방, 저장한 스토리와 커뮤니티 게시글은 유지됩니다.', resetChatFailed: '대화를 초기화하지 못했습니다. 연결을 확인하고 다시 시도해 주세요.',
     ...communityTranslations.ko,
     ...scriptEditorTranslations.ko,
+    ...appUpdateTranslations.ko,
     videoChatMode: '영상에 포함할 내용', videoIncludeChat: '채팅 포함', videoExcludeChat: '스토리만', videoStoryOnlyHint: '채팅 없이 인연 스토리만 영상으로 만듭니다. 선택지는 자동 진행하며 현재 BGM·효과음 볼륨을 사용합니다.',
     chatSound: '채팅 효과음', chatSoundHint: '선택한 소리는 자동 저장되며 채팅과 영상 추출에 적용됩니다. 미리듣기는 음소거 중에도 기본 볼륨으로 재생됩니다.', previewSound: '미리듣기', previewChatSound: '{name} 미리듣기', soundPreviewFailed: '소리를 재생하지 못했습니다. 다시 시도해 주세요.', chatSound_pop: '물방울 뽁', chatSound_bloop: '전자 알림 뾰록', chatSound_bell: '맑은 벨', chatSound_click: '가벼운 톡', chatSound_soft: '부드러운 팝', chatSound_none: '사용 안 함',
     appVersion: '현재 버전', updateTitle: '업데이트 안내', updateLater: '나중에',
@@ -52,6 +54,7 @@ const translations: Record<AppLanguage, Dictionary> = {
     refreshChat: 'Reset chat', resetChatTitle: 'Start a new conversation?', resetChatNotice: 'This clears this room’s chat and AI memory. Other rooms, saved stories and community posts are kept.', resetChatFailed: 'Could not reset the chat. Check your connection and try again.',
     ...communityTranslations.en,
     ...scriptEditorTranslations.en,
+    ...appUpdateTranslations.en,
     videoChatMode: 'Video content', videoIncludeChat: 'Include chat', videoExcludeChat: 'Story only', videoStoryOnlyHint: 'Export only the story without chat. Choices advance automatically. Uses your current music and effects volumes.',
     chatSound: 'Chat sound', chatSoundHint: 'Your choice is saved and used in chat and video exports. Preview uses a default volume when muted.', previewSound: 'Preview', previewChatSound: 'Preview {name}', soundPreviewFailed: 'Could not play the sound. Please try again.', chatSound_pop: 'Water drop', chatSound_bloop: 'Electronic bloop', chatSound_bell: 'Clear bell', chatSound_click: 'Light click', chatSound_soft: 'Soft pop', chatSound_none: 'Off',
     appVersion: 'App version', updateTitle: 'Update available', updateLater: 'Later',
@@ -89,6 +92,7 @@ const translations: Record<AppLanguage, Dictionary> = {
     refreshChat: 'チャットをリセット', resetChatTitle: '新しい会話を始めますか？', resetChatNotice: 'このルームのチャットとAIの会話記憶を初期化します。他のルーム、保存したストーリーとコミュニティの投稿は残ります。', resetChatFailed: '初期化できませんでした。接続を確認して再試行してください。',
     ...communityTranslations.ja,
     ...scriptEditorTranslations.ja,
+    ...appUpdateTranslations.ja,
     videoChatMode: '動画に含める内容', videoIncludeChat: 'チャットを含む', videoExcludeChat: 'ストーリーのみ', videoStoryOnlyHint: 'チャットを含めずストーリーのみを書き出します。選択肢は自動進行し、現在のBGM・効果音音量を使用します。',
     chatSound: 'チャット効果音', chatSoundHint: '選択は自動保存され、チャットと動画に反映されます。試聴はミュート中でも標準音量で再生します。', previewSound: '試聴', previewChatSound: '{name}を試聴', soundPreviewFailed: '再生できませんでした。もう一度お試しください。', chatSound_pop: '水滴', chatSound_bloop: '電子通知音', chatSound_bell: '澄んだベル', chatSound_click: '軽いクリック', chatSound_soft: '柔らかいポップ', chatSound_none: '使用しない',
     appVersion: '現在のバージョン', updateTitle: 'アップデートのお知らせ', updateLater: '後で',
@@ -126,6 +130,7 @@ const translations: Record<AppLanguage, Dictionary> = {
     refreshChat: '重置聊天', resetChatTitle: '开始新的对话？', resetChatNotice: '将清除此聊天室的聊天和 AI 记忆。其他聊天室、保存的故事和社区帖子将保留。', resetChatFailed: '无法重置聊天，请检查连接后重试。',
     ...communityTranslations.zh,
     ...scriptEditorTranslations.zh,
+    ...appUpdateTranslations.zh,
     videoChatMode: '视频内容', videoIncludeChat: '包含聊天', videoExcludeChat: '仅故事', videoStoryOnlyHint: '仅导出故事，不包含聊天。选项自动推进，使用当前音乐和音效音量。',
     chatSound: '聊天音效', chatSoundHint: '选择将自动保存并用于聊天和视频导出。静音时试听仍使用默认音量。', previewSound: '试听', previewChatSound: '试听{name}', soundPreviewFailed: '无法播放声音，请重试。', chatSound_pop: '水滴', chatSound_bloop: '电子提示音', chatSound_bell: '清脆铃声', chatSound_click: '轻点击', chatSound_soft: '柔和气泡', chatSound_none: '关闭',
     appVersion: '当前版本', updateTitle: '更新提示', updateLater: '稍后',

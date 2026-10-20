@@ -1,11 +1,12 @@
 import React, { useEffect, useRef, useState, useSyncExternalStore } from 'react';
-import { Modal, Platform, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import { Modal, Platform, ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import Constants from 'expo-constants';
 import appConfig from '../../app.json';
 import { useI18n } from '@/i18n';
 import { getSetting, isStorageSynced, subscribeStorage } from '@/storage';
 import { checkAppUpdate, type UpdateResult } from '@/services/appUpdate';
 import { openExternalUrl } from '@/platform/openExternalUrl';
+import InAppUpdate from './InAppUpdate';
 
 const onboardingComplete = () => isStorageSynced() && getSetting('termsAccepted') && getSetting('tutorialSeen');
 
@@ -55,10 +56,11 @@ export default function StartupUpdatePrompt() {
   return (
     <Modal transparent animationType="fade" onRequestClose={dismiss}>
       <View style={styles.overlay}>
-        <View style={styles.card} accessibilityViewIsModal>
+        <ScrollView style={styles.scroll} contentContainerStyle={styles.card} accessibilityViewIsModal>
           <Text style={styles.title} accessibilityRole="header">{t('updateTitle')}</Text>
           <Text style={styles.body}>{t('updateAvailable', { version: release.version })}</Text>
           <Text style={styles.version}>{t('appVersion')}: {appVersion}</Text>
+          <InAppUpdate release={release} />
           {linkError && <Text selectable style={styles.error} accessibilityRole="alert">{t('updateOpenFailed')} {release.url}</Text>}
           <View style={styles.actions}>
             <TouchableOpacity accessibilityRole="button" disabled={opening} style={styles.button} onPress={dismiss}>
@@ -68,7 +70,7 @@ export default function StartupUpdatePrompt() {
               <Text style={styles.primaryText}>{t('openUpdateDownload')}</Text>
             </TouchableOpacity>
           </View>
-        </View>
+        </ScrollView>
       </View>
     </Modal>
   );
@@ -76,7 +78,8 @@ export default function StartupUpdatePrompt() {
 
 const styles = StyleSheet.create({
   overlay: { flex: 1, alignItems: 'center', justifyContent: 'center', padding: 20, backgroundColor: 'rgba(36,32,40,0.45)' },
-  card: { width: '100%', maxWidth: 440, padding: 24, borderRadius: 18, backgroundColor: '#fff', gap: 14 },
+  scroll: { width: '100%', maxWidth: 440, maxHeight: '90%', flexGrow: 0, borderRadius: 18, backgroundColor: '#fff' },
+  card: { padding: 24, gap: 14 },
   title: { fontSize: 20, fontWeight: '700', color: '#243044' },
   body: { fontSize: 16, lineHeight: 24, color: '#3c4654' },
   version: { fontSize: 13, color: '#667085' },

@@ -49,6 +49,7 @@ export async function migrateLegacyStorage(): Promise<boolean> {
       sfxVolume: DEFAULT_PREFERENCES.sfxVolume,
       chatSound: DEFAULT_PREFERENCES.chatSound,
       greetMode: oldGreetRaw === '1',
+      includeBondStory: DEFAULT_PREFERENCES.includeBondStory,
       rememberApiKey,
       termsAccepted: false,
       tutorialSeen: false,

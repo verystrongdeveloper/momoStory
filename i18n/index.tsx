@@ -8,6 +8,7 @@ type Dictionary = Record<string, string>;
 
 const translations: Record<AppLanguage, Dictionary> = {
   ko: {
+    conversationMode: '대화 모드', conversationChatOnly: '채팅만', conversationWithStory: '인연 스토리 포함', conversationChatOnlyHint: '인연 스토리 생성 없이 계속 채팅합니다.', conversationWithStoryHint: '대화 3쌍이 완성되면 인연 스토리로 이어집니다.', conversationModeConfirm: '대화 모드를 변경할까요?', conversationModeResetNotice: '이 설정을 바꾸면 모든 캐릭터의 채팅과 AI 대화 기억이 초기화됩니다. 저장한 라이브러리 스토리는 유지됩니다.', conversationModeApply: '초기화 후 변경',
     videoBackgroundHint: '추출 중 다른 화면을 사용할 수 있습니다. 앱은 실행 상태로 유지해 주세요.', videoExportBusy: '다른 영상을 추출 중입니다. 완료하거나 취소한 뒤 다시 시도해 주세요.', videoExportCanceled: '영상 추출을 취소했습니다.',
     storyChatLocked: '대화 3쌍이 완성되었습니다. 인연 스토리를 생성해 주세요.', storyChatAwaitingEnd: '스토리를 끝까지 감상하면 새 대화가 자동으로 시작됩니다.',
     unreadMessages: '안 읽은 메시지 {count}개',
@@ -43,6 +44,7 @@ const translations: Record<AppLanguage, Dictionary> = {
     termsTitle: '이용 약관', tutorialTitle: '사용 방법', agreeTerms: '위 내용을 확인했고, 이에 동의합니다.', agreeStart: '동의하고 시작', skip: '건너뛰기', previous: '이전', start: '시작하기', next: '다음', openAiStudio: 'Google AI Studio 열기',
   },
   en: {
+    conversationMode: 'Conversation mode', conversationChatOnly: 'Chat only', conversationWithStory: 'Include bond stories', conversationChatOnlyHint: 'Keep chatting without generating a bond story.', conversationWithStoryHint: 'After three dialogue pairs, continue into a bond story.', conversationModeConfirm: 'Change conversation mode?', conversationModeResetNotice: 'Changing this setting resets all character chats and AI conversation memory. Stories saved in your library are kept.', conversationModeApply: 'Reset and change',
     videoBackgroundHint: 'You can use other screens while exporting. Keep the app running.', videoExportBusy: 'Another video is exporting. Wait for it to finish or cancel it first.', videoExportCanceled: 'Video export canceled.',
     storyChatLocked: 'Three chat exchanges are complete. Generate your bond story to continue.', storyChatAwaitingEnd: 'Finish watching the story to automatically start a new conversation.',
     unreadMessages: '{count} unread messages',
@@ -78,6 +80,7 @@ const translations: Record<AppLanguage, Dictionary> = {
     termsTitle: 'Terms of use', tutorialTitle: 'How to use', agreeTerms: 'I have read and agree to the above.', agreeStart: 'Agree and start', skip: 'Skip', previous: 'Previous', start: 'Start', next: 'Next', openAiStudio: 'Open Google AI Studio',
   },
   ja: {
+    conversationMode: '会話モード', conversationChatOnly: 'チャットのみ', conversationWithStory: '絆ストーリーあり', conversationChatOnlyHint: '絆ストーリーを生成せず、チャットを続けられます。', conversationWithStoryHint: '会話を3往復すると絆ストーリーに進みます。', conversationModeConfirm: '会話モードを変更しますか？', conversationModeResetNotice: '設定を変更すると、全キャラクターのチャットとAIの会話記憶がリセットされます。ライブラリに保存したストーリーは残ります。', conversationModeApply: 'リセットして変更',
     videoBackgroundHint: '書き出し中も他の画面を使えます。アプリは起動したままにしてください。', videoExportBusy: '別の動画を書き出しています。完了するかキャンセルしてから再試行してください。', videoExportCanceled: '動画の書き出しをキャンセルしました。',
     storyChatLocked: '会話が3往復に達しました。絆ストーリーを生成してください。', storyChatAwaitingEnd: 'ストーリーを最後まで見ると、新しい会話が自動で始まります。',
     unreadMessages: '未読メッセージ {count}件',
@@ -113,6 +116,7 @@ const translations: Record<AppLanguage, Dictionary> = {
     termsTitle: '利用規約', tutorialTitle: '使い方', agreeTerms: '上記を確認し、同意します。', agreeStart: '同意して始める', skip: 'スキップ', previous: '戻る', start: '始める', next: '次へ', openAiStudio: 'Google AI Studio を開く',
   },
   zh: {
+    conversationMode: '对话模式', conversationChatOnly: '仅聊天', conversationWithStory: '包含羁绊故事', conversationChatOnlyHint: '无需生成羁绊故事，可以持续聊天。', conversationWithStoryHint: '完成三轮对话后进入羁绊故事。', conversationModeConfirm: '更改对话模式？', conversationModeResetNotice: '更改此设置将重置所有角色的聊天和AI对话记忆。故事库中已保存的故事将保留。', conversationModeApply: '重置并更改',
     videoBackgroundHint: '导出时可以使用其他页面，请保持应用运行。', videoExportBusy: '正在导出其他视频，请等待完成或先取消。', videoExportCanceled: '视频导出已取消。',
     storyChatLocked: '已完成三轮对话，请生成羁绊故事。', storyChatAwaitingEnd: '看完故事后将自动开始新的对话。',
     unreadMessages: '{count} 条未读消息',

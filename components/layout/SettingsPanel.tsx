@@ -3,6 +3,7 @@ import {
   GestureResponderEvent,
   KeyboardAvoidingView,
   Linking,
+  Modal,
   Platform,
   Pressable,
   ScrollView,
@@ -23,6 +24,7 @@ import { useI18n } from '@/i18n';
 import { setChatSize, useChatSize } from '@/services/chatSize';
 import { MAX_CHAT_SIZE, MIN_CHAT_SIZE } from '@/storage/types';
 import { makeChatSizeStyles } from '@/components/chat/chatSizeStyles';
+import { setIncludeBondStory, useIncludeBondStory } from '@/services/chatMode';
 
 const clamp = (value: number) => {
   if (!Number.isFinite(value)) return null;
@@ -89,6 +91,8 @@ export default function SettingsPanel({
 }) {
   const { language, t } = useI18n();
   const chatSize = useChatSize();
+  const includeBondStory = useIncludeBondStory();
+  const [pendingChatMode, setPendingChatMode] = useState<boolean | null>(null);
   const chatStyles = makeChatSizeStyles(chatSize);
   const [volume, setVolume] = useState(getBgmVolume);
   const [sfx, setSfx] = useState(getSfxVolume);
@@ -150,6 +154,18 @@ export default function SettingsPanel({
         keyboardDismissMode="on-drag"
       >
       <Text style={styles.title}>{t('settings')}</Text>
+
+      <View style={styles.card}>
+        <Text style={styles.label}>{t('conversationMode')}</Text>
+        <View style={styles.languageRow}>
+          {[false, true].map(value => <TouchableOpacity key={String(value)} accessibilityRole="radio" accessibilityState={{ checked: includeBondStory === value }}
+            style={[styles.languageButton, includeBondStory === value && styles.languageButtonActive]}
+            onPress={() => { if (value !== includeBondStory) setPendingChatMode(value); }}>
+            <Text style={[styles.languageButtonText, includeBondStory === value && styles.languageButtonTextActive]}>{t(value ? 'conversationWithStory' : 'conversationChatOnly')}</Text>
+          </TouchableOpacity>)}
+        </View>
+        <Text style={styles.hint}>{t(includeBondStory ? 'conversationWithStoryHint' : 'conversationChatOnlyHint')}</Text>
+      </View>
 
       <View style={styles.card}>
         <Text style={styles.label}>{t('language')}</Text>
@@ -247,11 +263,22 @@ export default function SettingsPanel({
         {linkError && <Text selectable style={styles.hint}>{t('updateOpenFailed')} {updateResult?.url}</Text>}
       </View>
       </ScrollView>
+      <Modal transparent visible={pendingChatMode !== null} animationType="fade" onRequestClose={() => setPendingChatMode(null)}>
+        <View style={styles.modeOverlay}><View style={styles.card} accessibilityViewIsModal>
+          <Text style={styles.label}>{t('conversationModeConfirm')}</Text>
+          <Text style={styles.hint}>{t('conversationModeResetNotice')}</Text>
+          <View style={styles.languageRow}>
+            <TouchableOpacity accessibilityRole="button" style={styles.guideBtn} onPress={() => setPendingChatMode(null)}><Text style={styles.guideText}>{t('cancel')}</Text></TouchableOpacity>
+            <TouchableOpacity accessibilityRole="button" style={styles.guideBtn} onPress={() => { if (pendingChatMode !== null) setIncludeBondStory(pendingChatMode); setPendingChatMode(null); }}><Text style={styles.guideText}>{t('conversationModeApply')}</Text></TouchableOpacity>
+          </View>
+        </View></View>
+      </Modal>
     </KeyboardAvoidingView>
   );
 }
 
 const styles = StyleSheet.create({
+  modeOverlay: { flex: 1, justifyContent: 'center', alignItems: 'center', padding: 24, backgroundColor: 'rgba(0,0,0,0.45)' },
   keyboardView: {
     flex: 1,
   },

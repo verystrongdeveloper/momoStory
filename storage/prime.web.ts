@@ -33,6 +33,7 @@ export function readInitialSync(): StorageSnapshot | null {
       sfxVolume: DEFAULT_PREFERENCES.sfxVolume,
       chatSound: DEFAULT_PREFERENCES.chatSound,
       greetMode: localStorage.getItem(OLD_GREET) === '1',
+      includeBondStory: DEFAULT_PREFERENCES.includeBondStory,
       termsAccepted: false,
       tutorialSeen: false,
       stories: parseStories(localStorage.getItem(OLD_STORIES)) ?? [],

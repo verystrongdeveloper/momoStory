@@ -6,7 +6,7 @@ import { readInitialSync } from './prime';
 import { AppLanguage, DEFAULT_PREFERENCES, Preferences, StoryRecord, clampChatSize, clampVolume } from './types';
 import { normalizeChatSound, type ChatSoundId } from '../utils/chatPresentation';
 
-type SettingKey = 'language' | 'chatSound' | 'chatSize' | 'bgmVolume' | 'sfxVolume' | 'greetMode' | 'rememberApiKey' | 'termsAccepted' | 'tutorialSeen';
+type SettingKey = 'language' | 'chatSound' | 'chatSize' | 'bgmVolume' | 'sfxVolume' | 'greetMode' | 'includeBondStory' | 'rememberApiKey' | 'termsAccepted' | 'tutorialSeen';
 
 let synced = readInitialSync() != null;
 
@@ -50,7 +50,7 @@ export function getRememberApiKey() {
 export function getSetting(key: 'chatSize' | 'bgmVolume' | 'sfxVolume'): number;
 export function getSetting(key: 'language'): AppLanguage;
 export function getSetting(key: 'chatSound'): ChatSoundId;
-export function getSetting(key: 'greetMode' | 'rememberApiKey' | 'termsAccepted' | 'tutorialSeen'): boolean;
+export function getSetting(key: 'greetMode' | 'includeBondStory' | 'rememberApiKey' | 'termsAccepted' | 'tutorialSeen'): boolean;
 export function getSetting(key: SettingKey): number | boolean | AppLanguage | ChatSoundId {
   return memory[key];
 }
@@ -67,6 +67,7 @@ async function persistAll() {
     sfxVolume: memory.sfxVolume,
     chatSound: memory.chatSound,
     greetMode: memory.greetMode,
+    includeBondStory: memory.includeBondStory,
     rememberApiKey: memory.rememberApiKey,
     termsAccepted: memory.termsAccepted,
     tutorialSeen: memory.tutorialSeen,
@@ -104,7 +105,7 @@ export function saveSetting(key: SettingKey, value: number | boolean | AppLangua
     if (next == null || next === memory[key]) return;
     memory[key] = next;
   } else if (
-    key === 'greetMode' ||
+    key === 'greetMode' || key === 'includeBondStory' ||
     key === 'rememberApiKey' ||
     key === 'termsAccepted' ||
     key === 'tutorialSeen'
@@ -140,6 +141,7 @@ async function pullAll() {
     sfxVolume: prefs.sfxVolume,
     chatSound: prefs.chatSound,
     greetMode: prefs.greetMode,
+    includeBondStory: prefs.includeBondStory,
     rememberApiKey: prefs.rememberApiKey,
     termsAccepted: prefs.termsAccepted,
     tutorialSeen: prefs.tutorialSeen,

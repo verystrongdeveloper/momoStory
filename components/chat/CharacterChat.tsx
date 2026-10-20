@@ -28,6 +28,7 @@ import { makeChatSizeStyles } from './chatSizeStyles';
 import { useI18n } from '@/i18n';
 import { splitChatReply } from '@/utils/splitChatReply';
 import useChatPop from '@/hooks/useChatPop';
+import { getIncludeBondStory, useIncludeBondStory } from '@/services/chatMode';
 
 export type ChatRefreshAction = { onPress: () => void; disabled: boolean };
 
@@ -51,6 +52,7 @@ const CharacterChat: React.FC<Props> = ({ characterName, displayName, characterI
   const visibleName = displayName ?? characterName;
   const router = useRouter();
   const chatSize = useChatSize();
+  const includeBondStory = useIncludeBondStory();
   const sizeStyles = useMemo(() => makeChatSizeStyles(chatSize), [chatSize]);
 
   const apiKey = useSyncExternalStore(subscribeGeminiKey, getGeminiKey, () => '');
@@ -83,10 +85,10 @@ const CharacterChat: React.FC<Props> = ({ characterName, displayName, characterI
   const inputRef = useRef<TextInput>(null);
   const listRef = useRef<FlatList<Chat>>(null);
   const setWaiting = (value: boolean) => session.update({ isWaiting: value });
-  const ensureFreshConversation = async () => {
+  const ensureFreshConversation = async (generation: number) => {
     if (!session.getSnapshot().needsReset) return;
     await geminiClient.reset(characterName);
-    session.update({ needsReset: false });
+    if (session.getSnapshot().generation === generation) session.update({ needsReset: false });
   };
 
   const requestReset = useCallback(() => {
@@ -123,7 +125,8 @@ const CharacterChat: React.FC<Props> = ({ characterName, displayName, characterI
   const removeTyping = (prev: Chat[]) => prev.filter((m) => m.sender !== 'typing');
 
   /** 캐릭터 응답을 타이핑 표시와 함께 문장별로 출력 */
-  const playReply = async (text: string) => {
+  const playReply = async (text: string, generation: number) => {
+    if (session.getSnapshot().generation !== generation) return;
     const sentences = splitChatReply(text);
     if (sentences.length === 0) {
       setMessages(removeTyping);
@@ -135,6 +138,7 @@ const CharacterChat: React.FC<Props> = ({ characterName, displayName, characterI
     for (let i = 1; i < sentences.length; i++) {
       setMessages((prev) => [...prev, { sender: 'typing', text: '···' }]);
       await sleep(TYPING_DELAY_MS);
+      if (session.getSnapshot().generation !== generation) return;
       setMessages((prev) => removeTyping(prev).concat({ sender: 'character', text: sentences[i] }));
     }
   };
@@ -146,19 +150,22 @@ const CharacterChat: React.FC<Props> = ({ characterName, displayName, characterI
     const current = session.getSnapshot();
     if (current.eventReady || current.greetingStarted || current.messages.length || current.isWaiting) return;
     session.update({ greetingStarted: true, isWaiting: true });
+    const generation = current.generation;
     // Finish and store the reply even when the user switches to another screen.
     (async () => {
       setMessages((prev) => [...prev, { sender: 'typing', text: '···', showImage: true }]);
       try {
-        await ensureFreshConversation();
+        await ensureFreshConversation(generation);
+        if (session.getSnapshot().generation !== generation) return;
         const { triggerLine } = await geminiClient.trigger(characterName);
         await sleep(TYPING_DELAY_MS);
-        await playReply(triggerLine ?? '');
+        await playReply(triggerLine ?? '', generation);
       } catch (e) {
+        if (session.getSnapshot().generation !== generation) return;
         console.error('[CharacterChat] trigger 실패:', e);
         setMessages((prev) => removeTyping(prev).concat({ sender: 'character', text: geminiFailureText(e), showImage: true }));
       } finally {
-        setWaiting(false);
+        if (session.getSnapshot().generation === generation) setWaiting(false);
       }
     })();
 
@@ -167,22 +174,25 @@ const CharacterChat: React.FC<Props> = ({ characterName, displayName, characterI
 
   const handleReset = async () => {
     if (savedStory || !hasKey || session.getSnapshot().isWaiting) return;
+    const generation = session.getSnapshot().generation;
     setWaiting(true);
     setResetError(false);
     try {
       await geminiClient.reset(characterName);
+      if (session.getSnapshot().generation !== generation) return;
       session.clear();
       setResetConfirm(false);
     } catch {
-      setResetError(true);
+      if (session.getSnapshot().generation === generation) setResetError(true);
     } finally {
-      setWaiting(false);
+      if (session.getSnapshot().generation === generation) setWaiting(false);
     }
   };
 
   const handleSend = async () => {
     const text = input.trim();
     if (savedStory || !hasKey || !text || session.getSnapshot().isWaiting || session.getSnapshot().eventReady) return;
+    const generation = session.getSnapshot().generation;
 
     setWaiting(true);
     setMessages((prev) => [
@@ -193,12 +203,15 @@ const CharacterChat: React.FC<Props> = ({ characterName, displayName, characterI
     setInput('');
 
     try {
-      await ensureFreshConversation();
+      await ensureFreshConversation(generation);
+      if (session.getSnapshot().generation !== generation) return;
       const { reply, eventReady: ready } = await geminiClient.chat(characterName, text);
-      setEventReady(ready);
-      await playReply(reply);
-      setWaiting(false);
+      if (session.getSnapshot().generation !== generation) return;
+      setEventReady(getIncludeBondStory() && ready);
+      await playReply(reply, generation);
+      if (session.getSnapshot().generation === generation) setWaiting(false);
     } catch (err) {
+      if (session.getSnapshot().generation !== generation) return;
       console.error('[CharacterChat] chat 실패:', err);
       setWaiting(false);
       setMessages((prev) =>
@@ -213,7 +226,7 @@ const CharacterChat: React.FC<Props> = ({ characterName, displayName, characterI
       router.push('/event');
       return;
     }
-    if (session.getSnapshot().isWaiting || !session.getSnapshot().eventReady) return;
+    if (!getIncludeBondStory() || session.getSnapshot().isWaiting || !session.getSnapshot().eventReady) return;
     const openStory = (script: string) => {
       const generation = session.getSnapshot().generation;
       setPendingEvent(script, () => {
@@ -224,18 +237,21 @@ const CharacterChat: React.FC<Props> = ({ characterName, displayName, characterI
     };
     if (session.getSnapshot().storyScript) { openStory(session.getSnapshot().storyScript!); return; }
     setWaiting(true);
+    const generation = session.getSnapshot().generation;
     const chatSnapshot = messages.filter((message): message is SavedChatMessage => message.sender !== 'typing');
     setGlobalLoading?.(true);
     try {
       const { eventScript } = await geminiClient.createEvent(characterName);
+      if (session.getSnapshot().generation !== generation) return;
       saveStory(characterName, eventScript, chatSnapshot);
       session.update({ storyScript: eventScript });
       openStory(eventScript);
     } catch (e) {
+      if (session.getSnapshot().generation !== generation) return;
       console.error('[CharacterChat] 이벤트 생성 실패:', e);
       setMessages((prev) => [...prev, { sender: 'character', text: geminiFailureText(e) }]);
     } finally {
-      setWaiting(false);
+      if (session.getSnapshot().generation === generation) setWaiting(false);
       setGlobalLoading?.(false);
     }
   };
@@ -281,7 +297,7 @@ const CharacterChat: React.FC<Props> = ({ characterName, displayName, characterI
         }}
       />
 
-      {(savedStory ? !replaying : eventReady) && (
+      {(savedStory ? !replaying : includeBondStory && eventReady) && (
         <View style={styles.eventContainer}>
           <Text style={[styles.eventLabel, sizeStyles.eventLabel]}>| {t('bondEvent')} |</Text>
           <TouchableOpacity style={styles.eventButton} onPress={handleEventStart}>

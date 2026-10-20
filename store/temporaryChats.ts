@@ -44,6 +44,11 @@ function createChat() {
 // Keep ongoing conversations alive when a chat screen unmounts. API keys are
 // kept only in memory, and conversations belonging to different keys never mix.
 const chats = new Map<string, Map<string, ReturnType<typeof createChat>>>();
+export function clearAllTemporaryChats() {
+  for (const characters of chats.values()) {
+    for (const chat of characters.values()) chat.clear({ needsReset: true });
+  }
+}
 export function getTemporaryChat(character: string, apiKey: string) {
   let characters = chats.get(apiKey);
   if (!characters) { characters = new Map(); chats.set(apiKey, characters); }

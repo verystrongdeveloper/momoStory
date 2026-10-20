@@ -22,9 +22,24 @@ function current() {
   return geminiTransport() === 'direct' ? directClient : expressTransport;
 }
 
+const pending = new Map<string, Set<Promise<unknown>>>();
+function track<T>(character: string, operation: () => Promise<T>): Promise<T> {
+  const requests = pending.get(character) ?? new Set<Promise<unknown>>();
+  pending.set(character, requests);
+  const request = operation();
+  requests.add(request);
+  const clean = () => { requests.delete(request); if (!requests.size && pending.get(character) === requests) pending.delete(character); };
+  void request.then(clean, clean);
+  return request;
+}
 export const geminiClient = {
-  reset: (character: string) => current().reset(character),
-  trigger: (character: string) => current().trigger(character),
-  chat: (character: string, message: string) => current().chat(character, message),
-  createEvent: (character: string) => current().createEvent(character),
+  reset: (character: string) => {
+    const transport = current();
+    const previous = [...pending.get(character) ?? []];
+    // Drain old replies before resetting AI memory so they cannot restore an old session.
+    return track(character, async () => { await Promise.allSettled(previous); return transport.reset(character); });
+  },
+  trigger: (character: string) => track(character, () => current().trigger(character)),
+  chat: (character: string, message: string) => track(character, () => current().chat(character, message)),
+  createEvent: (character: string) => track(character, () => current().createEvent(character)),
 };

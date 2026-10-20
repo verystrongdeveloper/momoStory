@@ -8,8 +8,9 @@ const appConfig = require('../app.json');
 global.IS_REACT_ACT_ENVIRONMENT = true;
 const constants = { expoConfig: { version: '9.8.7' } };
 let calls = 0, resolveUpdate, failUpdate = false, opened, checkedVersion;
+let modeChanges = [];
 const rn = { Linking: { openURL: async url => { opened = url; } }, Platform: { OS: 'android' }, StyleSheet: { create: value => value } };
-for (const name of ['KeyboardAvoidingView', 'Pressable', 'ScrollView', 'Text', 'TouchableOpacity', 'View']) rn[name] = name;
+for (const name of ['KeyboardAvoidingView', 'Pressable', 'ScrollView', 'Text', 'TouchableOpacity', 'View', 'Modal']) rn[name] = name;
 const mocks = {
   'react': React, 'react-native': rn, 'expo-constants': constants,
   '../../app.json': appConfig, './GeminiKeyField': 'GeminiKeyField',
@@ -25,6 +26,7 @@ const mocks = {
   '@/services/appLanguage': { APP_LANGUAGES: [] },
   '@/i18n': { useI18n: () => ({ language: 'ko', t: key => key }) },
   '@/services/chatSize': { useChatSize: () => 1 },
+  '@/services/chatMode': { useIncludeBondStory: () => true, setIncludeBondStory: value => modeChanges.push(value) },
   '@/storage/types': { MIN_CHAT_SIZE: 0.7, MAX_CHAT_SIZE: 1.5 },
   '@/components/chat/chatSizeStyles': { makeChatSizeStyles: () => ({ bubble: {} }) },
 };
@@ -52,6 +54,18 @@ new Function('require', 'module', 'exports', code)(id => {
     assert.ok(texts.some(text => text.props.children === 'appVersion'));
     assert.ok(texts.some(text => text.props.children === expected && text.props.selectable));
     const button = key => tree.root.findAllByType('TouchableOpacity').find(node => node.findAllByType('Text').some(text => text.props.children === key));
+    const changesBefore = modeChanges.length;
+    await React.act(async () => button('conversationWithStory').props.onPress());
+    assert.equal(tree.root.findByType('Modal').props.visible, false, 'same mode needs no confirmation');
+    await React.act(async () => button('conversationChatOnly').props.onPress());
+    assert.equal(tree.root.findByType('Modal').props.visible, true);
+    assert.equal(modeChanges.length, changesBefore, 'mode is unchanged until confirmation');
+    await React.act(async () => button('cancel').props.onPress());
+    assert.equal(modeChanges.length, changesBefore, 'cancel keeps all chats');
+    await React.act(async () => button('conversationChatOnly').props.onPress());
+    await React.act(async () => button('conversationModeApply').props.onPress());
+    assert.equal(modeChanges.at(-1), false);
+    assert.equal(tree.root.findByType('Modal').props.visible, false);
     const previous = calls;
     await React.act(async () => { button('checkUpdate').props.onPress(); button('checkUpdate').props.onPress(); });
     assert.equal(calls, previous + 1);

@@ -164,6 +164,18 @@
       "hina_unamused.jpg",
       "hina_upset.jpg",
       "hina_wink.jpg"
+    ],
+    "마리": [
+      "mari_angry.png",
+      "mari_default.png",
+      "mari_embarrassed.png",
+      "mari_flustered.png",
+      "mari_happy.png",
+      "mari_peaceful.png",
+      "mari_smile.png",
+      "mari_teary.png",
+      "mari_unamused.png",
+      "mari_worried.png"
     ]
   }
 }

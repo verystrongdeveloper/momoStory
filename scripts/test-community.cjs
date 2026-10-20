@@ -21,7 +21,8 @@ const sample = { clientId: 'one', title: 'Test', character: '호시노', script:
 const invalid = (changes, code) => assert.throws(() => validatePublicStory({ ...sample, ...changes }, assets), error => error.code === code);
 (async () => {
   assert.deepEqual(validatePublicStory({ ...sample, apiKey: 'must-not-upload', author: 'forged', preferences: {} }, assets), sample);
-  for (const speaker of ['호시노', 'Hoshino', 'ホシノ', '星野', 'Hina', 'ヒナ', '日奈']) validatePublicStory({ ...sample, script: `타이틀 : Test\n${speaker} : hi\nendEvent` }, assets);
+  assert.equal(validatePublicStory({ ...sample, character: '마리', script: 'title : Test\n마리 : 안녕하세요, 선생님.\nendEvent' }, assets).character, '마리');
+  for (const speaker of ['호시노', 'Hoshino', 'ホシノ', '星野', 'Hina', 'ヒナ', '日奈', '마리', 'Mari', 'マリー', '玛丽']) validatePublicStory({ ...sample, script: `타이틀 : Test\n${speaker} : hi\nendEvent` }, assets);
   for (const animation of ['shakeX', 'shakeY', 'slideX', 'slideY']) validatePublicStory({ ...sample, script: `title : Test\nanimation : ${animation}\n호시노 : hi\nendEvent` }, assets);
   validatePublicStory({ ...sample, script: 'title : Test\nbg : BG_AbydosCouncilRoom.jpg\n[music : Aira.mp3]\n호시노 : hi\nendEvent' }, assets);
   for (const row of [
@@ -110,8 +111,11 @@ const invalid = (changes, code) => assert.throws(() => validatePublicStory({ ...
     await db.exec(fs.readFileSync(path.join(root, 'supabase/migrations/202610180001_community.sql'), 'utf8'));
     await db.exec(fs.readFileSync(path.join(root, 'supabase/migrations/202610180002_community_rankings.sql'), 'utf8'));
     await db.exec(fs.readFileSync(path.join(root, 'supabase/migrations/202610190001_community_comment_counts.sql'), 'utf8'));
+    await db.exec(fs.readFileSync(path.join(root, 'supabase/migrations/202610200001_add_mari.sql'), 'utf8'));
     const actor = '11111111-1111-4111-8111-111111111111', other = '22222222-2222-4222-8222-222222222222';
     await db.query('insert into auth.users values($1),($2)', [actor, other]);
+    await db.query("insert into public.community_posts(author, client_id, title, character, script) values($1, 'mari-migration-check', 'Mari', '마리', 'test')", [actor]);
+    await db.query("delete from public.community_posts where client_id = 'mari-migration-check'");
     const rpc = async (action, data = {}, user = actor) => (action === 'list'
       ? await db.query('select public.community_list($1::uuid, $2::jsonb) as result', [user, JSON.stringify(data)])
       : await db.query('select public.community_api($1::uuid, $2::text, $3::jsonb) as result', [user, action, JSON.stringify(data)])).rows[0].result;

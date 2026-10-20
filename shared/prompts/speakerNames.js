@@ -1,6 +1,7 @@
 const NAMES = {
   호시노: { ko: '호시노', en: 'Hoshino', ja: 'ホシノ', zh: '星野' },
   히나: { ko: '히나', en: 'Hina', ja: 'ヒナ', zh: '日奈' },
+  마리: { ko: '마리', en: 'Mari', ja: 'マリー', zh: '玛丽' },
 };
 const AFFILIATIONS = {
   '아비도스 고등학교': { en: 'Abydos High School', ja: 'アビドス高等学校', zh: '阿拜多斯高中' },
@@ -10,6 +11,9 @@ const AFFILIATIONS = {
   선도부장: { en: 'Head Prefect', ja: '風紀委員長', zh: '风纪委员长' },
   아비도스: { en: 'Abydos', ja: 'アビドス', zh: '阿拜多斯' },
   게헨나: { en: 'Gehenna', ja: 'ゲヘナ', zh: '格黑娜' },
+  '트리니티 종합학원': { en: 'Trinity General School', ja: 'トリニティ総合学園', zh: '圣三一综合学园' },
+  시스터후드: { en: 'Sisterhood', ja: 'シスターフッド', zh: '修女会' },
+  트리니티: { en: 'Trinity', ja: 'トリニティ', zh: '圣三一' },
 };
 function canonicalCharacterName(name) {
   const text = name.trim();

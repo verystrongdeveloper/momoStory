@@ -20,6 +20,7 @@ const CATEGORIES: { id: Category; label: 'background' | 'emotion' | 'music' | 's
 const EMOTION_GROUPS: { label: string; prefixes: string[] }[] = [
   { label: '호시노', prefixes: ['hoshino_'] },
   { label: '히나', prefixes: ['hina_'] },
+  { label: '마리', prefixes: ['mari_'] },
   { label: '시로코', prefixes: ['shiroko_'] },
   { label: '세리카', prefixes: ['serika_'] },
   { label: '노노미', prefixes: ['nonomi_'] },

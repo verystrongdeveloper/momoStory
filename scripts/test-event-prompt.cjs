@@ -22,7 +22,7 @@ assert.ok(resources.공통.expression.includes('Headpat.png'));
 assert.ok(!resources.공통.expression.includes('Headpat.webp'));
 assert.ok(resources.공통.sound.includes('SE_Crow_04.wav'));
 const parse = loadTs('utils/parseEventScript.ts', () => { throw new Error('Unexpected dependency'); }).default;
-for (const name of ['호시노', '히나']) {
+for (const name of ['호시노', '히나', '마리']) {
   const prompt = buildEventPromptPro(name, [{ user: '안녕', ai: '왔어?' }], [{ name, emotions: resources[name].emotions }], '최근 대화에서 이어진 일상');
   for (const animation of ['shakeX', 'shakeY', 'slideX', 'slideY']) {
     assert.ok(prompt.includes(`- ${animation}:`));

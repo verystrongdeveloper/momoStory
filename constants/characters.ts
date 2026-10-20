@@ -25,6 +25,13 @@ export const CHARACTERS: Character[] = [
     displayStatus: { ko: '', en: '', ja: '', zh: '' },
     image: require('../assets/images/hina.jpg'),
   },
+  {
+    name: '마리',
+    status: '',
+    displayName: { ko: '마리', en: 'Mari', ja: 'マリー', zh: '玛丽' },
+    displayStatus: { ko: '', en: '', ja: '', zh: '' },
+    image: require('../assets/images/mari/mari_default.png'),
+  },
 ];
 
 const byName = new Map(CHARACTERS.map((c) => [c.name, c]));

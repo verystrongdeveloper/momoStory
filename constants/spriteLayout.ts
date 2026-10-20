@@ -11,6 +11,7 @@ const ASPECT_RULES: Array<[RegExp, number]> = [
   [/^hoshino_swimsuit_/, 800 / 1002],
   [/^hoshino_/, 373 / 668],
   [/^hina_/, 572 / 1024],
+  [/^mari_/, 572 / 1024],
   [/^aris_/, 800 / 904],
   [/^ako_/, 320 / 957],
   [/^ibuki_/, 798 / 1280],

@@ -107,6 +107,17 @@ export const emotionMap: Record<string, any> = {
   hina_unamused: require('../assets/images/hina/hina_unamused.jpg'),
   hina_upset: require('../assets/images/hina/hina_upset.jpg'),
   hina_wink: require('../assets/images/hina/hina_wink.jpg'),
+
+  mari_angry: require('../assets/images/mari/mari_angry.png'),
+  mari_default: require('../assets/images/mari/mari_default.png'),
+  mari_embarrassed: require('../assets/images/mari/mari_embarrassed.png'),
+  mari_flustered: require('../assets/images/mari/mari_flustered.png'),
+  mari_happy: require('../assets/images/mari/mari_happy.png'),
+  mari_peaceful: require('../assets/images/mari/mari_peaceful.png'),
+  mari_smile: require('../assets/images/mari/mari_smile.png'),
+  mari_teary: require('../assets/images/mari/mari_teary.png'),
+  mari_unamused: require('../assets/images/mari/mari_unamused.png'),
+  mari_worried: require('../assets/images/mari/mari_worried.png'),
 } as const;
 
 /* BGM */

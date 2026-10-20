@@ -28,7 +28,7 @@ MomoStory offers one-on-one conversations shaped by each character's personality
 
 | Feature | Description |
 | --- | --- |
-| 💬 Character chat | Persona-based conversations with supported characters such as Hoshino and Hina. |
+| 💬 Character chat | Persona-based conversations with supported characters such as Hoshino, Hina, and Mari. |
 | 🎬 Relationship stories | Generate and play scenes with dialogue choices based on your conversations. |
 | 🎵 Multimedia effects | Character expressions, backgrounds, music, and sound effects. |
 | 📚 Library | Save chats and stories, search by title or content, edit scripts, and create new ones. Saved chats play back message by message in read-only mode. |
@@ -104,7 +104,7 @@ src-tauri/           Windows desktop package
 
 ## Supported characters
 
-The characters currently selectable in the chat screen are **Hoshino and Hina**.
+The characters currently selectable in the chat screen are **Hoshino, Hina, and Mari**.
 
 ## Disclaimer and rights
 

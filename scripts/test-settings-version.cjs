@@ -9,12 +9,13 @@ global.IS_REACT_ACT_ENVIRONMENT = true;
 const constants = { expoConfig: { version: '9.8.7' } };
 let calls = 0, resolveUpdate, failUpdate = false, opened, checkedVersion;
 let modeChanges = [];
-const rn = { Linking: { openURL: async url => { opened = url; } }, Platform: { OS: 'android' }, StyleSheet: { create: value => value } };
+const rn = { Platform: { OS: 'android' }, StyleSheet: { create: value => value } };
 for (const name of ['KeyboardAvoidingView', 'Pressable', 'ScrollView', 'Text', 'TouchableOpacity', 'View', 'Modal']) rn[name] = name;
 const mocks = {
   'react': React, 'react-native': rn, 'expo-constants': constants,
   '../../app.json': appConfig, './GeminiKeyField': 'GeminiKeyField',
   './ChatSoundPicker': 'ChatSoundPicker',
+  '@/platform/openExternalUrl': { openExternalUrl: async url => { opened = url; } },
   '@/services/appUpdate': { checkAppUpdate: async (version) => {
     checkedVersion = version;
     calls++;

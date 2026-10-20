@@ -1,10 +1,11 @@
 import React, { useEffect, useRef, useState, useSyncExternalStore } from 'react';
-import { Linking, Modal, Platform, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import { Modal, Platform, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import Constants from 'expo-constants';
 import appConfig from '../../app.json';
 import { useI18n } from '@/i18n';
 import { getSetting, isStorageSynced, subscribeStorage } from '@/storage';
 import { checkAppUpdate, type UpdateResult } from '@/services/appUpdate';
+import { openExternalUrl } from '@/platform/openExternalUrl';
 
 const onboardingComplete = () => isStorageSynced() && getSetting('termsAccepted') && getSetting('tutorialSeen');
 
@@ -38,7 +39,7 @@ export default function StartupUpdatePrompt() {
     setOpening(true);
     setLinkError(false);
     try {
-      await Linking.openURL(release.url);
+      await openExternalUrl(release.url);
       setRelease(null);
     } catch {
       setLinkError(true);

@@ -2,5 +2,13 @@
   "identifier": "default",
   "description": "MomoStory window",
   "windows": ["main"],
-  "permissions": ["core:default", "dialog:allow-save", "fs:allow-write-file"]
+  "permissions": [
+    "core:default",
+    "dialog:allow-save",
+    "fs:allow-write-file",
+    {
+      "identifier": "opener:allow-open-url",
+      "allow": [{ "url": "https://github.com/verystrongdeveloper/momoStory/releases/*" }]
+    }
+  ]
 }

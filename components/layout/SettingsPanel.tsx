@@ -2,7 +2,6 @@ import React, { useEffect, useRef, useState } from 'react';
 import {
   GestureResponderEvent,
   KeyboardAvoidingView,
-  Linking,
   Modal,
   Platform,
   Pressable,
@@ -17,6 +16,7 @@ import ChatSoundPicker from './ChatSoundPicker';
 import Constants from 'expo-constants';
 import appConfig from '../../app.json';
 import { checkAppUpdate, type UpdateResult } from '@/services/appUpdate';
+import { openExternalUrl } from '@/platform/openExternalUrl';
 import { getBgmVolume, setBgmVolume, subscribeBgmVolume } from '@/services/bgmVolume';
 import { getSfxVolume, setSfxVolume, subscribeSfxVolume } from '@/services/sfxVolume';
 import { APP_LANGUAGES, setAppLanguage } from '@/services/appLanguage';
@@ -128,7 +128,7 @@ export default function SettingsPanel({
   const openUpdate = async () => {
     if (!updateResult?.available) return;
     setLinkError(false);
-    try { await Linking.openURL(updateResult.url); }
+    try { await openExternalUrl(updateResult.url); }
     catch { setLinkError(true); }
   };
 

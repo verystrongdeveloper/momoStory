@@ -15,8 +15,7 @@ function load(file, mocks = {}) {
 }
 (async () => {
   const types = load('storage/types.ts');
-  assert.equal(types.parsePreferences(null).includeBondStory, true);
-  assert.equal(types.parsePreferences('{"greetMode":true}').includeBondStory, true, 'existing installs retain story mode');
+  assert.equal('includeBondStory' in types.parsePreferences('{"greetMode":true,"includeBondStory":false}'), false, 'legacy mode setting is ignored');
   let raw = JSON.stringify({ ...types.DEFAULT_PREFERENCES, includeBondStory: false });
   const prefsMocks = {
     './types': types,
@@ -25,8 +24,8 @@ function load(file, mocks = {}) {
   global.localStorage = { getItem: () => raw, setItem: (_key, value) => { raw = value; } };
   for (const file of ['storage/preferencesStorage.ts', 'storage/preferencesStorage.web.ts']) {
     const preferences = load(file, prefsMocks);
-    await preferences.savePreferences({ ...types.DEFAULT_PREFERENCES, includeBondStory: false });
-    assert.equal((await preferences.loadPreferences()).includeBondStory, false, `${file}: restart preserves chat-only mode`);
+    await preferences.savePreferences({ ...types.DEFAULT_PREFERENCES });
+    assert.equal('includeBondStory' in await preferences.loadPreferences(), false, `${file}: no global room preference remains`);
   }
   const mocks = {
     './types': types,
@@ -37,10 +36,10 @@ function load(file, mocks = {}) {
   };
   const storage = load('storage/index.ts', mocks);
   await storage.hydrateStorage();
-  assert.equal(storage.getSetting('includeBondStory'), false);
-  storage.saveSetting('includeBondStory', true);
+  assert.equal(storage.getSetting('greetMode'), false);
+  storage.saveSetting('greetMode', true);
   await new Promise(resolve => setImmediate(resolve));
-  assert.equal(types.parsePreferences(raw).includeBondStory, true, 'settings persistence includes conversation mode');
+  assert.equal(types.parsePreferences(raw).greetMode, true, 'other preferences still persist');
 
   let resolveReply, rejectReply, resets = [];
   const transport = {
@@ -66,5 +65,10 @@ function load(file, mocks = {}) {
   rejectReply(new Error('offline'));
   await caughtFailure; await afterFailure;
   assert.equal(resets.length, 3, 'failed old requests do not prevent reset');
-  console.log('PASS conversation mode defaults, native/web persistence, storage hydration, and AI reset ordering after late or failed replies');
+  const chatOnlyReply = geminiClient.chat('Hoshino', 'keep general chat', 'chat');
+  await geminiClient.reset('Hoshino', 'bond');
+  assert.equal(resets.length, 4, 'bond reset does not wait for another room');
+  resolveReply({ reply: 'general chat', eventReady: false });
+  await chatOnlyReply;
+  console.log('PASS legacy mode ignored, preferences preserved, AI reset ordering and independent room requests');
 })().catch(error => { console.error(error); process.exitCode = 1; });

@@ -14,6 +14,7 @@ import { avatarOf, CHARACTERS, Character, displayCharacterName } from '@/constan
 import type { SavedStory } from '@/store/storyLibrary';
 import { useLayout } from '@/hooks/useLayout';
 import { useI18n } from '@/i18n';
+import type { ChatRoom } from '@/shared/chatRoom';
 
 /** characters: 1:1 캐릭터 목록  |  library: 저장된 스토리  |  settings: 설정 */
 type ListPanel = 'characters' | 'library' | 'community' | 'settings';
@@ -23,20 +24,22 @@ const StoryContainer: React.FC = () => {
   const { isCompact } = useLayout();
   const [listPanel, setListPanel] = useState<ListPanel>('characters');
   const [selectedCharacter, setSelectedCharacter] = useState<Character | null>(null);
+  const [pendingCharacter, setPendingCharacter] = useState<Character | null>(null);
+  const [room, setRoom] = useState<ChatRoom>('chat');
   const [savedStory, setSavedStory] = useState<SavedStory | null>(null);
   const [globalLoading, setGlobalLoading] = useState(false);
   const [guide, setGuide] = useState<GuideMode | null>(null);
   const [chatRefresh, setChatRefresh] = useState<ChatRefreshAction | null>(null);
 
   const hasDetail = selectedCharacter !== null;
-  const detailTitle = selectedCharacter?.displayName[language];
+  const detailTitle = selectedCharacter ? `${selectedCharacter.displayName[language]} · ${t(room === 'chat' ? 'conversationChatOnly' : 'conversationWithStory')}` : undefined;
 
   const closeDetail = () => {
     setSelectedCharacter(null);
   };
 
   const openCharacter = (char: Character) => {
-    setSelectedCharacter(char);
+    setPendingCharacter(char);
   };
 
   const sidebar = (
@@ -110,8 +113,9 @@ const StoryContainer: React.FC = () => {
     <View style={styles.detail}>
       {selectedCharacter && (
         <CharacterChat
-          key={selectedCharacter.name}
+          key={`${selectedCharacter.name}:${room}`}
           characterName={selectedCharacter.name}
+          room={room}
           displayName={selectedCharacter.displayName[language]}
           characterImage={selectedCharacter.image}
           setGlobalLoading={setGlobalLoading}
@@ -129,7 +133,7 @@ const StoryContainer: React.FC = () => {
   return (
     <View style={styles.container}>
       <StoryHeader
-        title={libraryOpen && savedStory ? displayCharacterName(savedStory.character, language) : isCompact ? detailTitle : undefined}
+        title={libraryOpen && savedStory ? displayCharacterName(savedStory.character, language) : !fullPane ? detailTitle : undefined}
         onBack={libraryOpen && savedStory ? () => setSavedStory(null) : isCompact && hasDetail ? closeDetail : undefined}
         rightAction={isCompact && !fullPane && hasDetail && chatRefresh ? (
           <TouchableOpacity accessibilityRole="button" accessibilityLabel={t('refreshChat')} accessibilityState={{ disabled: chatRefresh.disabled }} disabled={chatRefresh.disabled} onPress={chatRefresh.onPress} style={[styles.headerRefresh, chatRefresh.disabled && styles.headerRefreshDisabled]}>
@@ -153,6 +157,25 @@ const StoryContainer: React.FC = () => {
 
       <AppGuide manual={guide} onManualClose={() => setGuide(null)} />
 
+      {pendingCharacter && <Modal transparent visible animationType="fade" onRequestClose={() => setPendingCharacter(null)}>
+        <View style={styles.roomOverlay}>
+          <View style={styles.roomCard} accessibilityViewIsModal>
+            <Text style={styles.roomTitle}>{t('chooseChatRoom', { name: pendingCharacter.displayName[language] })}</Text>
+            {(['chat', 'bond'] as const).map(value => (
+              <TouchableOpacity key={value} accessibilityRole="button" style={styles.roomOption} onPress={() => {
+                setSelectedCharacter(pendingCharacter);
+                setRoom(value);
+                setPendingCharacter(null);
+              }}>
+                <Text style={styles.roomOptionTitle}>{t(value === 'chat' ? 'conversationChatOnly' : 'conversationWithStory')}</Text>
+                <Text style={styles.roomHint}>{t(value === 'chat' ? 'conversationChatOnlyHint' : 'conversationWithStoryHint')}</Text>
+              </TouchableOpacity>
+            ))}
+            <TouchableOpacity accessibilityRole="button" style={styles.roomCancel} onPress={() => setPendingCharacter(null)}><Text style={styles.roomHint}>{t('cancel')}</Text></TouchableOpacity>
+          </View>
+        </View>
+      </Modal>}
+
       <Modal
         visible={globalLoading}
         transparent
@@ -173,6 +196,13 @@ const StoryContainer: React.FC = () => {
 export default StoryContainer;
 
 const styles = StyleSheet.create({
+  roomOverlay: { flex: 1, justifyContent: 'center', alignItems: 'center', padding: 24, backgroundColor: 'rgba(36,32,40,0.45)' },
+  roomCard: { width: '100%', maxWidth: 420, padding: 24, gap: 14, borderRadius: 18, backgroundColor: '#fff' },
+  roomTitle: { fontSize: 20, fontWeight: '700', color: '#243044', marginBottom: 4 },
+  roomOption: { padding: 18, gap: 8, borderRadius: 12, backgroundColor: '#f9edf1', borderWidth: 1, borderColor: '#f1dce4' },
+  roomOptionTitle: { fontSize: 17, fontWeight: '700', color: '#704759' },
+  roomHint: { fontSize: 14, lineHeight: 21, color: '#758297' },
+  roomCancel: { alignSelf: 'flex-end', padding: 10 },
   headerRefresh: { width: 44, height: 44, alignItems: 'center', justifyContent: 'center' },
   headerRefreshDisabled: { opacity: 0.4 },
   container: {

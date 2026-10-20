@@ -5,6 +5,7 @@ import { getAvailableCharacters, hasStoryAssets, keepAssetSpeakers } from '../..
 import { getGeminiKey } from '@/services/geminiKey';
 import { getAppLanguage } from '@/services/appLanguage';
 import { dialogKey, resetChatSessions, sendWithFallback, userApiKey } from './rest';
+import type { ChatRoom } from '@/shared/chatRoom';
 
 type DialogPair = { user: string; ai: string };
 
@@ -31,27 +32,26 @@ function pushLog(character: string, apiKey: string, pair: DialogPair): boolean {
 }
 
 export const directClient = {
-  async reset(character: string) {
+  async reset(character: string, room: ChatRoom = 'bond') {
     const apiKey = readKey();
     if (!character) throw new Error('character 누락');
-    resetChatSessions(character, apiKey);
-    chatLogs.delete(dialogKey(character, apiKey));
+    resetChatSessions(character, apiKey, room);
+    chatLogs.delete(dialogKey(character, apiKey, room));
   },
-  async trigger(character: string) {
+  async trigger(character: string, room: ChatRoom = 'bond') {
     const language = getAppLanguage();
     const apiKey = readKey();
     if (!character) throw new Error('character 누락');
-    const triggerLine = await sendWithFallback(character, '', TRIGGER_MESSAGE, undefined, apiKey, language);
-    pushLog(character, apiKey, { user: '(트리거)', ai: triggerLine });
+    const triggerLine = await sendWithFallback(character, '', TRIGGER_MESSAGE, undefined, apiKey, language, room);
     return { triggerLine };
   },
 
-  async chat(character: string, message: string) {
+  async chat(character: string, message: string, room: ChatRoom = 'bond') {
     const language = getAppLanguage();
     const apiKey = readKey();
     if (!character || !message) throw new Error('character 또는 message 누락');
-    const reply = await sendWithFallback(character, '', message, undefined, apiKey, language);
-    const eventReady = pushLog(character, apiKey, { user: message, ai: reply });
+    const reply = await sendWithFallback(character, '', message, undefined, apiKey, language, room);
+    const eventReady = room === 'bond' && pushLog(character, apiKey, { user: message, ai: reply });
     return { reply, eventReady };
   },
 

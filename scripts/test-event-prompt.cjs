@@ -4,6 +4,7 @@ const path = require('node:path');
 const ts = require('typescript');
 const { buildEventPromptPro } = require('../shared/prompts/promptBuilderPro');
 const { resources } = require('../shared/prompts/resources');
+const { personas, buildChatPrompt } = require('../shared/prompts');
 const { buildSelectionPrompt } = require('../shared/prompts/selectionPromptBuilder');
 const { withGenerationLanguage } = require('../shared/prompts/generationLanguage');
 function loadTs(file, mockRequire) {
@@ -24,6 +25,8 @@ assert.ok(resources.공통.sound.includes('SE_Crow_04.wav'));
 const parse = loadTs('utils/parseEventScript.ts', () => { throw new Error('Unexpected dependency'); }).default;
 for (const name of ['호시노', '히나', '마리']) {
   const prompt = buildEventPromptPro(name, [{ user: '안녕', ai: '왔어?' }], [{ name, emotions: resources[name].emotions }], '최근 대화에서 이어진 일상');
+  assert.ok(prompt.includes(personas[name]), 'story generation must receive the shared character persona');
+  assert.ok(buildChatPrompt(name).includes(personas[name]), 'chat generation must receive the same persona');
   for (const animation of ['shakeX', 'shakeY', 'slideX', 'slideY']) {
     assert.ok(prompt.includes(`- ${animation}:`));
     const sample = `${name} : 반응 [emotion : ${resources[name].emotions[0]}, animation : ${animation}, expression : sweat.png, sound : SE_Crow_04.wav]`;

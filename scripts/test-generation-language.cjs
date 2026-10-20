@@ -92,13 +92,14 @@ function output(instruction) {
     assert.equal((await direct.trigger('호시노')).triggerLine, content[code]);
     await direct.chat('호시노', '한국어 입력이어도 설정 언어로');
     assert.equal((await direct.chat('호시노', 'continue')).reply, content[code]);
+    await direct.chat('호시노', 'third pair');
     const script = (await direct.createEvent('호시노')).eventScript;
     assert.ok(script.includes(`${code === 'ko' ? '타이틀' : 'title'} : ${content[code]}`));
     assert.ok(script.includes(`${names[code]} : ${content[code]}`));
     assert.ok(script.includes('emotion : hoshino_smile.png'));
     assert.ok(script.includes('endEvent'));
   }
-  assert.ok(requests[5].contents.length > 1, 'Language change retains direct conversation history');
+  assert.ok(requests[6].contents.length > 1, 'Language change retains direct conversation history');
   await direct.chat('히나', 'keep other character');
   await rest.sendWithFallback('호시노', '', 'keep other key', undefined, 'other-key', 'en');
   await direct.reset('호시노');
@@ -121,6 +122,14 @@ function output(instruction) {
   assert.equal(await retryRest.sendWithFallback('호시노', '', 'hello', undefined, 'test-only-key', 'ja'), content.ja);
   assert.equal(fallbackRequests.length, 2);
   assert.ok(fallbackRequests.every(request => request.systemInstruction.parts[0].text.includes('OUTPUT LANGUAGE: Japanese.')));
+  await direct.trigger('room-test', 'chat');
+  for (let i = 0; i < 5; i++) assert.equal((await direct.chat('room-test', `general ${i}`, 'chat')).eventReady, false);
+  await direct.trigger('room-test', 'bond');
+  assert.equal(requests.at(-1).contents.length, 1, 'direct rooms have separate AI histories');
+  for (let i = 0; i < 3; i++) assert.equal((await direct.chat('room-test', `bond ${i}`, 'bond')).eventReady, i === 2, 'greeting does not replace a user dialogue pair');
+  await direct.reset('room-test', 'bond');
+  await direct.chat('room-test', 'continue general', 'chat');
+  assert.equal(requests.at(-1).contents.length, 13, 'bond reset preserves general chat history');
   // One generation keeps its initial language even if settings change during selection.
   const snapshots = [];
   selected = 'en';
@@ -133,8 +142,8 @@ function output(instruction) {
       return session === 'event' ? '타이틀 : Hello\n호시노 : Hello\nendEvent' : 'Hello';
     } },
   }).directClient;
-  await snapshot.trigger('호시노'); await snapshot.chat('호시노', 'a'); await snapshot.chat('호시노', 'b'); await snapshot.createEvent('호시노');
-  assert.deepEqual(snapshots, ['en', 'en', 'en', 'en', 'en']);
+  await snapshot.trigger('호시노'); await snapshot.chat('호시노', 'a'); await snapshot.chat('호시노', 'b'); await snapshot.chat('호시노', 'c'); await snapshot.createEvent('호시노');
+  assert.deepEqual(snapshots, ['en', 'en', 'en', 'en', 'en', 'en']);
 
   const transportCalls = [];
   const transport = load('services/geminiClient/expressTransport.ts', {
@@ -183,6 +192,7 @@ function output(instruction) {
     assert.equal((await invoke(trigger.sendTrigger, code)).triggerLine, content[code]);
     await invoke(chat.sendChat, code, { message: 'one' });
     assert.equal((await invoke(chat.sendChat, code, { message: 'two' })).reply, content[code]);
+    await invoke(chat.sendChat, code, { message: 'three' });
     const result = await invoke(event.createEvent, code);
     assert.ok(result.eventScript.includes(`${names[code]} : ${content[code]}`));
     assert.ok(result.eventScript.includes(`${code === 'ko' ? '타이틀' : 'title'} : ${content[code]}`));
@@ -198,5 +208,15 @@ function output(instruction) {
   assert.equal(chat.getDialogHistory('호시노', 'other-key').length, 1);
   assert.equal((await invoke(chat.sendChat, 'en', { message: 'fresh start' })).eventReady, false);
   assert.equal(models.at(-1).history.length, 0, 'Express reset clears cached SDK sessions');
+  await invoke(trigger.sendTrigger, 'en', { character: 'room-test', room: 'chat' });
+  for (let i = 0; i < 5; i++) assert.equal((await invoke(chat.sendChat, 'en', { character: 'room-test', room: 'chat', message: `general ${i}` })).eventReady, false);
+  await invoke(trigger.sendTrigger, 'en', { character: 'room-test', room: 'bond' });
+  assert.equal(models.at(-1).history.length, 0, 'Express rooms have separate AI histories');
+  for (let i = 0; i < 3; i++) assert.equal((await invoke(chat.sendChat, 'en', { character: 'room-test', room: 'bond', message: `bond ${i}` })).eventReady, i === 2);
+  await invoke(chat.resetChat, 'en', { character: 'room-test', room: 'bond' });
+  const modelCount = models.length;
+  await invoke(chat.sendChat, 'en', { character: 'room-test', room: 'chat', message: 'continue general' });
+  assert.equal(models.length, modelCount, 'bond reset preserves the general SDK session');
+  assert.deepEqual(chat.getDialogHistory('room-test', 'test-only-key'), []);
   console.log('PASS ko/en/ja/zh: direct + Express greeting/chat/selection/story, mid-generation snapshot, language switching with history, invalid default, canonical script/asset preservation (mocked Gemini, no paid API calls)');
 })().catch(error => { console.error(error); process.exitCode = 1; });

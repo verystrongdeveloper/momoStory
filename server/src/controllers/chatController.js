@@ -2,8 +2,8 @@
 const chatLogs = new Map(); // 키+캐릭터별 최근 3쌍
 const { getChat, apiKeyFrom, keyId, resetChatSessions } = require('../services/geminiService');
 
-function historyKey(character, apiKey) {
-  return `${keyId(apiKey)}:${character}`;
+function historyKey(character, apiKey, room = 'bond') {
+  return `${keyId(apiKey)}:${character}:${room}`;
 }
 
 function readKey(req, res) {
@@ -24,6 +24,7 @@ function readKey(req, res) {
  */
 exports.sendChat = async (req, res) => {
   const { character, message } = req.body;
+  const room = req.body.room === 'chat' ? 'chat' : 'bond';
   const apiKey = readKey(req, res);
   if (!apiKey) return;
   if (!character || !message) {
@@ -31,18 +32,18 @@ exports.sendChat = async (req, res) => {
   }
 
   try {
-    const chat   = await getChat(character, undefined, '', undefined, apiKey, req.body.language);
+    const chat   = await getChat(character, undefined, '', undefined, apiKey, req.body.language, room);
     const result = await chat.sendMessage(message);
     const reply  = result.response.text();
 
     // 최근 대화 3쌍 관리 ------------------------------
-    const slot = historyKey(character, apiKey);
+    const slot = historyKey(character, apiKey, room);
     const log = chatLogs.get(slot) || [];
-    log.push({ user: message, ai: reply });
+    if (room === 'bond') log.push({ user: message, ai: reply });
     if (log.length > 3) log.shift();
     chatLogs.set(slot, log);
 
-    const eventReady = log.length >= 3;
+    const eventReady = room === 'bond' && log.length >= 3;
     res.json({ reply, eventReady });
   } catch (err) {
     console.error('[Gemini 오류]', err);
@@ -63,10 +64,11 @@ exports.resetChat = (req, res) => {
   const apiKey = readKey(req, res);
   if (!apiKey) return;
   const { character } = req.body;
+  const room = req.body.room === 'chat' ? 'chat' : 'bond';
   if (typeof character !== 'string' || !character.trim() || character.length > 100) {
     return res.status(400).json({ error: 'character 누락' });
   }
-  resetChatSessions(character, apiKey);
-  chatLogs.delete(historyKey(character, apiKey));
+  resetChatSessions(character, apiKey, room);
+  chatLogs.delete(historyKey(character, apiKey, room));
   res.json({ ok: true });
 };

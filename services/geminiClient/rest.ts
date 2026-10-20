@@ -2,6 +2,7 @@ import { prompts } from '../../shared/prompts';
 import { GEMINI_OFFLINE_MESSAGE, throwIfOffline } from './errors';
 import { withGenerationLanguage } from '../../shared/prompts/generationLanguage';
 import type { AppLanguage } from '@/storage/types';
+import type { ChatRoom } from '@/shared/chatRoom';
 
 const MODEL_FALLBACKS = [
   'gemini-3.7-flash',
@@ -20,8 +21,8 @@ type Session = {
 };
 
 const sessions = new Map<string, Session>();
-export function resetChatSessions(character: string, apiKey: string) {
-  const prefix = `${keyId(apiKey)}:${character}:`;
+export function resetChatSessions(character: string, apiKey: string, room: ChatRoom = 'bond') {
+  const prefix = `${keyId(apiKey)}:${character}:${room}:`;
   for (const key of sessions.keys()) if (key.startsWith(prefix)) sessions.delete(key);
 }
 let activeModel = GEMINI_MODEL;
@@ -40,8 +41,8 @@ function orderFrom(modelName: string): string[] {
   return MODEL_FALLBACKS.slice(index).concat(MODEL_FALLBACKS.slice(0, index));
 }
 
-function sessionFor(character: string, modelName: string, sessionKey: string, apiKey: string): Session {
-  const cacheKey = [keyId(apiKey), character, modelName, sessionKey].filter(Boolean).join(':');
+function sessionFor(character: string, modelName: string, sessionKey: string, apiKey: string, room: ChatRoom): Session {
+  const cacheKey = [keyId(apiKey), character, room, modelName, sessionKey].filter(Boolean).join(':');
   const existing = sessions.get(cacheKey);
   if (existing) return existing;
   const created: Session = { history: [] };
@@ -119,13 +120,14 @@ export async function sendWithFallback(
   systemInstruction: string | undefined,
   apiKey: string,
   language: AppLanguage = 'ko',
+  room: ChatRoom = 'bond',
 ): Promise<string> {
   const order = orderFrom(activeModel);
   const instruction = withGenerationLanguage(systemText(character, systemInstruction), language, sessionKey === 'event' ? 'event' : sessionKey === 'select' ? 'select' : 'chat');
   let lastError: unknown;
 
   for (const modelName of order) {
-    const session = sessionFor(character, modelName, sessionKey, apiKey);
+    const session = sessionFor(character, modelName, sessionKey, apiKey, room);
     try {
       const text = await generate(apiKey, modelName, instruction, session.history, message);
       session.history.push(
@@ -150,6 +152,6 @@ export function userApiKey(raw: string): string {
   return apiKey;
 }
 
-export function dialogKey(character: string, apiKey: string): string {
-  return `${keyId(apiKey)}:${character}`;
+export function dialogKey(character: string, apiKey: string, room: ChatRoom = 'bond'): string {
+  return `${keyId(apiKey)}:${character}:${room}`;
 }

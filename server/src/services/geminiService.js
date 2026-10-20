@@ -48,9 +48,9 @@ function orderFrom(modelName) {
   return MODEL_FALLBACKS.slice(index).concat(MODEL_FALLBACKS.slice(0, index));
 }
 
-async function openChat(character, modelName, sessionKey, systemInstruction, apiKey, language) {
+async function openChat(character, modelName, sessionKey, systemInstruction, apiKey, language, room) {
   const { id, genAI } = clientFor(apiKey);
-  const cacheKey = [id, character, modelName, sessionKey].filter(Boolean).join(':');
+  const cacheKey = [id, character, room, modelName, sessionKey].filter(Boolean).join(':');
   const instruction = withGenerationLanguage(systemInstruction || prompts[character] || `${character}처럼 말해.`, language, sessionKey === 'event' ? 'event' : sessionKey === 'select' ? 'select' : 'chat');
   const existing = sessions.get(cacheKey);
   if (existing?.instruction === instruction) return existing.chat;
@@ -68,13 +68,13 @@ async function openChat(character, modelName, sessionKey, systemInstruction, api
   return chat;
 }
 
-async function sendWithFallback(character, sessionKey, message, systemInstruction, apiKey, language) {
+async function sendWithFallback(character, sessionKey, message, systemInstruction, apiKey, language, room) {
   const order = orderFrom(activeModel);
   let lastError;
 
   for (const modelName of order) {
     try {
-      const chat = await openChat(character, modelName, sessionKey, systemInstruction, apiKey, language);
+      const chat = await openChat(character, modelName, sessionKey, systemInstruction, apiKey, language, room);
       const result = await chat.sendMessage(message);
       if (activeModel !== modelName) {
         console.log(`[MomoStory] 모델 전환: ${activeModel} -> ${modelName}`);
@@ -97,17 +97,17 @@ async function sendWithFallback(character, sessionKey, message, systemInstructio
  * @param {string} [sessionKey] 같은 캐릭터라도 세션을 나눌 때 사용
  * @param {string} [systemInstruction] 있으면 캐릭터 기본 프롬프트 대신 사용
  */
-async function getChat(character, _modelName = GEMINI_MODEL, sessionKey = '', systemInstruction, apiKey, language = 'ko') {
+async function getChat(character, _modelName = GEMINI_MODEL, sessionKey = '', systemInstruction, apiKey, language = 'ko', room = 'bond') {
   const selectedLanguage = normalizeGenerationLanguage(language);
   return {
     sendMessage(message) {
-      return sendWithFallback(character, sessionKey, message, systemInstruction, apiKey, selectedLanguage);
+      return sendWithFallback(character, sessionKey, message, systemInstruction, apiKey, selectedLanguage, room);
     },
   };
 }
 
-function resetChatSessions(character, apiKey) {
-  const prefix = `${keyId(apiKey)}:${character}:`;
+function resetChatSessions(character, apiKey, room = 'bond') {
+  const prefix = `${keyId(apiKey)}:${character}:${room}:`;
   for (const key of sessions.keys()) if (key.startsWith(prefix)) sessions.delete(key);
 }
 

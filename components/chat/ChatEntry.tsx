@@ -19,8 +19,11 @@ const ChatEntry: React.FC<Props> = ({ image, name, characterName, status, select
   const apiKey = useSyncExternalStore(subscribeGeminiKey, getGeminiKey, () => '');
   const session = useMemo(() => getTemporaryChat(characterName, apiKey), [characterName, apiKey]);
   const unreadCount = useSyncExternalStore(session.subscribe, () => session.getSnapshot().unreadCount, () => 0);
+  const chatSession = useMemo(() => getTemporaryChat(characterName, apiKey, 'chat'), [characterName, apiKey]);
+  const chatUnread = useSyncExternalStore(chatSession.subscribe, () => chatSession.getSnapshot().unreadCount, () => 0);
+  const totalUnread = unreadCount + chatUnread;
   return (
-    <TouchableOpacity onPress={onSelect} style={[styles.entry, selected && styles.entrySelected]}>
+    <TouchableOpacity accessibilityRole="button" accessibilityLabel={name} onPress={onSelect} style={[styles.entry, selected && styles.entrySelected]}>
       <CharacterAvatar characterName={characterName} source={image} style={styles.avatar} />
       <View style={styles.texts}>
         <Text style={styles.name}>{name}</Text>
@@ -30,8 +33,8 @@ const ChatEntry: React.FC<Props> = ({ image, name, characterName, status, select
           </Text>
         )}
       </View>
-      {unreadCount > 0 && <View style={styles.unreadBadge}>
-        <Text style={styles.unreadText} accessibilityLabel={t('unreadMessages', { count: unreadCount })}>{unreadCount > 99 ? '99+' : unreadCount}</Text>
+      {totalUnread > 0 && <View style={styles.unreadBadge}>
+        <Text style={styles.unreadText} accessibilityLabel={t('unreadMessages', { count: totalUnread })}>{totalUnread > 99 ? '99+' : totalUnread}</Text>
       </View>}
     </TouchableOpacity>
   );

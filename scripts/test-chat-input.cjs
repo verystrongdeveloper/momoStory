@@ -17,17 +17,6 @@ new Function('module', 'exports', ts.transpileModule(fs.readFileSync(path.join(_
   compilerOptions: { module: ts.ModuleKind.CommonJS, target: ts.ScriptTarget.ES2022 },
 }).outputText)(temporaryModule, temporaryModule.exports);
 const temporaryChats = temporaryModule.exports;
-let includeBondStory = true;
-const modeListeners = new Set();
-const modeModule = { exports: {} };
-new Function('require', 'module', 'exports', ts.transpileModule(fs.readFileSync(path.join(__dirname, '../services/chatMode.ts'), 'utf8'), {
-  compilerOptions: { module: ts.ModuleKind.CommonJS, target: ts.ScriptTarget.ES2022 },
-}).outputText)(id => ({ react: React, '@/store/temporaryChats': temporaryChats, '@/storage': {
-  getSetting: () => includeBondStory,
-  saveSetting: (_key, value) => { includeBondStory = value; modeListeners.forEach(listener => listener()); },
-  subscribeStorage: listener => { modeListeners.add(listener); return () => modeListeners.delete(listener); },
-} })[id], modeModule, modeModule.exports);
-const chatMode = modeModule.exports;
 const eventModule = { exports: {} };
 new Function('module', 'exports', ts.transpileModule(fs.readFileSync(path.join(__dirname, '../store/eventStore.ts'), 'utf8'), {
   compilerOptions: { module: ts.ModuleKind.CommonJS, target: ts.ScriptTarget.ES2022 },
@@ -42,7 +31,6 @@ const mocks = {
   '@/store/eventStore': eventStore, '@/store/storyLibrary': { saveStory(...args) { if (failSave) throw new Error('save failed'); savedStories.push(args); } },
   '@/store/temporaryChats': temporaryChats,
   '@/services/chatSize': { useChatSize: () => 1 }, './chatSizeStyles': { makeChatSizeStyles: () => ({}) },
-  '@/services/chatMode': chatMode,
   '@/components/CharacterAvatar': 'CharacterAvatar',
   '@/i18n': { useI18n: () => ({ t: key => key }) },
   '@/utils/splitChatReply': { splitChatReply: text => text ? text.split('|') : [] },
@@ -279,48 +267,48 @@ process.once('beforeExit', () => { if (!completed) { console.error('FAIL unfinis
   assert.equal(input().props.value, 'keep Hoshino draft');
   await unmount();
 
-  // Chat-only mode stays writable after three pairs, and switching resets every character/key.
+  // Rooms keep separate drafts, replies and readiness; switching never resets either room.
   const otherKey = temporaryChats.getTemporaryChat('other-key-character', 'another-key');
   otherKey.update({ input: 'draft', messages: [{ sender: 'character', text: 'unread' }], storyScript: 'old story', eventReady: true });
-  await React.act(async () => chatMode.setIncludeBondStory(false));
-  for (const session of [untouched, otherKey, temporaryChats.getTemporaryChat('히나', apiKey)]) {
-    assert.deepEqual(session.getSnapshot().messages, []);
-    assert.equal(session.getSnapshot().input, '');
-    assert.equal(session.getSnapshot().eventReady, false);
-    assert.equal(session.getSnapshot().unreadCount, 0);
-    assert.equal(session.getSnapshot().storyScript, null);
-    assert.equal(session.getSnapshot().needsReset, true);
-  }
-  await mount({ characterName: 'continuous-test' });
+  const otherSnapshot = otherKey.getSnapshot();
+  await mount({ characterName: 'continuous-test', room: 'chat' });
   for (let turn = 0; turn < 5; turn++) {
     await type(`turn ${turn}`);
     await React.act(async () => { sending = send().props.onPress(); });
     await React.act(async () => chatCalls.at(-1).resolve({ reply: `reply ${turn}`, eventReady: true }));
     await React.act(async () => sending);
     locked(false);
-    assert.equal(temporaryChats.getTemporaryChat('continuous-test', apiKey).getSnapshot().eventReady, false);
+    assert.equal(temporaryChats.getTemporaryChat('continuous-test', apiKey, 'chat').getSnapshot().eventReady, false);
   }
   assert.equal(tree.root.findByType('FlatList').props.data.length, 10);
-  await type('pending reply before mode change');
+  await type('pending reply before room change');
   await React.act(async () => { sending = send().props.onPress(); });
   const oldRequest = chatCalls.at(-1);
-  await React.act(async () => chatMode.setIncludeBondStory(true));
-  await React.act(async () => oldRequest.resolve({ reply: 'stale reply', eventReady: true }));
+  await unmount();
+  await mount({ characterName: 'continuous-test', room: 'bond' });
+  await React.act(async () => oldRequest.resolve({ reply: 'chat room reply', eventReady: true }));
   await React.act(async () => sending);
-  assert.deepEqual(tree.root.findByType('FlatList').props.data, [], 'late replies cannot restore reset chats');
-  await type('fresh story mode');
-  const previousCalls = chatCalls.length;
+  assert.deepEqual(tree.root.findByType('FlatList').props.data, [], 'background chat reply cannot enter the bond room');
+  await type('fresh bond room');
   await React.act(async () => { sending = send().props.onPress(); });
-  assert.equal(chatCalls.length, previousCalls, 'new mode resets AI memory before chatting');
-  await React.act(async () => resetCalls.at(-1).resolve());
-  await React.act(async () => chatCalls.at(-1).resolve({ reply: 'one|two', eventReady: true }));
+  await React.act(async () => chatCalls.at(-1).resolve({ reply: 'bond reply', eventReady: true }));
+  await React.act(async () => sending);
   locked(true);
-  await React.act(async () => chatMode.setIncludeBondStory(false));
-  await delay(); await React.act(async () => sending);
-  assert.deepEqual(tree.root.findByType('FlatList').props.data, [], 'sentence playback cannot append after mode reset');
-  const generationBeforeNoChange = temporaryChats.getTemporaryChat('continuous-test', apiKey).getSnapshot().generation;
-  chatMode.setIncludeBondStory(false);
-  assert.equal(temporaryChats.getTemporaryChat('continuous-test', apiKey).getSnapshot().generation, generationBeforeNoChange, 'selecting current mode does not reset');
+  await unmount();
+  await mount({ characterName: 'continuous-test', room: 'chat' });
+  locked(false);
+  assert.equal(tree.root.findByType('FlatList').props.data.length, 12, 'reopening chat restores the conversation including its background reply');
+  assert.equal(tree.root.findByType('FlatList').props.data.at(-1).text, 'chat room reply');
+  await type('keep chat draft');
+  const chatSnapshot = temporaryChats.getTemporaryChat('continuous-test', apiKey, 'chat').getSnapshot();
+  await unmount();
+  await mount({ characterName: 'continuous-test', room: 'bond' });
+  locked(true);
+  await React.act(async () => refresh().props.onPress());
+  await React.act(async () => confirmReset().props.onPress());
+  await React.act(async () => resetCalls.at(-1).resolve());
+  assert.deepEqual(temporaryChats.getTemporaryChat('continuous-test', apiKey, 'chat').getSnapshot(), chatSnapshot, 'resetting bond leaves chat untouched');
+  assert.deepEqual(otherKey.getSnapshot(), otherSnapshot);
   await unmount();
 
   const entryModule = { exports: {} };

@@ -1,4 +1,5 @@
 import type { SavedChatMessage } from '@/storage/types';
+import type { ChatRoom } from '@/shared/chatRoom';
 
 export type TemporaryMessage = Omit<SavedChatMessage, 'sender'> & { sender: 'user' | 'character' | 'typing' };
 type TemporaryChat = {
@@ -44,15 +45,11 @@ function createChat() {
 // Keep ongoing conversations alive when a chat screen unmounts. API keys are
 // kept only in memory, and conversations belonging to different keys never mix.
 const chats = new Map<string, Map<string, ReturnType<typeof createChat>>>();
-export function clearAllTemporaryChats() {
-  for (const characters of chats.values()) {
-    for (const chat of characters.values()) chat.clear({ needsReset: true });
-  }
-}
-export function getTemporaryChat(character: string, apiKey: string) {
+export function getTemporaryChat(character: string, apiKey: string, room: ChatRoom = 'bond') {
   let characters = chats.get(apiKey);
   if (!characters) { characters = new Map(); chats.set(apiKey, characters); }
-  let chat = characters.get(character);
-  if (!chat) { chat = createChat(); characters.set(character, chat); }
+  const slot = `${character}:${room}`;
+  let chat = characters.get(slot);
+  if (!chat) { chat = createChat(); characters.set(slot, chat); }
   return chat;
 }

@@ -8,7 +8,6 @@ export type Preferences = {
   sfxVolume: number;
   chatSound: ChatSoundId;
   greetMode: boolean;
-  includeBondStory: boolean;
   rememberApiKey: boolean;
   termsAccepted: boolean;
   tutorialSeen: boolean;
@@ -41,7 +40,6 @@ export const DEFAULT_PREFERENCES: Preferences = {
   sfxVolume: 0.5,
   chatSound: 'pop',
   greetMode: false,
-  includeBondStory: true,
   rememberApiKey: false,
   termsAccepted: false,
   tutorialSeen: false,
@@ -124,7 +122,6 @@ export function parsePreferences(raw: string | null): Preferences {
       sfxVolume: clampVolume(Number(parsed.sfxVolume)) ?? DEFAULT_PREFERENCES.sfxVolume,
       chatSound: normalizeChatSound(parsed.chatSound),
       greetMode: parsed.greetMode === true,
-      includeBondStory: parsed.includeBondStory !== false,
       rememberApiKey: parsed.rememberApiKey === true,
       termsAccepted: parsed.termsAccepted === true,
       tutorialSeen: parsed.tutorialSeen === true,

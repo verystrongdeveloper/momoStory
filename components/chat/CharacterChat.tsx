@@ -28,12 +28,13 @@ import { useI18n } from '@/i18n';
 import CharacterAvatar from '@/components/CharacterAvatar';
 import { splitChatReply } from '@/utils/splitChatReply';
 import useChatPop from '@/hooks/useChatPop';
-import { getIncludeBondStory, useIncludeBondStory } from '@/services/chatMode';
+import type { ChatRoom } from '@/shared/chatRoom';
 
 export type ChatRefreshAction = { onPress: () => void; disabled: boolean };
 
 interface Props {
   characterName: string;
+  room?: ChatRoom;
   displayName?: string;
   characterImage?: ImageSourcePropType;
   setGlobalLoading?: (value: boolean) => void;
@@ -47,17 +48,17 @@ const TYPING_DELAY_MS = 1500;
 
 const sleep = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
 
-const CharacterChat: React.FC<Props> = ({ characterName, displayName, characterImage, setGlobalLoading, savedStory, onRefreshActionChange }) => {
+const CharacterChat: React.FC<Props> = ({ characterName, room = 'bond', displayName, characterImage, setGlobalLoading, savedStory, onRefreshActionChange }) => {
   const { t } = useI18n();
   const visibleName = displayName ?? characterName;
   const router = useRouter();
   const chatSize = useChatSize();
-  const includeBondStory = useIncludeBondStory();
+  const includeBondStory = room === 'bond';
   const sizeStyles = useMemo(() => makeChatSizeStyles(chatSize), [chatSize]);
 
   const apiKey = useSyncExternalStore(subscribeGeminiKey, getGeminiKey, () => '');
   const hasKey = apiKey.trim().length > 0;
-  const session = useMemo(() => getTemporaryChat(characterName, apiKey), [characterName, apiKey]);
+  const session = useMemo(() => getTemporaryChat(characterName, apiKey, room), [characterName, apiKey, room]);
   const draft = useSyncExternalStore(session.subscribe, session.getSnapshot, session.getSnapshot);
   const { messages, input, isWaiting, eventReady, storyScript } = draft;
   const setMessages = (change: Chat[] | ((previous: Chat[]) => Chat[])) => session.update(previous => ({ messages: typeof change === 'function' ? change(previous.messages) : change }));
@@ -87,7 +88,7 @@ const CharacterChat: React.FC<Props> = ({ characterName, displayName, characterI
   const setWaiting = (value: boolean) => session.update({ isWaiting: value });
   const ensureFreshConversation = async (generation: number) => {
     if (!session.getSnapshot().needsReset) return;
-    await geminiClient.reset(characterName);
+    await geminiClient.reset(characterName, room);
     if (session.getSnapshot().generation === generation) session.update({ needsReset: false });
   };
 
@@ -157,7 +158,7 @@ const CharacterChat: React.FC<Props> = ({ characterName, displayName, characterI
       try {
         await ensureFreshConversation(generation);
         if (session.getSnapshot().generation !== generation) return;
-        const { triggerLine } = await geminiClient.trigger(characterName);
+        const { triggerLine } = await geminiClient.trigger(characterName, room);
         await sleep(TYPING_DELAY_MS);
         await playReply(triggerLine ?? '', generation);
       } catch (e) {
@@ -170,7 +171,7 @@ const CharacterChat: React.FC<Props> = ({ characterName, displayName, characterI
     })();
 
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [session, characterName, hasKey, savedStory, draft.generation]));
+  }, [session, characterName, room, hasKey, savedStory, draft.generation]));
 
   const handleReset = async () => {
     if (savedStory || !hasKey || session.getSnapshot().isWaiting) return;
@@ -178,7 +179,7 @@ const CharacterChat: React.FC<Props> = ({ characterName, displayName, characterI
     setWaiting(true);
     setResetError(false);
     try {
-      await geminiClient.reset(characterName);
+      await geminiClient.reset(characterName, room);
       if (session.getSnapshot().generation !== generation) return;
       session.clear();
       setResetConfirm(false);
@@ -205,9 +206,9 @@ const CharacterChat: React.FC<Props> = ({ characterName, displayName, characterI
     try {
       await ensureFreshConversation(generation);
       if (session.getSnapshot().generation !== generation) return;
-      const { reply, eventReady: ready } = await geminiClient.chat(characterName, text);
+      const { reply, eventReady: ready } = await geminiClient.chat(characterName, text, room);
       if (session.getSnapshot().generation !== generation) return;
-      setEventReady(getIncludeBondStory() && ready);
+      setEventReady(includeBondStory && ready);
       await playReply(reply, generation);
       if (session.getSnapshot().generation === generation) setWaiting(false);
     } catch (err) {
@@ -226,7 +227,7 @@ const CharacterChat: React.FC<Props> = ({ characterName, displayName, characterI
       router.push('/event');
       return;
     }
-    if (!getIncludeBondStory() || session.getSnapshot().isWaiting || !session.getSnapshot().eventReady) return;
+    if (!includeBondStory || session.getSnapshot().isWaiting || !session.getSnapshot().eventReady) return;
     const openStory = (script: string) => {
       const generation = session.getSnapshot().generation;
       setPendingEvent(script, () => {

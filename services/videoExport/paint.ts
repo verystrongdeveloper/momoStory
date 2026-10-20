@@ -47,7 +47,12 @@ function chat(ctx: Context, payload: VideoPayload, scene: VideoScene, images: Vi
   const avatar = short * 0.075 * payload.chatSize;
   ctx.fillStyle = '#fff'; ctx.fillRect(0, 0, W, H);
   ctx.font = `${font}px MomoExport`;
-  const rows = payload.timeline.messages.slice(0, scene.chatCount).map((message) => {
+  const messages = payload.timeline.messages.slice(0, scene.chatCount);
+  if (scene.typing) {
+    const next = payload.timeline.messages[scene.chatCount ?? 0];
+    if (next?.sender === 'character') messages.push({ ...next, text: '···' });
+  }
+  const rows = messages.map((message) => {
     const lines = wrap(ctx, message.text, W * 0.7 - pad * 2);
     const width = Math.min(W * 0.7, Math.max(...lines.map((line) => ctx.measureText(line).width), font) + pad * 2);
     return { message, lines, width, height: lines.length * lineHeight + pad * 2 + (!message.showImage || message.sender === 'user' ? 0 : font * 1.4) };

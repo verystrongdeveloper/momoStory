@@ -57,7 +57,7 @@ const CharacterChat: React.FC<Props> = ({ characterName, displayName, characterI
   const hasKey = apiKey.trim().length > 0;
   const session = useMemo(() => getTemporaryChat(characterName, apiKey), [characterName, apiKey]);
   const draft = useSyncExternalStore(session.subscribe, session.getSnapshot, session.getSnapshot);
-  const { messages, input, isWaiting, eventReady, storyCompleted } = draft;
+  const { messages, input, isWaiting, eventReady, storyScript } = draft;
   const setMessages = (change: Chat[] | ((previous: Chat[]) => Chat[])) => session.update(previous => ({ messages: typeof change === 'function' ? change(previous.messages) : change }));
   const setInput = (value: string) => session.update({ input: value });
   const setEventReady = (value: boolean) => session.update({ eventReady: value });
@@ -74,7 +74,6 @@ const CharacterChat: React.FC<Props> = ({ characterName, displayName, characterI
   }, [session, savedStory]));
   const [resetConfirm, setResetConfirm] = useState(false);
   const [resetError, setResetError] = useState(false);
-  const [chatGeneration, setChatGeneration] = useState(0);
   const [replayCount, setReplayCount] = useState(1);
   const savedMessages = savedStory?.chatMessages;
   const replaying = !!savedStory && replayCount < (savedMessages?.length ?? 0);
@@ -141,11 +140,11 @@ const CharacterChat: React.FC<Props> = ({ characterName, displayName, characterI
   };
 
   /* 먼저 말 걸기가 켜져 있으면 입장 시 캐릭터가 먼저 말을 건다 */
-  useEffect(() => {
+  useFocusEffect(useCallback(() => {
     if (savedStory || !getGreetMode() || !getGeminiKey().trim()) return;
 
     const current = session.getSnapshot();
-    if (current.storyCompleted || current.greetingStarted || current.messages.length || current.isWaiting) return;
+    if (current.eventReady || current.greetingStarted || current.messages.length || current.isWaiting) return;
     session.update({ greetingStarted: true, isWaiting: true });
     // Finish and store the reply even when the user switches to another screen.
     (async () => {
@@ -164,7 +163,7 @@ const CharacterChat: React.FC<Props> = ({ characterName, displayName, characterI
     })();
 
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [session, characterName, hasKey, savedStory, chatGeneration]);
+  }, [session, characterName, hasKey, savedStory, draft.generation]));
 
   const handleReset = async () => {
     if (savedStory || !hasKey || session.getSnapshot().isWaiting) return;
@@ -174,7 +173,6 @@ const CharacterChat: React.FC<Props> = ({ characterName, displayName, characterI
       await geminiClient.reset(characterName);
       session.clear();
       setResetConfirm(false);
-      setChatGeneration(value => value + 1);
     } catch {
       setResetError(true);
     } finally {
@@ -184,7 +182,7 @@ const CharacterChat: React.FC<Props> = ({ characterName, displayName, characterI
 
   const handleSend = async () => {
     const text = input.trim();
-    if (savedStory || !hasKey || !text || session.getSnapshot().isWaiting || session.getSnapshot().storyCompleted) return;
+    if (savedStory || !hasKey || !text || session.getSnapshot().isWaiting || session.getSnapshot().eventReady) return;
 
     setWaiting(true);
     setMessages((prev) => [
@@ -197,9 +195,9 @@ const CharacterChat: React.FC<Props> = ({ characterName, displayName, characterI
     try {
       await ensureFreshConversation();
       const { reply, eventReady: ready } = await geminiClient.chat(characterName, text);
+      setEventReady(ready);
       await playReply(reply);
       setWaiting(false);
-      setEventReady(ready);
     } catch (err) {
       console.error('[CharacterChat] chat 실패:', err);
       setWaiting(false);
@@ -215,16 +213,24 @@ const CharacterChat: React.FC<Props> = ({ characterName, displayName, characterI
       router.push('/event');
       return;
     }
-    if (session.getSnapshot().isWaiting || session.getSnapshot().storyCompleted) return;
+    if (session.getSnapshot().isWaiting || !session.getSnapshot().eventReady) return;
+    const openStory = (script: string) => {
+      const generation = session.getSnapshot().generation;
+      setPendingEvent(script, () => {
+        if (session.getSnapshot().generation !== generation || session.getSnapshot().storyScript !== script) return;
+        session.clear({ needsReset: true });
+      });
+      router.push('/event');
+    };
+    if (session.getSnapshot().storyScript) { openStory(session.getSnapshot().storyScript!); return; }
     setWaiting(true);
     const chatSnapshot = messages.filter((message): message is SavedChatMessage => message.sender !== 'typing');
     setGlobalLoading?.(true);
     try {
       const { eventScript } = await geminiClient.createEvent(characterName);
       saveStory(characterName, eventScript, chatSnapshot);
-      session.clear({ isWaiting: true, needsReset: true, storyCompleted: true });
-      setPendingEvent(eventScript);
-      router.push('/event');
+      session.update({ storyScript: eventScript });
+      openStory(eventScript);
     } catch (e) {
       console.error('[CharacterChat] 이벤트 생성 실패:', e);
       setMessages((prev) => [...prev, { sender: 'character', text: geminiFailureText(e) }]);
@@ -284,21 +290,20 @@ const CharacterChat: React.FC<Props> = ({ characterName, displayName, characterI
         </View>
       )}
 
-      {!savedStory && storyCompleted && <Text style={styles.archiveNotice}>{t('storyChatLocked')}</Text>}
-      {savedStory ? (
-        <Text style={styles.archiveNotice}>{t(replaying ? 'chatReplayHint' : 'savedChatReadOnly')}</Text>
-      ) : <View style={styles.inputArea}>
+      {!savedStory && eventReady && <Text style={styles.archiveNotice}>{t(storyScript ? 'storyChatAwaitingEnd' : 'storyChatLocked')}</Text>}
+      {savedStory && replaying && <Text style={styles.archiveNotice}>{t('chatReplayHint')}</Text>}
+      {!savedStory && <View style={styles.inputArea}>
         <TextInput
           ref={inputRef}
-          style={[styles.input, sizeStyles.input, (!hasKey || isWaiting || storyCompleted) && styles.inputLocked]}
+          style={[styles.input, sizeStyles.input, (!hasKey || isWaiting || eventReady) && styles.inputLocked]}
           placeholder={hasKey ? t('messagePlaceholder') : t('messageKeyRequired')}
           value={hasKey ? input : ''}
-          editable={hasKey && !isWaiting && !storyCompleted}
-          onChangeText={(value) => { if (hasKey && !session.getSnapshot().isWaiting && !session.getSnapshot().storyCompleted) setInput(value); }}
+          editable={hasKey && !isWaiting && !eventReady}
+          onChangeText={(value) => { if (hasKey && !session.getSnapshot().isWaiting && !session.getSnapshot().eventReady) setInput(value); }}
           onSubmitEditing={handleSend}
           blurOnSubmit={false}
         />
-        <Button title={t('send')} onPress={handleSend} disabled={!hasKey || isWaiting || storyCompleted} />
+        <Button title={t('send')} onPress={handleSend} disabled={!hasKey || isWaiting || eventReady} />
       </View>}
       {replaying && (
         <Pressable

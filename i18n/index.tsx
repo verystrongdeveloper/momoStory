@@ -8,7 +8,8 @@ type Dictionary = Record<string, string>;
 
 const translations: Record<AppLanguage, Dictionary> = {
   ko: {
-    storyChatLocked: '인연 스토리가 완성되었습니다. 새 대화는 채팅 새로고침 후 시작할 수 있습니다.',
+    videoBackgroundHint: '추출 중 다른 화면을 사용할 수 있습니다. 앱은 실행 상태로 유지해 주세요.', videoExportBusy: '다른 영상을 추출 중입니다. 완료하거나 취소한 뒤 다시 시도해 주세요.', videoExportCanceled: '영상 추출을 취소했습니다.',
+    storyChatLocked: '대화 3쌍이 완성되었습니다. 인연 스토리를 생성해 주세요.', storyChatAwaitingEnd: '스토리를 끝까지 감상하면 새 대화가 자동으로 시작됩니다.',
     unreadMessages: '안 읽은 메시지 {count}개',
     refreshChat: '채팅 새로고침', resetChatTitle: '대화를 새로 시작할까요?', resetChatNotice: '현재 캐릭터와의 채팅과 AI 대화 기억을 초기화합니다. 저장한 스토리와 커뮤니티 게시글은 유지됩니다.', resetChatFailed: '대화를 초기화하지 못했습니다. 연결을 확인하고 다시 시도해 주세요.',
     ...communityTranslations.ko,
@@ -42,7 +43,8 @@ const translations: Record<AppLanguage, Dictionary> = {
     termsTitle: '이용 약관', tutorialTitle: '사용 방법', agreeTerms: '위 내용을 확인했고, 이에 동의합니다.', agreeStart: '동의하고 시작', skip: '건너뛰기', previous: '이전', start: '시작하기', next: '다음', openAiStudio: 'Google AI Studio 열기',
   },
   en: {
-    storyChatLocked: 'Your bond story is complete. Reset this chat to start a new conversation.',
+    videoBackgroundHint: 'You can use other screens while exporting. Keep the app running.', videoExportBusy: 'Another video is exporting. Wait for it to finish or cancel it first.', videoExportCanceled: 'Video export canceled.',
+    storyChatLocked: 'Three chat exchanges are complete. Generate your bond story to continue.', storyChatAwaitingEnd: 'Finish watching the story to automatically start a new conversation.',
     unreadMessages: '{count} unread messages',
     refreshChat: 'Reset chat', resetChatTitle: 'Start a new conversation?', resetChatNotice: 'This clears the current character’s chat and AI conversation history. Saved stories and community posts are kept.', resetChatFailed: 'Could not reset the chat. Check your connection and try again.',
     ...communityTranslations.en,
@@ -76,7 +78,8 @@ const translations: Record<AppLanguage, Dictionary> = {
     termsTitle: 'Terms of use', tutorialTitle: 'How to use', agreeTerms: 'I have read and agree to the above.', agreeStart: 'Agree and start', skip: 'Skip', previous: 'Previous', start: 'Start', next: 'Next', openAiStudio: 'Open Google AI Studio',
   },
   ja: {
-    storyChatLocked: '絆ストーリーが完成しました。新しい会話を始めるにはチャットをリセットしてください。',
+    videoBackgroundHint: '書き出し中も他の画面を使えます。アプリは起動したままにしてください。', videoExportBusy: '別の動画を書き出しています。完了するかキャンセルしてから再試行してください。', videoExportCanceled: '動画の書き出しをキャンセルしました。',
+    storyChatLocked: '会話が3往復に達しました。絆ストーリーを生成してください。', storyChatAwaitingEnd: 'ストーリーを最後まで見ると、新しい会話が自動で始まります。',
     unreadMessages: '未読メッセージ {count}件',
     refreshChat: 'チャットをリセット', resetChatTitle: '新しい会話を始めますか？', resetChatNotice: '現在のキャラクターとのチャットとAIの会話履歴を初期化します。保存したストーリーとコミュニティの投稿は残ります。', resetChatFailed: '初期化できませんでした。接続を確認して再試行してください。',
     ...communityTranslations.ja,
@@ -110,7 +113,8 @@ const translations: Record<AppLanguage, Dictionary> = {
     termsTitle: '利用規約', tutorialTitle: '使い方', agreeTerms: '上記を確認し、同意します。', agreeStart: '同意して始める', skip: 'スキップ', previous: '戻る', start: '始める', next: '次へ', openAiStudio: 'Google AI Studio を開く',
   },
   zh: {
-    storyChatLocked: '羁绊故事已生成。重置此聊天后即可开始新的对话。',
+    videoBackgroundHint: '导出时可以使用其他页面，请保持应用运行。', videoExportBusy: '正在导出其他视频，请等待完成或先取消。', videoExportCanceled: '视频导出已取消。',
+    storyChatLocked: '已完成三轮对话，请生成羁绊故事。', storyChatAwaitingEnd: '看完故事后将自动开始新的对话。',
     unreadMessages: '{count} 条未读消息',
     refreshChat: '重置聊天', resetChatTitle: '开始新的对话？', resetChatNotice: '将清除当前角色的聊天和 AI 对话记录。保存的故事和社区帖子将保留。', resetChatFailed: '无法重置聊天，请检查连接后重试。',
     ...communityTranslations.zh,

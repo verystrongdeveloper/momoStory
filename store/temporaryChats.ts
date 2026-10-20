@@ -8,11 +8,12 @@ type TemporaryChat = {
   eventReady: boolean;
   greetingStarted: boolean;
   needsReset: boolean;
-  storyCompleted: boolean;
+  storyScript: string | null;
+  generation: number;
   unreadCount: number;
 };
 
-const empty = (): TemporaryChat => ({ messages: [], input: '', isWaiting: false, eventReady: false, greetingStarted: false, needsReset: false, storyCompleted: false, unreadCount: 0 });
+const empty = (): TemporaryChat => ({ messages: [], input: '', isWaiting: false, eventReady: false, greetingStarted: false, needsReset: false, storyScript: null, generation: 0, unreadCount: 0 });
 
 function createChat() {
   let snapshot = empty();
@@ -36,7 +37,7 @@ function createChat() {
       let active = true;
       return () => { if (active) { active = false; readers--; } };
     },
-    clear: (change: Partial<TemporaryChat> = {}) => update({ ...empty(), ...change }),
+    clear: (change: Partial<TemporaryChat> = {}) => update({ ...empty(), generation: snapshot.generation + 1, ...change }),
   };
 }
 

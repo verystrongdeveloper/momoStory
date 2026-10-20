@@ -46,8 +46,11 @@ for (const prefix of ['타이틀 :', 'title :', 'TITLE：']) {
   assert.equal(title.duration, timeline.scenes.find(scene => scene.line?.type === '타이틀').duration);
   assert.ok(localized.scenes.some(scene => scene.line?.character === 'ホシノ(対策委員会)'));
 }
-assert.deepEqual(timeline.scenes.slice(0, 3).map((scene) => [scene.kind, scene.chatCount]), [['chat', 1], ['chat', 2], ['chat', 2]]);
-assert.deepEqual(timeline.scenes.slice(0, 3).map((scene) => !!scene.showStoryButton), [false, false, true]);
+assert.deepEqual(timeline.scenes.slice(0, 4).map((scene) => [scene.kind, scene.chatCount, !!scene.typing]), [['chat', 0, true], ['chat', 1, false], ['chat', 2, false], ['chat', 2, false]]);
+assert.deepEqual(timeline.scenes.slice(0, 4).map((scene) => !!scene.showStoryButton), [false, false, false, true]);
+assert.equal(timeline.scenes[0].duration, 1.5);
+const multiReply = buildVideoTimeline({ ...story, chatMessages: [story.chatMessages[1], story.chatMessages[0], { sender: 'character', text: '다음 문장' }] }, 0, 0);
+assert.deepEqual(multiReply.scenes.filter(scene => scene.typing).map(scene => scene.chatCount), [1, 2], 'typing precedes both initial replies and subsequent character sentences, never user messages');
 // Verify rendered text, not just timeline flags, in both export aspect ratios.
 for (const ratio of ['16:9', '9:16']) {
   const { width, height } = videoDimensions(ratio);
@@ -67,6 +70,8 @@ for (const ratio of ['16:9', '9:16']) {
     assert.equal(text.includes('AUTO'), false);
     assert.equal(text.includes(payload.labels.bondStory), !!scene.showStoryButton);
     assert.equal(text.includes('| 인연 이벤트 |'), !!scene.showStoryButton);
+    assert.equal(text.includes('···'), !!scene.typing, 'typing bubble appears only during typing scenes');
+    if (scene.typing) assert.equal(text.includes(timeline.messages[scene.chatCount].text), false, 'pending reply stays hidden');
   }
   const titleScene = timeline.scenes.find(scene => scene.line?.type === '타이틀');
   const bannerHeights = [];
@@ -83,7 +88,8 @@ for (const ratio of ['16:9', '9:16']) {
   assert.equal(bannerHeights[4], 0);
   const single = buildVideoTimeline({ ...story, chatMessages: [story.chatMessages[0]] }, 0, 0);
   assert.equal(!!single.scenes[0].showStoryButton, false);
-  assert.equal(single.scenes[1].showStoryButton, true);
+  assert.equal(!!single.scenes[1].showStoryButton, false);
+  assert.equal(single.scenes[2].showStoryButton, true);
 }
 assert.equal(timeline.scenes.find((scene) => scene.line?.commandType === 'waitSecond').duration, 2);
 const selection = timeline.scenes.find((scene) => scene.line?.type === 'selection');
@@ -96,7 +102,8 @@ assert.equal(timeline.scenes.at(-1).emotion, undefined);
 assert.equal(timeline.scenes.at(-1).background, undefined);
 const pops = timeline.audio.filter(cue => cue.key === 'Chat_Pop.wav');
 assert.equal(pops.length, story.chatMessages.length + 1);
-assert.deepEqual(pops.slice(0, 2).map(cue => cue.start), timeline.scenes.slice(0, 2).map(scene => scene.start));
+assert.deepEqual(pops.slice(0, 2).map(cue => cue.start), timeline.scenes.filter(scene => scene.kind === 'chat' && !scene.typing && !scene.showStoryButton).map(scene => scene.start));
+assert.equal(timeline.audio.some(cue => cue.start === timeline.scenes[0].start), false, 'typing is silent');
 assert.equal(pops[2].start, selection.start + selection.duration - 0.6, 'selection sound matches automatic highlight');
 assert.ok(pops.every(cue => cue.volume === 0.5 && Math.abs(cue.end - cue.start - 0.18) < 1e-9));
 const music = timeline.audio.filter(cue => cue.loop);

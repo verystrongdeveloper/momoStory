@@ -179,6 +179,26 @@ for (const ratio of ['16:9', '9:16']) {
   await React.act(async () => tree.unmount());
   assert.ok(sounds.every(sound => sound.removed === 1 && sound.unsubscribed === 1), 'no leaked players/listeners or double release on exit');
   assert.equal(keys.size, 0, 'keyboard listener removed when leaving story');
+  let completions = 0;
+  lines.splice(0, lines.length, { type: 'dialogue', text: 'not finished' }, { type: 'narration', text: 'ending' }, { type: 'command', commandType: 'endEvent' });
+  await React.act(async () => { tree = Renderer.create(React.createElement(Player, { script: '', onComplete: () => completions++ })); });
+  await React.act(async () => tree.root.findByType('EventHud').props.onMenu());
+  await React.act(async () => tree.root.findByType('EventVolumeModal').props.onExit());
+  assert.equal(completions, 0, 'leaving a story early must not reset the chat');
+  await React.act(async () => tree.unmount());
+  lines.splice(0, lines.length, { type: 'narration', text: 'ending' }, { type: 'command', commandType: 'endEvent' });
+  await React.act(async () => { tree = Renderer.create(React.createElement(Player, { script: '', onComplete: () => completions++ })); });
+  typing = true;
+  await React.act(async () => advance());
+  assert.equal(completions, 0, 'revealing the last sentence is not completion');
+  await React.act(async () => advance());
+  await React.act(async () => advance());
+  assert.equal(completions, 1, 'finishing the ending resets the chat exactly once');
+  await React.act(async () => tree.unmount());
+  lines.splice(0, lines.length, { type: 'command', commandType: 'endEvent' });
+  await React.act(async () => { tree = Renderer.create(React.createElement(Player, { script: '', onComplete: () => completions++ })); });
+  assert.equal(completions, 2, 'explicit endEvent completes and returns home');
+  await React.act(async () => tree.unmount());
   global.document = originalDocument;
   // Real dialogue components opt out of native selection and web user-select,
   // while retaining the press handler and typewriter completion API.

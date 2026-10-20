@@ -12,7 +12,8 @@ const PREVIEW = `selection : (1)"오늘은 무슨 일이야?" (2)"잠깐 쉬러 
 `;
 
 export default function EventScreen() {
-  const [script] = useState(() => consumePendingEvent() ?? PREVIEW);
+  const [event] = useState(() => consumePendingEvent() ?? { script: PREVIEW });
+  const script = event.script;
 
   useEffect(() => {
     if (Platform.OS === 'web') return;
@@ -38,7 +39,7 @@ export default function EventScreen() {
         },
       ]}
     >
-      <EventPlayer script={script} />
+      <EventPlayer script={script} onComplete={event.onComplete} />
     </View>
   );
 }

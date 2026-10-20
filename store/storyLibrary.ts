@@ -62,6 +62,20 @@ export function importStory(script: string): SavedStory {
   return saveStory(characterOf(script), script);
 }
 
+/** 공유 게시글의 고정 ID를 유지하여 반복 가져오기가 기존 저장본을 덮어쓰지 않게 한다. */
+export function importSharedStory(source: SavedStory): SavedStory {
+  const stories = readStored();
+  const existing = stories.find(story => story.id === source.id);
+  if (existing) return existing;
+  const story: SavedStory = {
+    id: source.id, title: source.title, character: source.character, script: source.script,
+    createdAt: Date.now(),
+    ...(source.chatMessages ? { chatMessages: source.chatMessages.map(message => ({ ...message })) } : {}),
+  };
+  writeStored([story, ...stories]);
+  return story;
+}
+
 /** 생성된 스크립트를 라이브러리에 넣는다. 재생은 그대로 이어진다. */
 export function saveStory(character: string, script: string, chatMessages?: SavedChatMessage[]): SavedStory {
   const story: SavedStory = {

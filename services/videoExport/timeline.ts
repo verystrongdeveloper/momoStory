@@ -10,6 +10,7 @@ export type VideoScene = {
   duration: number;
   kind: 'chat' | 'story';
   chatCount?: number;
+  typing?: boolean;
   showStoryButton?: boolean;
   line?: EventLine;
   background?: string;
@@ -47,6 +48,8 @@ export function buildVideoTimeline(story: StoryRecord, bgmVolume: number, sfxVol
     music = undefined;
   };
   for (let index = 0; index < messages.length; index++) {
+    // Typing is transient UI, so reconstruct it from the next saved reply.
+    if (messages[index].sender === 'character') append({ kind: 'chat', chatCount: index, typing: true, duration: 1.5 });
     if (chatSound !== 'none') audio.push({ key: chatSoundKey(chatSound), start: time, end: time + CHAT_POP_DURATION, loop: false, volume: sfxVolume });
     append({ kind: 'chat', chatCount: index + 1, duration: Math.max(1.5, messages[index].text.length * 0.03 + 1) });
   }

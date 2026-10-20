@@ -53,8 +53,18 @@ const hasCount = (tree, count) => tree.root.findAllByType('Text').some(text => J
   api.community.like = async (...args) => { likes.push(args); };
   api.community.comment = async (_id, text) => { if (failComment) throw { code: 'RATE_LIMIT' }; commentBodies.push(text); post.comment_count++; };
   api.community.report = async () => {};
-  api.communityStory = value => ({ ...value, chatMessages: value.chat_messages });
-  const Panel = load('components/community/CommunityPanel.tsx', { react: React, 'react-native': rn, '@/i18n': i18n, '@/constants/characters': chars, '@/components/chat/CharacterChat': 'CharacterChat', '@/services/community/client': api, '@/shared/community/validation': validation }).default;
+  api.communityStory = value => ({ id: `community-${value.id}`, title: value.title, character: value.character, script: value.script, createdAt: 0, chatMessages: value.chat_messages });
+  let stored = [], failSave = false;
+  const storageListeners = new Set();
+  const library = load('store/storyLibrary.ts', {
+    '@/storage': {
+      loadStories: () => stored,
+      saveStories: value => { if (failSave) throw new Error('storage failed'); stored = value; storageListeners.forEach(listener => listener()); },
+      subscribeStorage: listener => { storageListeners.add(listener); return () => storageListeners.delete(listener); },
+    },
+    '../shared/prompts/speakerNames': { canonicalCharacterName: name => name },
+  });
+  const Panel = load('components/community/CommunityPanel.tsx', { react: React, 'react-native': rn, '@/i18n': i18n, '@/constants/characters': chars, '@/components/chat/CharacterChat': 'CharacterChat', '@/services/community/client': api, '@/shared/community/validation': validation, '@/store/storyLibrary': library }).default;
   await React.act(async () => { tree = Renderer.create(React.createElement(Panel)); });
   assert.ok(has(tree, 'communitySetup')); assert.equal(queries.length, 0);
   await React.act(async () => tree.unmount()); configured = true;
@@ -78,6 +88,26 @@ const hasCount = (tree, count) => tree.root.findAllByType('Text').some(text => J
   assert.equal(queries.at(-1).query, 'Hello');
   await React.act(async () => tree.root.findByProps({ accessibilityLabel: post.title }).props.onPress());
   assert.deepEqual(views, [post.id]);
+  failSave = true;
+  await React.act(async () => button(tree, 'communityImport').props.onPress());
+  assert.ok(has(tree, 'communityImportFailed')); assert.equal(stored.length, 0);
+  failSave = false;
+  await React.act(async () => button(tree, 'communityImport').props.onPress());
+  assert.ok(has(tree, 'communityImportSuccess'));
+  assert.equal(button(tree, 'communityImported').props.disabled, true);
+  assert.equal(stored.length, 1);
+  assert.equal(stored[0].id, `community-${post.id}`);
+  assert.equal(stored[0].title, detail.title);
+  assert.equal(stored[0].character, detail.character);
+  assert.equal(stored[0].script, detail.script);
+  assert.deepEqual(stored[0].chatMessages, detail.chat_messages);
+  assert.notEqual(stored[0].chatMessages[0], detail.chat_messages[0], 'local chat is a separate copy');
+  assert.ok(stored[0].createdAt > 0, 'import sorts by local save time');
+  library.updateStory(stored[0].id, 'title : Local edit\n호시노 : edited\nendEvent');
+  const edited = stored[0];
+  library.importSharedStory(api.communityStory(detail));
+  assert.equal(stored.length, 1, 'repeat imports do not duplicate');
+  assert.equal(stored[0], edited, 'repeat imports preserve local edits');
   await React.act(async () => button(tree, 'communityLike').props.onPress());
   assert.deepEqual(likes, [[post.id, true]]); assert.ok(button(tree, 'communityUnlike'));
   await React.act(async () => button(tree, 'communityWatch').props.onPress());
@@ -93,9 +123,14 @@ const hasCount = (tree, count) => tree.root.findAllByType('Text').some(text => J
   await React.act(async () => commentInput().props.onChangeText('keep my draft'));
   await React.act(async () => button(tree, 'send').props.onPress());
   assert.ok(has(tree, 'communityRateLimit')); assert.equal(commentInput().props.value, 'keep my draft');
-  assert.equal(button(tree, 'save'), undefined, 'no save-to-library action');
   await React.act(async () => button(tree, 'previous').props.onPress());
   assert.ok(hasCount(tree, 8), 'returning from comments reloads the updated card count');
+  await React.act(async () => tree.root.findByProps({ accessibilityLabel: post.title }).props.onPress());
+  assert.equal(button(tree, 'communityImported').props.disabled, true, 'saved status survives reopening the post');
+  await React.act(async () => library.deleteStory(`community-${post.id}`));
+  assert.ok(button(tree, 'communityImport'), 'deleted local copy can be imported again');
+  await React.act(async () => button(tree, 'communityImport').props.onPress());
+  assert.equal(stored.length, 1);
   await React.act(async () => tree.unmount());
   // Verify the library menu opens the actual publish modal path.
   const Library = load('components/chat/StoryLibraryList.tsx', {

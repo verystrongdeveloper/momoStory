@@ -14,140 +14,117 @@ function load(file, mocks) {
   return mod.exports;
 }
 (async () => {
-  const rn = { ActivityIndicator: 'ActivityIndicator', Modal: 'Modal', Platform: { OS: 'android' }, ScrollView: 'ScrollView', Text: 'Text', TouchableOpacity: 'TouchableOpacity', View: 'View', TextInput: 'TextInput', Image: 'Image', StyleSheet: { create: (s) => s } };
-  const i18n = { useI18n: () => ({ language: 'ko', t: (key) => key }) };
-  const pickerMocks = {
-    '@/services/videoExport/types': { videoFileName: (title, ratio) => `${title}_${ratio.replace(':', 'x')}.mp4` },
-    '@/platform/videoSave': { chooseVideoSaveTarget: async () => undefined },
-  };
+  const rn = { Modal: 'Modal', Pressable: 'Pressable', ScrollView: 'ScrollView', Text: 'Text', TouchableOpacity: 'TouchableOpacity', View: 'View', TextInput: 'TextInput', Image: 'Image', ActivityIndicator: 'ActivityIndicator', Platform: { OS: 'android' }, StyleSheet: { absoluteFillObject: {}, create: s => s } };
+  const i18n = { useI18n: () => ({ language: 'ko', t: key => key }) };
   const story = { id: 'id', title: 'test', character: '호시노', script: '호시노 : 안녕', createdAt: 1 };
-  let prepared, closed = 0, prepareCount = 0;
-  const Modal = load('components/chat/VideoExportModal.tsx', {
-    ...pickerMocks,
-    'react-native': rn, '@/i18n': i18n,
-    '@/services/videoExport/prepare': { prepareVideo: async (...args) => { prepareCount++; prepared = args; return { title: 'test', ratio: args[1] }; } },
-    '@/platform/VideoExportWorker': 'VideoExportWorker',
-  }).default;
+  let pickerCalls = 0, prepareCalls = [], closed = 0, target, pickerOverride, resolvePrepare;
+  const dependencies = {
+    '@/services/videoExport/prepare': { prepareVideo: (...args) => { prepareCalls.push(args); return new Promise(resolve => { resolvePrepare = resolve; }); } },
+    '@/services/videoExport/types': { videoFileName: (title, ratio) => title + '_' + ratio.replace(':', 'x') + '.mp4' },
+    '@/platform/videoSave': { chooseVideoSaveTarget: (...args) => { pickerCalls++; return pickerOverride ? pickerOverride(...args) : Promise.resolve(target); } },
+  };
+  const jobs = load('store/videoExportJob.ts', dependencies);
+  const uiMocks = { react: React, 'react-native': rn, '@/i18n': i18n, '@/store/videoExportJob': jobs };
+  const Options = load('components/chat/VideoExportModal.tsx', uiMocks).default;
+  const Host = load('components/layout/VideoExportHost.tsx', { ...uiMocks, 'react-native-safe-area-context': { useSafeAreaInsets: () => ({ top: 0 }) }, '@/platform/VideoExportWorker': 'VideoExportWorker' }).default;
+  function Harness({ screen = 'library' }) {
+    const [show, setShow] = React.useState(true);
+    return React.createElement(React.Fragment, null,
+      React.createElement('Screen', { screen }),
+      show && React.createElement(Options, { story, onClose() { closed++; setShow(false); } }),
+      React.createElement(Host));
+  }
   let tree;
-  await React.act(async () => { tree = Renderer.create(React.createElement(Modal, { story, onClose: () => closed++ })); });
-  const button = (label) => tree.root.findAllByType('TouchableOpacity').find((node) => node.findAllByType('Text').some((text) => text.props.children === label));
+  const mount = async () => React.act(async () => { tree = Renderer.create(React.createElement(Harness)); });
+  const button = key => tree.root.findAllByType('TouchableOpacity').find(node => node.findAllByType('Text').some(text => text.props.children === key));
+  const has = key => tree.root.findAllByType('Text').some(text => text.props.children === key);
+  await mount();
   await React.act(async () => tree.root.findByProps({ accessibilityLabel: '9:16' }).props.onPress());
-  await React.act(async () => { button('videoDownload').props.onPress(); button('videoDownload').props.onPress(); });
-  assert.equal(prepared[1], '9:16');
-  assert.equal(prepared[4].includeChat, true, 'default keeps chat included');
-  assert.equal(prepareCount, 1);
-  assert.equal(tree.root.findByType('VideoExportWorker').props.payload.ratio, '9:16');
-  await React.act(async () => tree.root.findByType('VideoExportWorker').props.options.onProgress({ phase: 'saving', progress: 0.97 }));
-  assert.equal(button('cancel').props.disabled, true);
-  await React.act(async () => tree.root.findByType('VideoExportWorker').props.onComplete());
-  assert.ok(tree.root.findAllByType('Text').some((text) => text.props.children === 'videoSavedDownloads'));
-  assert.equal(tree.root.findAllByType('VideoExportWorker').length, 0);
-  await React.act(async () => button('close').props.onPress());
-  assert.equal(closed, 1);
-  await React.act(async () => tree.unmount());
-  assert.equal(prepared[4].signal.aborted, true);
-  await React.act(async () => { tree = Renderer.create(React.createElement(Modal, { story, onClose() {} })); });
   await React.act(async () => tree.root.findByProps({ accessibilityLabel: 'videoExcludeChat' }).props.onPress());
-  assert.equal(tree.root.findByProps({ accessibilityLabel: 'videoExcludeChat' }).props.accessibilityState.checked, true);
-  await React.act(async () => button('videoDownload').props.onPress());
-  assert.equal(prepared[4].includeChat, false, 'story-only selection reaches export preparation');
+  await React.act(async () => { button('videoDownload').props.onPress(); button('videoDownload').props.onPress(); });
+  assert.equal(pickerCalls, 1); assert.equal(prepareCalls.length, 1);
+  assert.equal(prepareCalls[0][1], '9:16'); assert.equal(prepareCalls[0][4].includeChat, false);
+  assert.equal(closed, 1); assert.equal(tree.root.findAllByType('Modal').length, 0, 'options close before preparation finishes');
+  const running = jobs.getVideoExportJob();
+  await React.act(async () => tree.update(React.createElement(Harness, { screen: 'chat' })));
+  assert.equal(running.controller.signal.aborted, false, 'screen navigation does not cancel export');
+  assert.equal(jobs.beginVideoExport(story, '16:9', 'ko', {}, true), null, 'only one export may run');
+  await React.act(async () => resolvePrepare({ title: story.title, ratio: '9:16' }));
+  const worker = () => tree.root.findByType('VideoExportWorker');
+  assert.equal(worker().props.payload.ratio, '9:16');
+  await React.act(async () => worker().props.options.onProgress({ phase: 'saving', progress: 0.97 }));
+  assert.equal(button('cancel').props.disabled, true, 'final save cannot be interrupted');
+  assert.equal(jobs.cancelVideoExport(running.id), false);
+  await React.act(async () => worker().props.onComplete());
+  assert.ok(has('videoSavedDownloads')); assert.equal(tree.root.findAllByType('VideoExportWorker').length, 0);
+  await React.act(async () => button('close').props.onPress());
+  assert.equal(jobs.getVideoExportJob(), null);
   await React.act(async () => tree.unmount());
 
-  let canceledSignal;
-  const Pending = load('components/chat/VideoExportModal.tsx', {
-    ...pickerMocks,
-    'react-native': rn, '@/i18n': i18n,
-    '@/services/videoExport/prepare': { prepareVideo: (...args) => { canceledSignal = args[4].signal; return new Promise(() => {}); } },
-    '@/platform/VideoExportWorker': 'VideoExportWorker',
-  }).default;
-  await React.act(async () => { tree = Renderer.create(React.createElement(Pending, { story, onClose: () => closed++ })); });
+  await mount();
   await React.act(async () => button('videoDownload').props.onPress());
+  const canceled = jobs.getVideoExportJob();
   await React.act(async () => button('cancel').props.onPress());
-  assert.equal(canceledSignal.aborted, true);
+  assert.equal(canceled.controller.signal.aborted, true);
+  await React.act(async () => resolvePrepare({ title: 'late result' }));
+  assert.equal(tree.root.findAllByType('VideoExportWorker').length, 0);
+  assert.ok(has('videoExportCanceled'));
+  await React.act(async () => button('close').props.onPress());
   await React.act(async () => tree.unmount());
 
-  // Desktop asks for a destination before preparing or encoding anything.
+  // A pending desktop save picker owns no encoder and is canceled with its modal.
   rn.Platform.OS = 'web';
-  const order = [];
-  const target = { kind: 'save-as', save: async () => {} };
-  let pickerCanceled = false;
-  const Desktop = load('components/chat/VideoExportModal.tsx', {
-    ...pickerMocks, 'react-native': rn, '@/i18n': i18n,
-    '@/platform/videoSave': { chooseVideoSaveTarget: async (filename) => { order.push('picker'); assert.equal(filename, 'test_16x9.mp4'); return pickerCanceled ? null : target; } },
-    '@/services/videoExport/prepare': { prepareVideo: async () => { order.push('prepare'); return { title: 'test' }; } },
-    '@/platform/VideoExportWorker': 'VideoExportWorker',
-  }).default;
-  await React.act(async () => { tree = Renderer.create(React.createElement(Desktop, { story, onClose() {} })); });
+  let resolvePicker, selectionSignal, targetCancels = 0;
+  target = { kind: 'save-as', save: async () => {}, cancel: async () => { targetCancels++; } };
+  pickerOverride = (_name, signal) => { selectionSignal = signal; return new Promise(resolve => { resolvePicker = resolve; }); };
+  const previousPrepares = prepareCalls.length;
+  await mount();
   await React.act(async () => button('videoDownload').props.onPress());
-  assert.deepEqual(order, ['picker', 'prepare']);
-  assert.equal(tree.root.findByType('VideoExportWorker').props.destination, target);
-  await React.act(async () => tree.root.findByType('VideoExportWorker').props.onComplete());
-  assert.ok(tree.root.findAllByType('Text').some((text) => text.props.children === 'videoSavedFile'));
-  await React.act(async () => tree.unmount());
-  pickerCanceled = true; order.length = 0;
-  await React.act(async () => { tree = Renderer.create(React.createElement(Desktop, { story, onClose() {} })); });
-  await React.act(async () => button('videoDownload').props.onPress());
-  assert.deepEqual(order, ['picker']);
+  assert.ok(has('videoChooseLocation'));
+  assert.equal(prepareCalls.length, previousPrepares);
   assert.equal(tree.root.findAllByType('VideoExportWorker').length, 0);
-  assert.ok(button('videoDownload'));
-  await React.act(async () => tree.unmount());
-
-  // A slow/native save dialog must show no preparation progress or encoder.
-  let resolvePicker;
-  let selectionSignal;
-  let delayedPrepareCount = 0;
-  const WaitingForPath = load('components/chat/VideoExportModal.tsx', {
-    ...pickerMocks, 'react-native': rn, '@/i18n': i18n,
-    '@/platform/videoSave': { chooseVideoSaveTarget: (_filename, signal) => { selectionSignal = signal; return new Promise(resolve => { resolvePicker = resolve; }); } },
-    '@/services/videoExport/prepare': { prepareVideo: async () => { delayedPrepareCount++; return { title: 'test' }; } },
-    '@/platform/VideoExportWorker': 'VideoExportWorker',
-  }).default;
-  await React.act(async () => { tree = Renderer.create(React.createElement(WaitingForPath, { story, onClose() {} })); });
-  await React.act(async () => button('videoDownload').props.onPress());
-  assert.equal(delayedPrepareCount, 0);
-  assert.equal(tree.root.findAllByType('ActivityIndicator').length, 0);
-  assert.equal(tree.root.findAllByType('VideoExportWorker').length, 0);
-  assert.ok(tree.root.findAllByType('Text').some(text => text.props.children === 'videoChooseLocation'));
-  await React.act(async () => resolvePicker(target));
-  assert.equal(delayedPrepareCount, 1);
-  await React.act(async () => tree.unmount());
-  await React.act(async () => { tree = Renderer.create(React.createElement(WaitingForPath, { story, onClose() {} })); });
-  await React.act(async () => button('videoDownload').props.onPress());
   await React.act(async () => button('cancel').props.onPress());
   assert.equal(selectionSignal.aborted, true);
-  await React.act(async () => resolvePicker(null));
-  assert.equal(delayedPrepareCount, 1);
+  await React.act(async () => resolvePicker(target));
+  assert.equal(targetCancels, 1, 'late save target is released');
+  assert.equal(prepareCalls.length, previousPrepares);
+  await React.act(async () => jobs.dismissVideoExport());
   await React.act(async () => tree.unmount());
 
-  // Failure messages must identify the phase, not assume storage is full.
-  for (const failurePhase of ['preparing', 'encoding', 'saving']) {
-    const Broken = load('components/chat/VideoExportModal.tsx', {
-      ...pickerMocks, 'react-native': rn, '@/i18n': i18n,
-      '@/services/videoExport/prepare': { prepareVideo: async () => {
-        if (failurePhase === 'preparing') throw new Error('resource unavailable');
-        return { title: 'test' };
-      } },
-      '@/platform/VideoExportWorker': 'VideoExportWorker',
-    }).default;
-    const originalError = console.error;
-    try {
-      console.error = () => {};
-      await React.act(async () => { tree = Renderer.create(React.createElement(Broken, { story, onClose() {} })); });
-      await React.act(async () => button('videoDownload').props.onPress());
-      if (failurePhase !== 'preparing') {
-        await React.act(async () => {
-          const worker = tree.root.findByType('VideoExportWorker');
-          // Progress and failure can arrive in the same tick, before re-render.
-          worker.props.options.onProgress({ phase: failurePhase, progress: 0.5 });
-          worker.props.onError(new Error('failure'));
-        });
-      }
-      const key = { preparing: 'videoPrepareFailed', encoding: 'videoEncodeFailed', saving: 'videoSaveFailed' }[failurePhase];
-      assert.ok(tree.root.findAllByType('Text').some(text => text.props.children === key));
-      assert.ok(button('videoDownload'), 'failure must allow retry');
-      await React.act(async () => tree.unmount());
-    } finally { console.error = originalError; }
+  pickerOverride = undefined;
+  await mount();
+  await React.act(async () => button('videoDownload').props.onPress());
+  const desktopId = jobs.getVideoExportJob().id;
+  await React.act(async () => resolvePrepare({ title: 'test', ratio: '16:9' }));
+  assert.equal(worker().props.destination, target);
+  await React.act(async () => worker().props.onComplete());
+  assert.ok(has('videoSavedFile'));
+  await React.act(async () => jobs.dismissVideoExport());
+  await React.act(async () => tree.unmount());
+
+  for (const phase of ['preparing', 'encoding', 'saving']) {
+    await mount();
+    await React.act(async () => button('videoDownload').props.onPress());
+    const id = jobs.getVideoExportJob().id;
+    await React.act(async () => {
+      jobs.reportVideoExport(id, { phase, progress: 0.5 });
+      jobs.failVideoExport(id, new Error('failure'));
+    });
+    assert.ok(has({ preparing: 'videoPrepareFailed', encoding: 'videoEncodeFailed', saving: 'videoSaveFailed' }[phase]));
+    await React.act(async () => resolvePrepare({ title: 'late result' }));
+    assert.equal(tree.root.findAllByType('VideoExportWorker').length, 0);
+    await React.act(async () => jobs.dismissVideoExport());
+    await React.act(async () => tree.unmount());
   }
+  target = null;
+  await mount();
+  await React.act(async () => button('videoDownload').props.onPress());
+  assert.ok(button('videoDownload'), 'canceling the picker leaves options available');
+  const id = jobs.getVideoExportJob().id;
+  await React.act(async () => jobs.completeVideoExport(desktopId));
+  assert.equal(jobs.getVideoExportJob().id, id, 'old worker callbacks cannot change another job');
+  await React.act(async () => jobs.dismissVideoExport());
+  await React.act(async () => tree.unmount());
 
   const List = load('components/chat/StoryLibraryList.tsx', {
     './StoryScriptEditor': 'StoryScriptEditor',
@@ -164,5 +141,5 @@ function load(file, mocks) {
   await React.act(async () => tree.root.findByType('VideoExportModal').props.onClose());
   assert.equal(tree.root.findAllByType('VideoExportModal').length, 0);
   await React.act(async () => tree.unmount());
-  console.log('PASS library video menu, ratio selection, progress, save completion, duplicate start guard, cancellation, desktop save picker ordering and picker cancellation');
-})().catch((error) => { console.error(error); process.exitCode = 1; });
+  console.log('PASS global export survives closed options/navigation, ratios/chat modes, duplicate guard, cancellation, picker ordering, save protection, phase errors, completion notices and library entry');
+})().catch(error => { console.error(error); process.exitCode = 1; });

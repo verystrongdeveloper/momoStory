@@ -25,6 +25,7 @@ import { EVENT_TIMING } from '@/utils/eventPresentation';
 
 interface Props {
   script: string;
+  onComplete?: () => void;
 }
 
 interface Expression {
@@ -46,7 +47,7 @@ const isEndingCaption = (lines: EventLine[], index: number) => {
   return current?.type === 'narration' && next?.type === 'command' && next.commandType === 'endEvent';
 };
 
-const EventPlayer: React.FC<Props> = ({ script }) => {
+const EventPlayer: React.FC<Props> = ({ script, onComplete }) => {
   const { t } = useI18n();
   const router = useRouter();
   const lines = useEventParser(script);
@@ -95,7 +96,11 @@ const EventPlayer: React.FC<Props> = ({ script }) => {
     setIdx(next);
   };
 
-  const goHome = () => router.replace('/');
+  const completed = useRef(false);
+  const goHome = () => {
+    if (!completed.current) { completed.current = true; onComplete?.(); }
+    router.replace('/');
+  };
 
   useEffect(() => {
     const target = lines[idx];
@@ -121,7 +126,7 @@ const EventPlayer: React.FC<Props> = ({ script }) => {
   }, [idx, lines, sceneOpacity]);
 
   const onAdvance = () => {
-    if (menuOpen || transitioning) return;
+    if (!line || menuOpen || transitioning) return;
     // 타이핑 중이면 문장만 끝까지 보여주고, 끝난 뒤에 누르면 다음으로 넘어간다.
     if (dialogueRef.current?.finish()) return;
     if (line?.type === 'selection' && (line.options?.length ?? 0) > 0) return;
@@ -315,6 +320,7 @@ const EventPlayer: React.FC<Props> = ({ script }) => {
           setLast(null);
           setShowTitle(false);
           stop();
+          goHome();
           return;
       }
     }

@@ -1,145 +1,77 @@
-import React, { useCallback, useEffect, useRef, useState } from 'react';
-import { ActivityIndicator, Modal, Platform, ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import React, { useEffect, useRef, useState, useSyncExternalStore } from 'react';
+import { Modal, ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import type { SavedStory } from '@/store/storyLibrary';
 import { useI18n } from '@/i18n';
-import { prepareVideo } from '@/services/videoExport/prepare';
 import type { VideoRatio } from '@/services/videoExport/timeline';
-import { videoFileName, type ExportProgress, type VideoPayload } from '@/services/videoExport/types';
-import { chooseVideoSaveTarget } from '@/platform/videoSave';
-import type { FileSaveTarget } from '@/platform/fileSave.types';
-import VideoExportWorker from '@/platform/VideoExportWorker';
+import { beginVideoExport, cancelVideoExport, getVideoExportJob, subscribeVideoExportJob, videoExportBusy } from '@/store/videoExportJob';
 
 export default function VideoExportModal({ story, onClose }: { story: SavedStory; onClose: () => void }) {
   const { language, t } = useI18n();
   const [ratio, setRatio] = useState<VideoRatio>('16:9');
   const [includeChat, setIncludeChat] = useState(true);
-  const [status, setStatus] = useState<'idle' | 'picking' | 'working' | 'done' | 'error'>('idle');
-  const [progress, setProgress] = useState<ExportProgress>({ phase: 'preparing', progress: 0 });
-  const [payload, setPayload] = useState<VideoPayload | null>(null);
+  const [picking, setPicking] = useState(false);
   const [error, setError] = useState('');
-  const controller = useRef<AbortController | null>(null);
-  const destination = useRef<FileSaveTarget | undefined>(undefined);
+  const busy = useSyncExternalStore(subscribeVideoExportJob, videoExportBusy, () => false);
+  const selection = useRef<{ id: number; detached: boolean } | null>(null);
   const alive = useRef(true);
-  const starting = useRef(false);
-  const phase = useRef<'picking' | ExportProgress['phase']>('preparing');
-  const reportProgress = useCallback((value: ExportProgress) => {
-    phase.current = value.phase;
-    setProgress(value);
-  }, []);
   useEffect(() => {
     alive.current = true;
-    return () => { alive.current = false; controller.current?.abort(); void destination.current?.cancel?.().catch(() => {}); };
+    return () => { alive.current = false; if (selection.current && !selection.current.detached) cancelVideoExport(selection.current.id); };
   }, []);
-
-  const failed = useCallback((failure: Error) => {
-    if (!alive.current || controller.current?.signal.aborted) return;
-    starting.current = false;
-    setPayload(null);
-    void destination.current?.cancel?.().catch(() => {});
-    if (failure.message.includes('EXPORT_CANCELED')) { setStatus('idle'); return; }
-    console.error('[VideoExport]', phase.current, failure);
-    const key = failure.message === 'VIDEO_UNSUPPORTED' ? 'videoUnsupported'
-      : failure.message === 'VIDEO_NATIVE_REBUILD' ? 'videoNativeRebuild'
-      : failure.message === 'VIDEO_TOO_LONG' ? 'videoTooLong'
-      : failure.message === 'VIDEO_TOO_LARGE' ? 'videoTooLarge'
-      : failure.message === 'SAVE_LOCATION_UNSUPPORTED' ? 'fileSaveUnsupported'
-      : phase.current === 'preparing' ? 'videoPrepareFailed'
-      : phase.current === 'encoding' ? 'videoEncodeFailed'
-      : 'videoSaveFailed';
-    setError(key); setStatus('error');
-  }, []);
-
+  const close = () => { if (selection.current && !selection.current.detached) cancelVideoExport(selection.current.id); onClose(); };
   const start = async () => {
-    if (starting.current) return;
-    starting.current = true;
-    const abort = new AbortController(); controller.current = abort;
-    phase.current = 'picking';
-    setError(''); setStatus('picking');
-    try {
-      const target = await chooseVideoSaveTarget(videoFileName(story.title, ratio), abort.signal);
-      if (!alive.current || abort.signal.aborted) { await target?.cancel?.(); return; }
-      if (target === null) { starting.current = false; setStatus('idle'); return; }
-      destination.current = target;
-      setStatus('working'); reportProgress({ phase: 'preparing', progress: 0 });
-      const prepared = await prepareVideo(story, ratio, language, {
-        bondEvent: t('bondEvent'), bondStory: t('bondStory', { name: story.character }),
-      }, { signal: abort.signal, includeChat, onProgress: (value) => { if (alive.current && !abort.signal.aborted) reportProgress(value); } });
-      if (alive.current && !abort.signal.aborted) { phase.current = 'encoding'; setPayload(prepared); }
-    } catch (failure) { failed(failure instanceof Error ? failure : new Error(String(failure))); }
-  };
-
-  const completed = useCallback(() => {
+    if (selection.current || busy) return;
+    setError('');
+    const started = beginVideoExport(story, ratio, language, { bondEvent: t('bondEvent'), bondStory: t('bondStory', { name: story.character }) }, includeChat);
+    if (!started) { setError('videoExportBusy'); return; }
+    const pending = { id: started.id, detached: false };
+    selection.current = pending;
+    setPicking(true);
+    const accepted = await started.ready;
     if (!alive.current) return;
-    setPayload(null); setStatus('done'); setProgress({ phase: 'saving', progress: 1 });
-    starting.current = false;
-  }, []);
-  const canClose = status !== 'working' || progress.phase !== 'saving';
-  const close = () => { if (canClose) { controller.current?.abort(); onClose(); } };
-
-  return (
-    <Modal transparent animationType="fade" visible onRequestClose={close} statusBarTranslucent>
-      <View style={styles.backdrop} accessibilityViewIsModal>
-        <View style={styles.card}>
-          <ScrollView contentContainerStyle={styles.content}>
-            <Text style={styles.heading}>{t('exportVideo')}</Text>
-            <Text style={styles.storyTitle} numberOfLines={2}>{story.title}</Text>
-            {status === 'idle' || status === 'error' ? (
-              <>
-                <Text style={styles.hint}>{t(includeChat ? 'videoExportHint' : 'videoStoryOnlyHint')}</Text>
-                <Text style={styles.hint}>{t('videoLimitHint')}</Text>
-                <View style={styles.chatModes} accessibilityRole="radiogroup" accessibilityLabel={t('videoChatMode')}>
-                  {[true, false].map(value => (
-                    <TouchableOpacity key={String(value)} accessibilityRole="radio" accessibilityState={{ checked: includeChat === value }}
-                      accessibilityLabel={t(value ? 'videoIncludeChat' : 'videoExcludeChat')} onPress={() => setIncludeChat(value)}
-                      style={[styles.chatMode, includeChat === value && styles.selectedRatio]}>
-                      <Text style={styles.ratioText}>{t(value ? 'videoIncludeChat' : 'videoExcludeChat')}</Text>
-                    </TouchableOpacity>
-                  ))}
-                </View>
-                <View style={styles.ratios} accessibilityRole="radiogroup" accessibilityLabel={t('videoRatio')}>
-                  {(['16:9', '9:16'] as const).map((value) => (
-                    <TouchableOpacity
-                      key={value} accessibilityRole="radio" accessibilityState={{ checked: ratio === value }}
-                      accessibilityLabel={value} onPress={() => setRatio(value)}
-                      style={[styles.ratio, ratio === value && styles.selectedRatio]}
-                    >
-                      <View style={[styles.ratioShape, value === '9:16' ? { width: 27, height: 48 } : { width: 64, height: 36 }]} />
-                      <Text style={styles.ratioText}>{value}</Text>
-                    </TouchableOpacity>
-                  ))}
-                </View>
-                {!!error && <Text style={styles.error} accessibilityLiveRegion="polite">{t(error)}</Text>}
-              </>
-            ) : status === 'picking' ? (
-              <Text style={styles.hint} accessibilityLiveRegion="polite">{t('videoChooseLocation')}</Text>
-            ) : status === 'working' ? (
-              <View style={styles.progressArea}>
-                <ActivityIndicator color="#d85b76" size="large" />
-                <Text style={styles.status} accessibilityLiveRegion="polite">
-                  {t(progress.phase === 'preparing' ? 'videoPreparing' : progress.phase === 'saving' ? 'videoSaving' : 'videoEncoding')} {Math.floor(progress.progress * 100)}%
-                </Text>
-                <View style={styles.track}><View style={[styles.fill, { width: `${progress.progress * 100}%` }]} /></View>
-                <Text style={styles.hint}>{t('videoKeepOpen')}</Text>
-              </View>
-            ) : <Text style={styles.hint}>{t(Platform.OS === 'android' ? 'videoSavedDownloads' : destination.current?.kind === 'save-as' ? 'videoSavedFile' : 'videoDownloadStarted')}</Text>}
-            <View style={styles.actions}>
-              <TouchableOpacity onPress={close} disabled={!canClose} style={[styles.secondary, !canClose && { opacity: 0.4 }]}>
-                <Text style={styles.secondaryText}>{t(status === 'working' || status === 'picking' ? 'cancel' : 'close')}</Text>
-              </TouchableOpacity>
-              {(status === 'idle' || status === 'error') && (
-                <TouchableOpacity onPress={() => void start()} style={styles.primary} accessibilityRole="button">
-                  <Text style={styles.primaryText}>{t('videoDownload')}</Text>
-                </TouchableOpacity>
-              )}
-            </View>
-          </ScrollView>
+    if (accepted) { pending.detached = true; onClose(); }
+    else {
+      selection.current = null;
+      setPicking(false);
+      const job = getVideoExportJob();
+      if (job?.id === started.id && job.status === 'error') setError(job.error);
+    }
+  };
+  return <Modal transparent animationType="fade" visible onRequestClose={close} statusBarTranslucent>
+    <View style={styles.backdrop} accessibilityViewIsModal><View style={styles.card}>
+      <ScrollView contentContainerStyle={styles.content}>
+        <Text style={styles.heading}>{t('exportVideo')}</Text>
+        <Text style={styles.storyTitle} numberOfLines={2}>{story.title}</Text>
+        {picking ? <Text style={styles.hint} accessibilityLiveRegion="polite">{t('videoChooseLocation')}</Text> : <>
+          <Text style={styles.hint}>{t(includeChat ? 'videoExportHint' : 'videoStoryOnlyHint')}</Text>
+          <Text style={styles.hint}>{t('videoLimitHint')}</Text>
+          <Text style={styles.hint}>{t('videoBackgroundHint')}</Text>
+          <View style={styles.chatModes} accessibilityRole="radiogroup" accessibilityLabel={t('videoChatMode')}>
+            {[true, false].map(value => <TouchableOpacity key={String(value)} accessibilityRole="radio" accessibilityState={{ checked: includeChat === value }}
+              accessibilityLabel={t(value ? 'videoIncludeChat' : 'videoExcludeChat')} onPress={() => setIncludeChat(value)}
+              style={[styles.chatMode, includeChat === value && styles.selectedRatio]}>
+              <Text style={styles.ratioText}>{t(value ? 'videoIncludeChat' : 'videoExcludeChat')}</Text>
+            </TouchableOpacity>)}
+          </View>
+          <View style={styles.ratios} accessibilityRole="radiogroup" accessibilityLabel={t('videoRatio')}>
+            {(['16:9', '9:16'] as const).map(value => <TouchableOpacity key={value} accessibilityRole="radio" accessibilityState={{ checked: ratio === value }} accessibilityLabel={value}
+              onPress={() => setRatio(value)} style={[styles.ratio, ratio === value && styles.selectedRatio]}>
+              <View style={[styles.ratioShape, value === '9:16' ? { width: 27, height: 48 } : { width: 64, height: 36 }]} />
+              <Text style={styles.ratioText}>{value}</Text>
+            </TouchableOpacity>)}
+          </View>
+          {busy && <Text style={styles.hint}>{t('videoExportBusy')}</Text>}
+          {!!error && <Text style={styles.error} accessibilityLiveRegion="polite">{t(error)}</Text>}
+        </>}
+        <View style={styles.actions}>
+          <TouchableOpacity onPress={close} style={styles.secondary}><Text style={styles.secondaryText}>{t(picking ? 'cancel' : 'close')}</Text></TouchableOpacity>
+          {!picking && <TouchableOpacity disabled={busy} onPress={() => void start()} style={[styles.primary, busy && { opacity: 0.4 }]} accessibilityRole="button">
+            <Text style={styles.primaryText}>{t('videoDownload')}</Text>
+          </TouchableOpacity>}
         </View>
-        {payload && controller.current && (
-          <VideoExportWorker payload={payload} options={{ signal: controller.current.signal, onProgress: reportProgress }} destination={destination.current} onComplete={completed} onError={failed} />
-        )}
-      </View>
-    </Modal>
-  );
+      </ScrollView>
+    </View></View>
+  </Modal>;
 }
 
 const styles = StyleSheet.create({

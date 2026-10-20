@@ -1,10 +1,11 @@
-import React, { useEffect, useRef, useState } from 'react';
+import React, { useEffect, useRef, useState, useSyncExternalStore } from 'react';
 import { ActivityIndicator, Image, Modal, ScrollView, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
 import { useI18n } from '@/i18n';
 import { avatarOf, displayCharacterName } from '@/constants/characters';
 import CharacterChat from '@/components/chat/CharacterChat';
 import { community, communityConfigured, communityErrorKey, communityStory, type CommunityDetail, type CommunityPost, type RankingPeriod } from '@/services/community/client';
 import { charCount } from '@/shared/community/validation';
+import { importSharedStory, listStories, subscribeStories } from '@/store/storyLibrary';
 
 function Button({ label, onPress, disabled = false, selected = false }: { label: string; onPress: () => void; disabled?: boolean; selected?: boolean }) {
   return <TouchableOpacity accessibilityRole="button" accessibilityState={{ disabled, selected }} disabled={disabled} onPress={onPress} style={[styles.button, selected && styles.selected, disabled && styles.disabled]}><Text style={styles.buttonText}>{label}</Text></TouchableOpacity>;
@@ -23,6 +24,9 @@ export default function CommunityPanel() {
   const [notice, setNotice] = useState('');
   const [more, setMore] = useState(false);
   const [reload, setReload] = useState(0);
+  const [gridWidth, setGridWidth] = useState(0);
+  const columns = gridWidth >= 720 ? 3 : 2;
+  const cardWidth = gridWidth > 0 ? Math.floor((gridWidth - 12 * (columns - 1)) / columns) : '47%';
   const generation = useRef(0);
   const pending = useRef(false);
   useEffect(() => {
@@ -68,11 +72,11 @@ export default function CommunityPanel() {
       <Text style={styles.hint}>{t('communityPrivacy')}</Text>
       {!!notice && <Text accessibilityRole="alert" style={styles.notice}>{notice}</Text>}
       {!posts.length && !busy && !notice && <Text style={styles.hint}>{t('communityEmpty')}</Text>}
-      <View style={styles.grid}>{posts.map(post => {
+      <View style={styles.grid} onLayout={event => setGridWidth(event.nativeEvent.layout.width)}>{posts.map(post => {
         const avatar = avatarOf(post.character);
-        return <TouchableOpacity key={post.id} accessibilityRole="button" accessibilityLabel={post.title} style={styles.card} onPress={() => setSelected(post)}>
+        return <TouchableOpacity key={post.id} accessibilityRole="button" accessibilityLabel={post.title} style={[styles.card, { width: cardWidth }]} onPress={() => setSelected(post)}>
           {avatar && <Image source={avatar} style={styles.avatar} />}
-          <Text style={styles.storyTitle} numberOfLines={2}>{post.title}</Text>
+          <Text style={styles.cardTitle} numberOfLines={2}>{post.title}</Text>
           <Text style={styles.hint}>{displayCharacterName(post.character, language)}</Text>
           <Text style={styles.hint}>{post.liked ? '♥' : '♡'} {post.likes} · {t('communityViews', { count: post.views })} · {t('communityCommentCount', { count: post.comment_count ?? 0 })}</Text>
           {sort === 'popular' && period !== 'all' && <Text style={styles.hint}>{t('communityPeriodLikes', { count: post.period_likes ?? 0 })}</Text>}
@@ -86,6 +90,7 @@ export default function CommunityPanel() {
 
 function CommunityPostView({ id, onBack }: { id: string; onBack: () => void }) {
   const { t, language } = useI18n();
+  const imported = useSyncExternalStore(subscribeStories, () => listStories().some(story => story.id === `community-${id}`), () => false);
   const [detail, setDetail] = useState<CommunityDetail | null>(null);
   const [watching, setWatching] = useState(false);
   const [busy, setBusy] = useState(false);
@@ -144,6 +149,10 @@ function CommunityPostView({ id, onBack }: { id: string; onBack: () => void }) {
       <Text style={styles.hint}>{t('communityViews', { count: detail.views })} · {t('communityLikes', { count: detail.likes })}</Text>
       <View style={styles.controls}>
         <Button label={t('communityWatch')} onPress={() => setWatching(true)} />
+        <Button label={t(imported ? 'communityImported' : 'communityImport')} disabled={imported || loading} onPress={() => {
+          try { importSharedStory(communityStory(detail)); setNotice(t('communityImportSuccess')); }
+          catch { setNotice(t('communityImportFailed')); }
+        }} />
         <Button label={t(detail.liked ? 'communityUnlike' : 'communityLike')} selected={detail.liked} disabled={busy || loading} onPress={() => void mutate(async () => { await community.like(id, !detail.liked); await refresh(); })} />
         <Button label={t('communityReport')} disabled={busy || loading} onPress={() => void mutate(() => community.report(id), 'communityReported')} />
         {detail.is_mine && <Button label={t('delete')} disabled={busy || loading} onPress={() => setConfirm({ action: 'post' })} />}
@@ -190,9 +199,10 @@ const styles = StyleSheet.create({
   search: { flex: 1, minWidth: 0, padding: 10, backgroundColor: 'white', borderWidth: 1, borderColor: '#dce2ea', borderRadius: 10 },
   hint: { color: '#758297', fontSize: 13, lineHeight: 20 },
   notice: { color: '#a33a54', lineHeight: 22 },
-  grid: { flexDirection: 'row', flexWrap: 'wrap', gap: 16 },
-  card: { width: 260, maxWidth: 320, flexGrow: 1, flexShrink: 1, flexBasis: 230, padding: 14, borderRadius: 16, backgroundColor: 'white', gap: 8, borderWidth: 1, borderColor: '#e4e8ef' },
-  avatar: { width: '100%', height: 150, resizeMode: 'contain' },
+  grid: { flexDirection: 'row', flexWrap: 'wrap', gap: 12 },
+  card: { flexGrow: 0, flexShrink: 0, minWidth: 0, padding: 10, borderRadius: 12, backgroundColor: 'white', gap: 8, borderWidth: 1, borderColor: '#e4e8ef' },
+  cardTitle: { fontSize: 15, lineHeight: 21, fontWeight: '700', color: '#33425a' },
+  avatar: { width: '100%', aspectRatio: 1.2, maxHeight: 150, resizeMode: 'contain' },
   storyTitle: { fontSize: 17, fontWeight: '700', color: '#33425a', flexShrink: 1 },
   commentInput: { minHeight: 86, textAlignVertical: 'top', padding: 12, backgroundColor: 'white', borderWidth: 1, borderColor: '#dce2ea', borderRadius: 10 },
   comment: { backgroundColor: 'white', borderRadius: 12, padding: 14, gap: 10 },

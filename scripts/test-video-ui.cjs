@@ -24,7 +24,8 @@ function load(file, mocks) {
     '@/platform/videoSave': { chooseVideoSaveTarget: (...args) => { pickerCalls++; return pickerOverride ? pickerOverride(...args) : Promise.resolve(target); } },
   };
   const jobs = load('store/videoExportJob.ts', dependencies);
-  const uiMocks = { react: React, 'react-native': rn, '@/i18n': i18n, '@/store/videoExportJob': jobs };
+  const dimensions = load('services/videoExport/timeline.ts', { '@/utils/parseEventScript': {}, '../../utils/eventPresentation': {}, '../../utils/chatPresentation': {} });
+  const uiMocks = { react: React, 'react-native': rn, '@/i18n': i18n, '@/store/videoExportJob': jobs, '@/services/videoExport/timeline': dimensions };
   const Options = load('components/chat/VideoExportModal.tsx', uiMocks).default;
   const Host = load('components/layout/VideoExportHost.tsx', { ...uiMocks, 'react-native-safe-area-context': { useSafeAreaInsets: () => ({ top: 0 }) }, '@/platform/VideoExportWorker': 'VideoExportWorker' }).default;
   function Harness({ screen = 'library' }) {
@@ -39,19 +40,23 @@ function load(file, mocks) {
   const button = key => tree.root.findAllByType('TouchableOpacity').find(node => node.findAllByType('Text').some(text => text.props.children === key));
   const has = key => tree.root.findAllByType('Text').some(text => text.props.children === key);
   await mount();
+  assert.equal(tree.root.findByProps({ accessibilityLabel: '720p' }).props.accessibilityState.checked, true);
+  await React.act(async () => tree.root.findByProps({ accessibilityLabel: '1080p' }).props.onPress());
   await React.act(async () => tree.root.findByProps({ accessibilityLabel: '9:16' }).props.onPress());
   await React.act(async () => tree.root.findByProps({ accessibilityLabel: 'videoExcludeChat' }).props.onPress());
   await React.act(async () => { button('videoDownload').props.onPress(); button('videoDownload').props.onPress(); });
   assert.equal(pickerCalls, 1); assert.equal(prepareCalls.length, 1);
   assert.equal(prepareCalls[0][1], '9:16'); assert.equal(prepareCalls[0][4].includeChat, false);
+  assert.equal(prepareCalls[0][4].quality, '1080p', 'selected quality survives closing the export options');
   assert.equal(closed, 1); assert.equal(tree.root.findAllByType('Modal').length, 0, 'options close before preparation finishes');
   const running = jobs.getVideoExportJob();
   await React.act(async () => tree.update(React.createElement(Harness, { screen: 'chat' })));
   assert.equal(running.controller.signal.aborted, false, 'screen navigation does not cancel export');
   assert.equal(jobs.beginVideoExport(story, '16:9', 'ko', {}, true), null, 'only one export may run');
-  await React.act(async () => resolvePrepare({ title: story.title, ratio: '9:16' }));
+  await React.act(async () => resolvePrepare({ title: story.title, ratio: '9:16', quality: prepareCalls[0][4].quality }));
   const worker = () => tree.root.findByType('VideoExportWorker');
   assert.equal(worker().props.payload.ratio, '9:16');
+  assert.equal(worker().props.payload.quality, '1080p');
   await React.act(async () => worker().props.options.onProgress({ phase: 'saving', progress: 0.97 }));
   assert.equal(button('cancel').props.disabled, true, 'final save cannot be interrupted');
   assert.equal(jobs.cancelVideoExport(running.id), false);
@@ -63,6 +68,7 @@ function load(file, mocks) {
 
   await mount();
   await React.act(async () => button('videoDownload').props.onPress());
+  assert.equal(prepareCalls.at(-1)[4].quality, '720p', 'default quality retains the existing export size');
   const canceled = jobs.getVideoExportJob();
   await React.act(async () => button('cancel').props.onPress());
   assert.equal(canceled.controller.signal.aborted, true);

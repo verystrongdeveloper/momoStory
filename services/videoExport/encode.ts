@@ -1,6 +1,6 @@
 import { AudioBufferSource, BufferTarget, CanvasSource, Mp4OutputFormat, Output, canEncodeAudio, canEncodeVideo } from 'mediabunny';
 import { registerAacEncoder } from '@mediabunny/aac-encoder';
-import { videoDimensions } from './timeline';
+import { videoBitrate, videoDimensions } from './timeline';
 import { checkAborted, type ExportOptions, type VideoPayload } from './types';
 import { paintVideo, type VideoImages } from './paint';
 
@@ -10,8 +10,12 @@ const MAX_VIDEO_BYTES = 150 * 1024 * 1024;
 
 export async function encodeVideo(payload: VideoPayload, options: ExportOptions): Promise<ArrayBuffer> {
   checkAborted(options.signal);
-  const { width, height } = videoDimensions(payload.ratio);
-  if (!(await canEncodeVideo('avc', { width, height, bitrate: 2_000_000, frameRate: FPS }))) throw new Error('VIDEO_UNSUPPORTED');
+  const { width, height } = videoDimensions(payload.ratio, payload.quality);
+  const bitrate = videoBitrate(payload.quality);
+  if (!(await canEncodeVideo('avc', { width, height, bitrate, frameRate: FPS }))) throw new Error(payload.quality === '1080p' ? 'VIDEO_QUALITY_UNSUPPORTED' : 'VIDEO_UNSUPPORTED');
+  // Keep layout breakpoints and composition identical at both output resolutions.
+  // Draw directly into the full-resolution canvas, including text and original assets.
+  const layout = videoDimensions(payload.ratio);
   if (payload.timeline.duration > 600) throw new Error('VIDEO_TOO_LONG');
   const canvas = document.createElement('canvas');
   canvas.width = width; canvas.height = height;
@@ -46,7 +50,7 @@ export async function encodeVideo(payload: VideoPayload, options: ExportOptions)
     const target = new BufferTarget();
     target.on('write', ({ end }) => { if (end > MAX_VIDEO_BYTES) throw new Error('VIDEO_TOO_LARGE'); });
     output = new Output({ target, format: new Mp4OutputFormat({ fastStart: 'in-memory' }) });
-    const video = new CanvasSource(canvas, { codec: 'avc', bitrate: 2_000_000, keyFrameInterval: 2 });
+    const video = new CanvasSource(canvas, { codec: 'avc', bitrate, keyFrameInterval: 2 });
     output.addVideoTrack(video, { frameRate: FPS });
     const audio = hasAudio ? new AudioBufferSource({ codec: 'aac', bitrate: 128_000 }) : null;
     if (audio) output.addAudioTrack(audio);
@@ -59,7 +63,10 @@ export async function encodeVideo(payload: VideoPayload, options: ExportOptions)
       const time = frame / FPS;
       while (sceneIndex + 1 < payload.timeline.scenes.length && time >= payload.timeline.scenes[sceneIndex + 1].start) sceneIndex++;
       const scene = payload.timeline.scenes[sceneIndex];
-      paintVideo(context, payload, scene, time - scene.start, images, width, height);
+      context.save();
+      context.scale(width / layout.width, height / layout.height);
+      paintVideo(context, payload, scene, time - scene.start, images, layout.width, layout.height);
+      context.restore();
       await video.add(time, Math.min(1 / FPS, payload.timeline.duration - time));
       if (audio && frame % FPS === 0) {
         const length = Math.min(SAMPLE_RATE, Math.round((payload.timeline.duration - audioTime) * SAMPLE_RATE));

@@ -1,6 +1,6 @@
 import { prepareVideo } from '@/services/videoExport/prepare';
 import { videoFileName, type ExportProgress, type VideoPayload } from '@/services/videoExport/types';
-import type { VideoRatio } from '@/services/videoExport/timeline';
+import type { VideoQuality, VideoRatio } from '@/services/videoExport/timeline';
 import type { AppLanguage } from '@/storage/types';
 import type { SavedStory } from '@/store/storyLibrary';
 import type { FileSaveTarget } from '@/platform/fileSave.types';
@@ -36,6 +36,7 @@ export function failVideoExport(id: number, failure: Error) {
   cancelTarget(job.destination);
   const phase = job.progress.phase;
   const error = failure.message === 'VIDEO_UNSUPPORTED' ? 'videoUnsupported'
+    : failure.message === 'VIDEO_QUALITY_UNSUPPORTED' ? 'videoQualityUnsupported'
     : failure.message === 'VIDEO_NATIVE_REBUILD' ? 'videoNativeRebuild'
     : failure.message === 'VIDEO_TOO_LONG' ? 'videoTooLong'
     : failure.message === 'VIDEO_TOO_LARGE' ? 'videoTooLarge'
@@ -60,7 +61,7 @@ export function dismissVideoExport() {
   listeners.forEach(listener => listener());
 }
 
-export function beginVideoExport(story: SavedStory, ratio: VideoRatio, language: AppLanguage, labels: VideoPayload['labels'], includeChat: boolean) {
+export function beginVideoExport(story: SavedStory, ratio: VideoRatio, language: AppLanguage, labels: VideoPayload['labels'], includeChat: boolean, quality: VideoQuality = '720p') {
   if (videoExportBusy()) return null;
   const id = ++sequence;
   const controller = new AbortController();
@@ -69,13 +70,13 @@ export function beginVideoExport(story: SavedStory, ratio: VideoRatio, language:
   const ready = (async () => {
     try {
       // Keep the save picker directly in the button's user-activation chain.
-      const target = await chooseVideoSaveTarget(videoFileName(story.title, ratio), controller.signal);
+      const target = await chooseVideoSaveTarget(videoFileName(story.title, ratio, quality), controller.signal);
       if (controller.signal.aborted || job?.id !== id) { cancelTarget(target ?? undefined); return false; }
       if (target === null) { patch(id, { status: 'canceled' }); return false; }
       patch(id, { status: 'working', destination: target });
       // Preparation and encoding belong to the root host, never to the options modal.
       void prepareVideo(story, ratio, language, labels, {
-        signal: controller.signal, includeChat, onProgress: progress => reportVideoExport(id, progress),
+        signal: controller.signal, includeChat, quality, onProgress: progress => reportVideoExport(id, progress),
       }).then(payload => {
         if (!controller.signal.aborted && job?.id === id && job.status === 'working') {
           patch(id, { payload, progress: { phase: 'encoding', progress: job.progress.progress } });

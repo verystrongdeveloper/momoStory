@@ -5,6 +5,7 @@ import { EVENT_TIMING } from '../../utils/eventPresentation';
 import { CHAT_POP_DURATION, chatSoundKey, type ChatSoundId } from '../../utils/chatPresentation';
 
 export type VideoRatio = '16:9' | '9:16';
+export type VideoQuality = '720p' | '1080p';
 export type VideoScene = {
   start: number;
   duration: number;
@@ -98,6 +99,12 @@ export function buildVideoTimeline(story: StoryRecord, bgmVolume: number, sfxVol
   return { scenes, audio: audio.map((cue) => ({ ...cue, end: Math.min(cue.end, time) })), duration: time, messages };
 }
 
-export function videoDimensions(ratio: VideoRatio) {
-  return ratio === '16:9' ? { width: 1280, height: 720 } : { width: 720, height: 1280 };
+export function videoDimensions(ratio: VideoRatio, quality: VideoQuality = '720p') {
+  const short = quality === '1080p' ? 1080 : 720;
+  const long = quality === '1080p' ? 1920 : 1280;
+  return ratio === '16:9' ? { width: long, height: short } : { width: short, height: long };
+}
+
+export function videoBitrate(quality: VideoQuality = '720p') {
+  return quality === '1080p' ? 5_000_000 : 2_000_000;
 }

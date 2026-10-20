@@ -121,6 +121,8 @@ assert.equal(buildVideoTimeline({ ...story, chatMessages: undefined }, 0, 0).sce
 assert.throws(() => buildVideoTimeline({ ...story, script: '', chatMessages: [] }, 1, 1), /EMPTY_VIDEO/);
 assert.deepEqual(videoDimensions('16:9'), { width: 1280, height: 720 });
 assert.deepEqual(videoDimensions('9:16'), { width: 720, height: 1280 });
+assert.deepEqual(videoDimensions('16:9', '1080p'), { width: 1920, height: 1080 });
+assert.deepEqual(videoDimensions('9:16', '1080p'), { width: 1080, height: 1920 });
 const storyOnly = buildVideoTimeline(story, 0.4, 0.5, 'bell', false);
 assert.deepEqual(storyOnly.messages, []);
 assert.ok(storyOnly.scenes.every(scene => scene.kind === 'story' && !scene.showStoryButton));
@@ -137,4 +139,5 @@ assert.ok(storyOnly.audio.some(cue => cue.key === 'Aira.mp3'));
 assert.ok(storyOnly.duration < timeline.duration);
 assert.equal(story.chatMessages.length, 2, 'export preference must not modify saved chat');
 assert.equal(videoFileName('가/나:다?', '9:16'), '가 나 다_9x16.mp4');
+assert.equal(videoFileName('가/나:다?', '9:16', '1080p'), '가 나 다_9x16_1080p.mp4');
 console.log('PASS timeline: chat-to-story continuity, automatic choices, command timing, music transitions, ending, missing history, dimensions, filenames');

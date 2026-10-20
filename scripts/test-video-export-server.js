@@ -20,7 +20,7 @@ const assets = {
 function nativeFixture() {
   const data = (key) => `data:${assets[key][1]};base64,${fs.readFileSync(path.join(root, assets[key][0])).toString('base64')}`;
   const payload = {
-    title: 'native bridge', name: '호시노', ratio: '9:16', chatSize: 1,
+    title: 'native bridge', name: '호시노', ratio: '9:16', quality: '1080p', chatSize: 1,
     font: data('/font.ttf'),
     images: { avatar: data('/avatar.jpg'), 'bg:BG_AbydosCouncilRoom': data('/bg.jpg'), 'emotion:hoshino_smallsmile': data('/sprite.png') },
     sounds: { 'music:Aira.mp3': data('/music.mp3') }, labels: { bondEvent: '인연 이벤트', bondStory: '호시노의 인연 스토리로' },
@@ -49,7 +49,7 @@ http.createServer((request, response) => {
     return response.end('<!doctype html><html><head><meta charset="utf-8"><title>Video export smoke test</title></head><body><h1>Video export smoke test</h1><button>Run video tests</button><pre>Ready</pre><script src="/test.js"></script></body></html>');
   }
   if (request.url === '/test.js') { response.setHeader('Content-Type', 'text/javascript'); return response.end(code); }
-  if (request.method === 'POST' && /^\/result\/(?:landscape\.mp4|portrait\.mp4|native-bridge\.mp4|(?:16x9|9x16)-(?:chat|dialogue|selection|title|expression|motion)\.png)$/.test(request.url)) {
+  if (request.method === 'POST' && /^\/result\/(?:(?:landscape|portrait)-(?:720p|1080p)\.mp4|native-bridge\.mp4|(?:16x9|9x16)-(?:720p|1080p)-(?:chat|dialogue|selection|title|expression|motion)\.png)$/.test(request.url)) {
     const chunks = []; let length = 0;
     request.on('data', (chunk) => { length += chunk.length; if (length > 150 * 1024 * 1024) { request.destroy(); return; } chunks.push(chunk); });
     request.on('end', () => { fs.writeFileSync(path.join(outputDir, path.basename(request.url)), Buffer.concat(chunks)); response.end('OK'); });

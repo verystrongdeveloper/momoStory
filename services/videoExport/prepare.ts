@@ -49,5 +49,5 @@ export async function prepareVideo(
   }
   const font = await videoAssetUrl(require('../../assets/fonts/Pretendard-SemiBold.ttf'), 'font/ttf');
   checkAborted(options.signal);
-  return { title: story.title, name: displayCharacterName(story.character, language), ratio, chatSize: getSetting('chatSize'), timeline, images, spriteAspects, sounds, font, labels };
+  return { title: story.title, name: displayCharacterName(story.character, language), ratio, quality: options.quality ?? '720p', chatSize: getSetting('chatSize'), timeline, images, spriteAspects, sounds, font, labels };
 }

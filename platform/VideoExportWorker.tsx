@@ -63,7 +63,7 @@ export default function VideoExportWorker(props: VideoExportWorkerProps) {
         expected.current = message.size;
         const temp = new Directory(Paths.cache, `video-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`);
         temp.create(); directory.current = temp;
-        const result = new File(temp, videoFileName(props.payload.title, props.payload.ratio));
+        const result = new File(temp, videoFileName(props.payload.title, props.payload.ratio, props.payload.quality));
         result.create(); file.current = result; handle.current = result.open(FileMode.WriteOnly);
         latest.current.options.onProgress({ phase: 'saving', progress: 0.96 });
       } else if (message.type === 'chunk') {
@@ -79,7 +79,7 @@ export default function VideoExportWorker(props: VideoExportWorkerProps) {
         const result = file.current;
         void (async () => {
           if (Platform.OS === 'android') {
-            await NativeModules.MomoVideoDownloads.save(result.uri, videoFileName(props.payload.title, props.payload.ratio));
+            await NativeModules.MomoVideoDownloads.save(result.uri, videoFileName(props.payload.title, props.payload.ratio, props.payload.quality));
           } else {
             if (!(await Sharing.isAvailableAsync())) throw new Error('VIDEO_UNSUPPORTED');
             await Sharing.shareAsync(result.uri, { mimeType: 'video/mp4', UTI: 'public.mpeg-4' });

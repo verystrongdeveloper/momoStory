@@ -2,12 +2,13 @@ import React, { useEffect, useRef, useState, useSyncExternalStore } from 'react'
 import { Modal, ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import type { SavedStory } from '@/store/storyLibrary';
 import { useI18n } from '@/i18n';
-import type { VideoRatio } from '@/services/videoExport/timeline';
+import { videoDimensions, type VideoQuality, type VideoRatio } from '@/services/videoExport/timeline';
 import { beginVideoExport, cancelVideoExport, getVideoExportJob, subscribeVideoExportJob, videoExportBusy } from '@/store/videoExportJob';
 
 export default function VideoExportModal({ story, onClose }: { story: SavedStory; onClose: () => void }) {
   const { language, t } = useI18n();
   const [ratio, setRatio] = useState<VideoRatio>('16:9');
+  const [quality, setQuality] = useState<VideoQuality>('720p');
   const [includeChat, setIncludeChat] = useState(true);
   const [picking, setPicking] = useState(false);
   const [error, setError] = useState('');
@@ -22,7 +23,7 @@ export default function VideoExportModal({ story, onClose }: { story: SavedStory
   const start = async () => {
     if (selection.current || busy) return;
     setError('');
-    const started = beginVideoExport(story, ratio, language, { bondEvent: t('bondEvent'), bondStory: t('bondStory', { name: story.character }) }, includeChat);
+    const started = beginVideoExport(story, ratio, language, { bondEvent: t('bondEvent'), bondStory: t('bondStory', { name: story.character }) }, includeChat, quality);
     if (!started) { setError('videoExportBusy'); return; }
     const pending = { id: started.id, detached: false };
     selection.current = pending;
@@ -60,6 +61,18 @@ export default function VideoExportModal({ story, onClose }: { story: SavedStory
               <Text style={styles.ratioText}>{value}</Text>
             </TouchableOpacity>)}
           </View>
+          <Text style={styles.hint}>{t('videoQuality')}</Text>
+          <View style={styles.qualities} accessibilityRole="radiogroup" accessibilityLabel={t('videoQuality')}>
+            {(['720p', '1080p'] as const).map(value => {
+              const size = videoDimensions(ratio, value);
+              return <TouchableOpacity key={value} accessibilityRole="radio" accessibilityState={{ checked: quality === value }} accessibilityLabel={value}
+                onPress={() => setQuality(value)} style={[styles.quality, quality === value && styles.selectedRatio]}>
+                <Text style={styles.ratioText}>{value}</Text>
+                <Text style={styles.dimensions}>{size.width} × {size.height}</Text>
+              </TouchableOpacity>;
+            })}
+          </View>
+          <Text style={styles.hint}>{t('videoQualityHint')}</Text>
           {busy && <Text style={styles.hint}>{t('videoExportBusy')}</Text>}
           {!!error && <Text style={styles.error} accessibilityLiveRegion="polite">{t(error)}</Text>}
         </>}
@@ -75,6 +88,9 @@ export default function VideoExportModal({ story, onClose }: { story: SavedStory
 }
 
 const styles = StyleSheet.create({
+  qualities: { flexDirection: 'row', gap: 12, marginTop: 10 },
+  quality: { flex: 1, alignItems: 'center', justifyContent: 'center', minHeight: 72, gap: 6, borderWidth: 2, borderColor: '#e6ebf0', borderRadius: 12, backgroundColor: '#f8fafc' },
+  dimensions: { color: '#67717d', fontSize: 12 },
   chatModes: { flexDirection: 'row', gap: 8, marginTop: 16 },
   chatMode: { flex: 1, alignItems: 'center', justifyContent: 'center', minHeight: 44, borderWidth: 2, borderColor: '#e6ebf0', borderRadius: 10, backgroundColor: '#f8fafc', padding: 8 },
   backdrop: { flex: 1, justifyContent: 'center', alignItems: 'center', backgroundColor: '#18202b88', padding: 20 },

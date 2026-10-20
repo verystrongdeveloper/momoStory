@@ -22,25 +22,26 @@ button.addEventListener('click', async () => {
       script: '타이틀 : 영상으로 남기는 하루\n호시노(아비도스) : 안녕, 선생! [emotion : hoshino_smallsmile.png, bg : BG_AbydosCouncilRoom.jpg, music : Aira.mp3, expression : sweat.png, animation : shakeX, sound : SE_Confirm_01.mp3]\nanimation : slideY\nsound : SE_Crow_04.wav\nselection : (1)"함께 산책하자" (2)"잠깐 쉬자"\ndeleteEmotion\n호시노 : 좋아, 함께 가자! [emotion : hoshino_smallsmile.png]\ndeleteAll\nnarration : 오늘의 추억을 간직했다.\nendEvent',
     };
     const results = [];
-    for (const ratio of ['16:9', '9:16'] as const) {
+    for (const quality of ['720p', '1080p'] as const) for (const ratio of ['16:9', '9:16'] as const) {
       const payload: VideoPayload = {
-        title: story.title, name: story.character, ratio, chatSize: 1,
+        title: story.title, name: story.character, ratio, quality, chatSize: 1,
         timeline: buildVideoTimeline(story, 0.3, 0.5),
         images: { 'bg:BG_AbydosCouncilRoom': '/bg.jpg', 'emotion:hoshino_smallsmile': '/sprite.png', 'expression:sweat.png': '/effect.png', avatar: '/avatar.jpg' },
         spriteAspects: { hoshino_smallsmile: 373 / 668 },
         sounds: { 'sfx:Chat_Pop.wav': '/chat-pop.wav', 'music:Aira.mp3': '/music.mp3', 'sfx:SE_Confirm_01.mp3': '/sfx.mp3', 'sfx:SE_Crow_04.wav': '/sfx.wav' }, font: '/font.ttf',
         labels: { bondEvent: '인연 이벤트', bondStory: '호시노의 인연 스토리로' },
       };
-      status.textContent = `Encoding ${ratio}`;
-      const output = await encodeVideo(payload, { signal: new AbortController().signal, onProgress: (p) => { status.textContent = `Encoding ${ratio}: ${Math.round(p.progress * 100)}%`; } });
+      status.textContent = `Encoding ${ratio} ${quality}`;
+      const output = await encodeVideo(payload, { signal: new AbortController().signal, onProgress: (p) => { status.textContent = `Encoding ${ratio} ${quality}: ${Math.round(p.progress * 100)}%`; } });
       const input = new Input({ source: new BufferSource(output), formats: ALL_FORMATS });
       const video = await input.getPrimaryVideoTrack();
       const audio = await input.getPrimaryAudioTrack();
-      const { width, height } = videoDimensions(ratio);
+      const { width, height } = videoDimensions(ratio, quality);
       if (!video || await video.getCodedWidth() !== width || await video.getCodedHeight() !== height || await video.getCodec() !== 'avc' || !audio || await audio.getCodec() !== 'aac') throw new Error('Invalid video/audio metadata');
       const sink = new AudioBufferSink(audio);
-      const pop = await sink.getBuffer(0.07);
-      const gap = await sink.getBuffer(0.5);
+      const firstPop = payload.timeline.audio.find(cue => cue.key === 'Chat_Pop.wav')!;
+      const pop = await sink.getBuffer(firstPop.start + 0.07);
+      const gap = await sink.getBuffer(firstPop.start + 0.5);
       const rms = (buffer: AudioBuffer) => {
         const data = buffer.getChannelData(0);
         return Math.sqrt(data.reduce((sum, value) => sum + value * value, 0) / data.length);
@@ -48,8 +49,8 @@ button.addEventListener('click', async () => {
       if (!pop || !gap || rms(pop.buffer) < 0.001 || rms(gap.buffer) > rms(pop.buffer) * 0.2) throw new Error('Chat pop missing or playing outside the bubble cue in MP4');
       const duration = await input.computeDuration();
       if (Math.abs(duration - payload.timeline.duration) > 0.1) throw new Error('Duration mismatch');
-      await fetch(`/result/${ratio === '16:9' ? 'landscape' : 'portrait'}.mp4`, { method: 'POST', body: output });
-      results.push({ ratio, width, height, duration, bytes: output.byteLength, video: 'avc', audio: 'aac' });
+      await fetch(`/result/${ratio === '16:9' ? 'landscape' : 'portrait'}-${quality}.mp4`, { method: 'POST', body: output });
+      results.push({ ratio, quality, width, height, duration, bytes: output.byteLength, video: 'avc', audio: 'aac' });
       const element = document.createElement('video'); element.controls = true; element.width = ratio === '16:9' ? 640 : 270;
       element.src = URL.createObjectURL(new Blob([output], { type: 'video/mp4' })); document.body.appendChild(element);
       // Still previews make layout QA independent of video playback controls.
@@ -59,9 +60,12 @@ button.addEventListener('click', async () => {
       for (const kind of ['chat', 'dialogue', 'selection', 'title', 'expression', 'motion']) {
         const scene = payload.timeline.scenes.find((s) => kind === 'chat' ? s.showStoryButton : s.line?.type === (kind === 'title' ? '타이틀' : kind === 'expression' ? 'dialogue' : kind === 'motion' ? 'animation' : kind))!;
         const canvas = document.createElement('canvas'); canvas.width = width; canvas.height = height;
-        paintVideo(canvas.getContext('2d')!, payload, scene, kind === 'title' ? 0.25 : kind === 'expression' ? 0.15 : kind === 'motion' ? 0.08 : scene.duration - 0.2, images, width, height);
+        const context = canvas.getContext('2d')!;
+        const layout = videoDimensions(ratio);
+        context.scale(width / layout.width, height / layout.height);
+        paintVideo(context, payload, scene, kind === 'title' ? 0.25 : kind === 'expression' ? 0.15 : kind === 'motion' ? 0.08 : scene.duration - 0.2, images, layout.width, layout.height);
         const png = await new Promise<Blob>((resolve) => canvas.toBlob((blob) => resolve(blob!), 'image/png'));
-        await fetch(`/result/${ratio.replace(':', 'x')}-${kind}.png`, { method: 'POST', body: png });
+        await fetch(`/result/${ratio.replace(':', 'x')}-${quality}-${kind}.png`, { method: 'POST', body: png });
       }
       input.dispose();
     }

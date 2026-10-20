@@ -7,7 +7,7 @@ import assets from '@/shared/community/assets.json';
 import { validatePublicStory, validateComment } from '@/shared/community/validation';
 
 export type RankingPeriod = 'all' | 'day' | 'week' | 'month' | 'year';
-export type CommunityPost = { id: string; title: string; character: string; created_at: string; likes: number; period_likes?: number; views: number; comment_count: number; liked: boolean; is_mine: boolean };
+export type CommunityPost = { id: string; title: string; character: string; preview_bg?: string | null; created_at: string; likes: number; period_likes?: number; views: number; comment_count: number; liked: boolean; is_mine: boolean };
 export type CommunityComment = { id: string; body: string; created_at: string; is_mine: boolean };
 export type CommunityDetail = Omit<CommunityPost, 'comment_count'> & { script: string; chat_messages: NonNullable<StoryRecord['chatMessages']>; comments: CommunityComment[] };
 export class CommunityError extends Error {

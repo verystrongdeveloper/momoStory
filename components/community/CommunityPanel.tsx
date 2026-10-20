@@ -6,6 +6,8 @@ import CharacterChat from '@/components/chat/CharacterChat';
 import { community, communityConfigured, communityErrorKey, communityStory, type CommunityDetail, type CommunityPost, type RankingPeriod } from '@/services/community/client';
 import { charCount } from '@/shared/community/validation';
 import { importSharedStory, listStories, subscribeStories } from '@/store/storyLibrary';
+import CharacterAvatar from '@/components/CharacterAvatar';
+import { bgMap } from '@/constants/eventAssets';
 
 function Button({ label, onPress, disabled = false, selected = false }: { label: string; onPress: () => void; disabled?: boolean; selected?: boolean }) {
   return <TouchableOpacity accessibilityRole="button" accessibilityState={{ disabled, selected }} disabled={disabled} onPress={onPress} style={[styles.button, selected && styles.selected, disabled && styles.disabled]}><Text style={styles.buttonText}>{label}</Text></TouchableOpacity>;
@@ -74,8 +76,12 @@ export default function CommunityPanel() {
       {!posts.length && !busy && !notice && <Text style={styles.hint}>{t('communityEmpty')}</Text>}
       <View style={styles.grid} onLayout={event => setGridWidth(event.nativeEvent.layout.width)}>{posts.map(post => {
         const avatar = avatarOf(post.character);
+        const background = post.preview_bg ? bgMap[post.preview_bg] : undefined;
         return <TouchableOpacity key={post.id} accessibilityRole="button" accessibilityLabel={post.title} style={[styles.card, { width: cardWidth }]} onPress={() => setSelected(post)}>
-          {avatar && <Image source={avatar} style={styles.avatar} />}
+          <View style={styles.preview}>
+            {background && <Image source={background} resizeMode="cover" style={styles.background} />}
+            {avatar && <CharacterAvatar characterName={post.character} source={avatar} style={styles.avatar} />}
+          </View>
           <Text style={styles.cardTitle} numberOfLines={2}>{post.title}</Text>
           <Text style={styles.hint}>{displayCharacterName(post.character, language)}</Text>
           <Text style={styles.hint}>{post.liked ? '♥' : '♡'} {post.likes} · {t('communityViews', { count: post.views })} · {t('communityCommentCount', { count: post.comment_count ?? 0 })}</Text>
@@ -202,7 +208,9 @@ const styles = StyleSheet.create({
   grid: { flexDirection: 'row', flexWrap: 'wrap', gap: 12 },
   card: { flexGrow: 0, flexShrink: 0, minWidth: 0, padding: 10, borderRadius: 12, backgroundColor: 'white', gap: 8, borderWidth: 1, borderColor: '#e4e8ef' },
   cardTitle: { fontSize: 15, lineHeight: 21, fontWeight: '700', color: '#33425a' },
-  avatar: { width: '100%', aspectRatio: 1.2, maxHeight: 150, resizeMode: 'contain' },
+  preview: { width: '100%', aspectRatio: 1.2, maxHeight: 150, overflow: 'hidden', backgroundColor: '#f3d5dc' },
+  background: { ...StyleSheet.absoluteFillObject, width: '100%', height: '100%' },
+  avatar: { ...StyleSheet.absoluteFillObject, backgroundColor: 'transparent' },
   storyTitle: { fontSize: 17, fontWeight: '700', color: '#33425a', flexShrink: 1 },
   commentInput: { minHeight: 86, textAlignVertical: 'top', padding: 12, backgroundColor: 'white', borderWidth: 1, borderColor: '#dce2ea', borderRadius: 10 },
   comment: { backgroundColor: 'white', borderRadius: 12, padding: 14, gap: 10 },

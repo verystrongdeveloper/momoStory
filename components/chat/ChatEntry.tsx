@@ -1,8 +1,9 @@
 import React, { useMemo, useSyncExternalStore } from 'react';
-import { Image, ImageSourcePropType, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import { ImageSourcePropType, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { getGeminiKey, subscribeGeminiKey } from '@/services/geminiKey';
 import { getTemporaryChat } from '@/store/temporaryChats';
 import { useI18n } from '@/i18n';
+import CharacterAvatar from '@/components/CharacterAvatar';
 
 interface Props {
   image: ImageSourcePropType;
@@ -20,7 +21,7 @@ const ChatEntry: React.FC<Props> = ({ image, name, characterName, status, select
   const unreadCount = useSyncExternalStore(session.subscribe, () => session.getSnapshot().unreadCount, () => 0);
   return (
     <TouchableOpacity onPress={onSelect} style={[styles.entry, selected && styles.entrySelected]}>
-      <Image source={image} style={styles.avatar} />
+      <CharacterAvatar characterName={characterName} source={image} style={styles.avatar} />
       <View style={styles.texts}>
         <Text style={styles.name}>{name}</Text>
         {!!status && (
@@ -56,7 +57,6 @@ const styles = StyleSheet.create({
     width: 50,
     height: 50,
     borderRadius: 5,
-    resizeMode: 'cover',
   },
   texts: {
     flex: 1,

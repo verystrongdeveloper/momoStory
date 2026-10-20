@@ -112,6 +112,7 @@ const invalid = (changes, code) => assert.throws(() => validatePublicStory({ ...
     await db.exec(fs.readFileSync(path.join(root, 'supabase/migrations/202610180002_community_rankings.sql'), 'utf8'));
     await db.exec(fs.readFileSync(path.join(root, 'supabase/migrations/202610190001_community_comment_counts.sql'), 'utf8'));
     await db.exec(fs.readFileSync(path.join(root, 'supabase/migrations/202610200001_add_mari.sql'), 'utf8'));
+    await db.exec(fs.readFileSync(path.join(root, 'supabase/migrations/202610200002_community_preview_backgrounds.sql'), 'utf8'));
     const actor = '11111111-1111-4111-8111-111111111111', other = '22222222-2222-4222-8222-222222222222';
     await db.query('insert into auth.users values($1),($2)', [actor, other]);
     await db.query("insert into public.community_posts(author, client_id, title, character, script) values($1, 'mari-migration-check', 'Mari', '마리', 'test')", [actor]);
@@ -119,6 +120,9 @@ const invalid = (changes, code) => assert.throws(() => validatePublicStory({ ...
     const rpc = async (action, data = {}, user = actor) => (action === 'list'
       ? await db.query('select public.community_list($1::uuid, $2::jsonb) as result', [user, JSON.stringify(data)])
       : await db.query('select public.community_api($1::uuid, $2::text, $3::jsonb) as result', [user, action, JSON.stringify(data)])).rows[0].result;
+    await db.query("insert into public.community_posts(author, client_id, title, character, script) values($1, 'preview-check', 'Preview fixture', '호시노', E'title : Preview fixture\\nbg : BG_First.jpg\\n호시노 : hi [bg : BG_Second.jpg]')", [actor]);
+    assert.equal((await rpc('list', { query: 'Preview fixture' }))[0].preview_bg, 'BG_First', 'standalone background commands use the first asset');
+    await db.query("delete from public.community_posts where client_id = 'preview-check'");
     const cooldown = async (action, user = actor) => db.query("update public.community_limits set last_at = now() - interval '2 minutes' where actor = $1 and action = $2", [user, action]);
     const first = await rpc('publish', sample);
     assert.ok(first.id);
@@ -130,6 +134,7 @@ const invalid = (changes, code) => assert.throws(() => validatePublicStory({ ...
     const list = await rpc('list');
     assert.equal(list.length, 5); assert.equal(list[0].is_mine, true);
     assert.ok(list.every(post => post.comment_count === 0), 'posts without comments report zero');
+    assert.ok(list.every(post => post.preview_bg === 'BG_AbydosCouncilRoom'), 'cards expose the first script background without exposing the script');
     assert.equal('author' in list[0], false); assert.equal('script' in list[0], false);
     await assert.rejects(() => rpc('deletePost', { id: first.id }, other), /NOT_FOUND/);
     await rpc('like', { id: first.id, liked: true }); await cooldown('like'); await rpc('like', { id: first.id, liked: true });

@@ -130,7 +130,7 @@ function load(file, mocks) {
     './StoryScriptEditor': 'StoryScriptEditor',
     '@/components/community/PublishStoryModal': 'PublishStoryModal',
     'react-native': rn, '@expo/vector-icons': { Ionicons: 'Ionicons' }, '@/constants/characters': { avatarOf: () => undefined, displayCharacterName: (name) => name },
-    '@/hooks/useLayout': { useLayout: () => ({ isCompact: true }) }, '@/components/chat/StoryAssetPanel': 'StoryAssetPanel', './VideoExportModal': 'VideoExportModal',
+    '@/hooks/useLayout': { useLayout: () => ({ isCompact: true }) }, '@/components/CharacterAvatar': 'CharacterAvatar', '@/components/chat/StoryAssetPanel': 'StoryAssetPanel', './VideoExportModal': 'VideoExportModal',
     '@/store/storyLibrary': { listStories: () => [story], subscribeStories: () => () => {} }, '@/utils/insertStoryAsset': {}, '@/platform/clipboard': {}, '@/utils/storyFile': {}, '@/utils/storyPrompt': {}, '@/i18n': i18n,
   }).default;
   await React.act(async () => { tree = Renderer.create(React.createElement(List, { onOpenStory() {} })); });

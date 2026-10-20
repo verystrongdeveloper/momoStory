@@ -43,6 +43,7 @@ const mocks = {
   '@/store/temporaryChats': temporaryChats,
   '@/services/chatSize': { useChatSize: () => 1 }, './chatSizeStyles': { makeChatSizeStyles: () => ({}) },
   '@/services/chatMode': chatMode,
+  '@/components/CharacterAvatar': 'CharacterAvatar',
   '@/i18n': { useI18n: () => ({ t: key => key }) },
   '@/utils/splitChatReply': { splitChatReply: text => text ? text.split('|') : [] },
   '@/hooks/useChatPop': () => {},

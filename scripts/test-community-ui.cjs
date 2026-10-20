@@ -16,7 +16,7 @@ const rn = Object.fromEntries(['View', 'Text', 'Modal', 'TextInput', 'ScrollView
 rn.StyleSheet = { create: value => value };
 const translate = (key, values) => key === 'communityCommentCount' ? `${key}:${values.count}` : key;
 const i18n = { useI18n: () => ({ t: translate, language: 'ko' }) };
-const post = { id: '11111111-1111-4111-8111-111111111111', title: 'Public story', character: '호시노', created_at: new Date().toISOString(), likes: 0, views: 1, comment_count: 0, liked: false, is_mine: true };
+const post = { id: '11111111-1111-4111-8111-111111111111', title: 'Public story', character: '호시노', preview_bg: 'BG_AbydosCouncilRoom', created_at: new Date().toISOString(), likes: 0, views: 1, comment_count: 0, liked: false, is_mine: true };
 const detail = { ...post, script: 'title : Public story\n호시노 : hi\nendEvent', chat_messages: [{ sender: 'user', text: 'hi' }], comments: [] };
 const validation = load('shared/community/validation.ts', {});
 const chars = { avatarOf: () => 'avatar', displayCharacterName: name => name };
@@ -64,12 +64,13 @@ const hasCount = (tree, count) => tree.root.findAllByType('Text').some(text => J
     },
     '../shared/prompts/speakerNames': { canonicalCharacterName: name => name },
   });
-  const Panel = load('components/community/CommunityPanel.tsx', { react: React, 'react-native': rn, '@/i18n': i18n, '@/constants/characters': chars, '@/components/chat/CharacterChat': 'CharacterChat', '@/services/community/client': api, '@/shared/community/validation': validation, '@/store/storyLibrary': library }).default;
+  const Panel = load('components/community/CommunityPanel.tsx', { react: React, 'react-native': rn, '@/i18n': i18n, '@/constants/characters': chars, '@/constants/eventAssets': { bgMap: { BG_AbydosCouncilRoom: 'background' } }, '@/components/CharacterAvatar': 'CharacterAvatar', '@/components/chat/CharacterChat': 'CharacterChat', '@/services/community/client': api, '@/shared/community/validation': validation, '@/store/storyLibrary': library }).default;
   await React.act(async () => { tree = Renderer.create(React.createElement(Panel)); });
   assert.ok(has(tree, 'communitySetup')); assert.equal(queries.length, 0);
   await React.act(async () => tree.unmount()); configured = true;
   await React.act(async () => { tree = Renderer.create(React.createElement(Panel)); });
   assert.equal(queries.at(-1).liked, false);
+  assert.equal(tree.root.findByType('Image').props.source, 'background', 'community cards render the first story background behind the character');
   assert.ok(hasCount(tree, 0), 'cards explicitly show zero comments');
   post.comment_count = 7;
   await React.act(async () => button(tree, 'communityRefresh').props.onPress());
@@ -136,7 +137,7 @@ const hasCount = (tree, count) => tree.root.findAllByType('Text').some(text => J
   const Library = load('components/chat/StoryLibraryList.tsx', {
     './StoryScriptEditor': 'StoryScriptEditor',
     react: React, 'react-native': { ...rn, Platform: { OS: 'web' } }, '@expo/vector-icons': { Ionicons: 'Ionicons' }, '@/constants/characters': chars,
-    '@/hooks/useLayout': { useLayout: () => ({ isCompact: true }) }, '@/components/chat/StoryAssetPanel': 'StoryAssetPanel', './VideoExportModal': 'VideoExportModal', '@/components/community/PublishStoryModal': 'PublishStoryModal',
+    '@/hooks/useLayout': { useLayout: () => ({ isCompact: true }) }, '@/components/CharacterAvatar': 'CharacterAvatar', '@/components/chat/StoryAssetPanel': 'StoryAssetPanel', './VideoExportModal': 'VideoExportModal', '@/components/community/PublishStoryModal': 'PublishStoryModal',
     '@/store/storyLibrary': { listStories: () => [{ ...detail, createdAt: Date.now() }], subscribeStories: () => () => {} }, '@/utils/insertStoryAsset': {}, '@/platform/clipboard': {}, '@/utils/storyFile': {}, '@/utils/storyPrompt': {}, '@/i18n': i18n,
   }).default;
   await React.act(async () => { tree = Renderer.create(React.createElement(Library, { onOpenStory() {} })); });

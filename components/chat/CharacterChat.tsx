@@ -3,7 +3,6 @@ import {
   Button,
   AppState,
   FlatList,
-  Image,
   ImageSourcePropType,
   Keyboard,
   Modal,
@@ -26,6 +25,7 @@ import { getTemporaryChat, type TemporaryMessage } from '@/store/temporaryChats'
 import { useChatSize } from '@/services/chatSize';
 import { makeChatSizeStyles } from './chatSizeStyles';
 import { useI18n } from '@/i18n';
+import CharacterAvatar from '@/components/CharacterAvatar';
 import { splitChatReply } from '@/utils/splitChatReply';
 import useChatPop from '@/hooks/useChatPop';
 import { getIncludeBondStory, useIncludeBondStory } from '@/services/chatMode';
@@ -264,7 +264,7 @@ const CharacterChat: React.FC<Props> = ({ characterName, displayName, characterI
       <View style={[styles.messageRow, sizeStyles.messageRow, isUser && styles.messageRowRight]}>
         {!isUser && (
           <View style={[styles.avatarWrapper, sizeStyles.avatarWrapper]}>
-            {item.showImage && characterImage && <Image source={characterImage} style={[styles.avatar, sizeStyles.avatar]} />}
+            {item.showImage && characterImage && <CharacterAvatar characterName={characterName} source={characterImage} style={[styles.avatar, sizeStyles.avatar]} />}
           </View>
         )}
         <View style={styles.messageColumn}>

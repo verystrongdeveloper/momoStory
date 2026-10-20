@@ -1,5 +1,5 @@
 import React, { useEffect, useMemo, useRef, useState } from 'react';
-import { Alert, Image, Platform, ScrollView, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
+import { Alert, Platform, ScrollView, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { avatarOf, displayCharacterName } from '@/constants/characters';
 import { useLayout } from '@/hooks/useLayout';
@@ -13,6 +13,7 @@ import { copyText } from '@/platform/clipboard';
 import { downloadStory, pickStoryFile } from '@/utils/storyFile';
 import { buildStoryPrompt } from '@/utils/storyPrompt';
 import { useI18n } from '@/i18n';
+import CharacterAvatar from '@/components/CharacterAvatar';
 
 const localeOf = { ko: 'ko-KR', en: 'en-US', ja: 'ja-JP', zh: 'zh-CN' } as const;
 const formatWhen = (createdAt: number, language: keyof typeof localeOf) =>
@@ -319,7 +320,7 @@ export default function StoryLibraryList({ onOpenStory }: { onOpenStory: (story:
                 >
                   <TouchableOpacity style={styles.coverHit} onPress={() => open(story)} activeOpacity={0.92}>
                     {portrait ? (
-                      <Image source={portrait} style={styles.portrait} resizeMode="cover" />
+                      <CharacterAvatar characterName={story.character} source={portrait} style={styles.portrait} />
                     ) : (
                       <View style={[styles.portrait, styles.portraitFallback]}>
                         <Text style={styles.fallbackText}>{displayCharacterName(story.character, language).slice(0, 1)}</Text>

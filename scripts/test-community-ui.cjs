@@ -71,6 +71,10 @@ const hasCount = (tree, count) => tree.root.findAllByType('Text').some(text => J
   await React.act(async () => { tree = Renderer.create(React.createElement(Panel)); });
   assert.equal(queries.at(-1).liked, false);
   assert.equal(tree.root.findByType('Image').props.source, 'background', 'community cards render the first story background behind the character');
+  const avatarStyle = tree.root.findByType('CharacterAvatar').props.style;
+  assert.equal(avatarStyle.position, 'absolute', 'native character layer must have explicit bounds without absoluteFillObject');
+  for (const edge of ['top', 'right', 'bottom', 'left']) assert.equal(avatarStyle[edge], 0);
+  assert.equal(avatarStyle.backgroundColor, 'transparent', 'story background remains visible behind the character');
   assert.ok(hasCount(tree, 0), 'cards explicitly show zero comments');
   post.comment_count = 7;
   await React.act(async () => button(tree, 'communityRefresh').props.onPress());
@@ -135,12 +139,15 @@ const hasCount = (tree, count) => tree.root.findAllByType('Text').some(text => J
   await React.act(async () => tree.unmount());
   // Verify the library menu opens the actual publish modal path.
   const Library = load('components/chat/StoryLibraryList.tsx', {
+    '@/constants/eventAssets': { bgMap: {} }, '@/utils/parseEventScript': load('utils/parseEventScript.ts', {}),
     './StoryScriptEditor': 'StoryScriptEditor',
     react: React, 'react-native': { ...rn, Platform: { OS: 'web' } }, '@expo/vector-icons': { Ionicons: 'Ionicons' }, '@/constants/characters': chars,
     '@/hooks/useLayout': { useLayout: () => ({ isCompact: true }) }, '@/components/CharacterAvatar': 'CharacterAvatar', '@/components/chat/StoryAssetPanel': 'StoryAssetPanel', './VideoExportModal': 'VideoExportModal', '@/components/community/PublishStoryModal': 'PublishStoryModal',
     '@/store/storyLibrary': { listStories: () => [{ ...detail, createdAt: Date.now() }], subscribeStories: () => () => {} }, '@/utils/insertStoryAsset': {}, '@/platform/clipboard': {}, '@/utils/storyFile': {}, '@/utils/storyPrompt': {}, '@/i18n': i18n,
   }).default;
   await React.act(async () => { tree = Renderer.create(React.createElement(Library, { onOpenStory() {} })); });
+  assert.equal(tree.root.findAllByType('Image').length, 0, 'stories without BG keep the original library thumbnail');
+  assert.equal(tree.root.findByType('CharacterAvatar').props.style[0].backgroundColor, '#f3d5dc');
   await React.act(async () => tree.root.findByProps({ accessibilityLabel: 'storyMenu' }).props.onPress());
   await React.act(async () => button(tree, 'communityPublish').props.onPress());
   assert.equal(tree.root.findByType('PublishStoryModal').props.story.id, post.id);

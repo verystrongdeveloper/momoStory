@@ -132,14 +132,20 @@ function load(file, mocks) {
   await React.act(async () => jobs.dismissVideoExport());
   await React.act(async () => tree.unmount());
 
+  story.script = 'title : Thumbnail\n호시노 : first [bg : BG_AbydosCouncilRoom.jpg]\n호시노 : next [bg : BG_Second.jpg]\nendEvent';
   const List = load('components/chat/StoryLibraryList.tsx', {
+    '@/constants/eventAssets': { bgMap: { BG_AbydosCouncilRoom: 'first-background', BG_Second: 'second-background' } },
+    '@/utils/parseEventScript': load('utils/parseEventScript.ts', {}),
     './StoryScriptEditor': 'StoryScriptEditor',
     '@/components/community/PublishStoryModal': 'PublishStoryModal',
-    'react-native': rn, '@expo/vector-icons': { Ionicons: 'Ionicons' }, '@/constants/characters': { avatarOf: () => undefined, displayCharacterName: (name) => name },
+    'react-native': rn, '@expo/vector-icons': { Ionicons: 'Ionicons' }, '@/constants/characters': { avatarOf: () => 'avatar', displayCharacterName: (name) => name },
     '@/hooks/useLayout': { useLayout: () => ({ isCompact: true }) }, '@/components/CharacterAvatar': 'CharacterAvatar', '@/components/chat/StoryAssetPanel': 'StoryAssetPanel', './VideoExportModal': 'VideoExportModal',
     '@/store/storyLibrary': { listStories: () => [story], subscribeStories: () => () => {} }, '@/utils/insertStoryAsset': {}, '@/platform/clipboard': {}, '@/utils/storyFile': {}, '@/utils/storyPrompt': {}, '@/i18n': i18n,
   }).default;
   await React.act(async () => { tree = Renderer.create(React.createElement(List, { onOpenStory() {} })); });
+  assert.equal(tree.root.findByType('Image').props.source, 'first-background', 'library thumbnail uses the first rendered BG, not later backgrounds');
+  assert.equal(tree.root.findByType('Image').props.style.position, 'absolute');
+  assert.equal(tree.root.findByType('CharacterAvatar').props.style.at(-1).backgroundColor, 'transparent', 'portrait does not hide the story background');
   await React.act(async () => tree.root.findByProps({ accessibilityLabel: 'storyMenu' }).props.onPress());
   assert.ok(button('export'));
   await React.act(async () => button('exportVideo').props.onPress());

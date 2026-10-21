@@ -82,7 +82,7 @@ export default function CommunityPanel() {
             {background && <Image source={background} resizeMode="cover" style={styles.background} />}
             {avatar && <CharacterAvatar characterName={post.character} source={avatar} style={styles.avatar} />}
           </View>
-          <Text style={styles.cardTitle} numberOfLines={2}>{post.title}</Text>
+          <Text style={styles.cardTitle} numberOfLines={1} ellipsizeMode="tail">{post.title}</Text>
           <Text style={styles.hint}>{displayCharacterName(post.character, language)}</Text>
           <Text style={styles.hint}>{post.liked ? '♥' : '♡'} {post.likes} · {t('communityViews', { count: post.views })} · {t('communityCommentCount', { count: post.comment_count ?? 0 })}</Text>
           {sort === 'popular' && period !== 'all' && <Text style={styles.hint}>{t('communityPeriodLikes', { count: post.period_likes ?? 0 })}</Text>}
@@ -209,8 +209,8 @@ const styles = StyleSheet.create({
   card: { flexGrow: 0, flexShrink: 0, minWidth: 0, padding: 10, borderRadius: 12, backgroundColor: 'white', gap: 8, borderWidth: 1, borderColor: '#e4e8ef' },
   cardTitle: { fontSize: 15, lineHeight: 21, fontWeight: '700', color: '#33425a' },
   preview: { width: '100%', aspectRatio: 1.2, maxHeight: 150, overflow: 'hidden', backgroundColor: '#f3d5dc' },
-  background: { ...StyleSheet.absoluteFillObject, width: '100%', height: '100%' },
-  avatar: { ...StyleSheet.absoluteFillObject, backgroundColor: 'transparent' },
+  background: { position: 'absolute', top: 0, right: 0, bottom: 0, left: 0, width: '100%', height: '100%' },
+  avatar: { position: 'absolute', top: 0, right: 0, bottom: 0, left: 0, backgroundColor: 'transparent' },
   storyTitle: { fontSize: 17, fontWeight: '700', color: '#33425a', flexShrink: 1 },
   commentInput: { minHeight: 86, textAlignVertical: 'top', padding: 12, backgroundColor: 'white', borderWidth: 1, borderColor: '#dce2ea', borderRadius: 10 },
   comment: { backgroundColor: 'white', borderRadius: 12, padding: 14, gap: 10 },

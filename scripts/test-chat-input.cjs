@@ -212,7 +212,7 @@ process.once('beforeExit', () => { if (!completed) { console.error('FAIL unfinis
   assert.deepEqual(tree.root.findByType('FlatList').props.data.slice(0, beforeStory.length), beforeStory, 'generating a story does not clear the chat before viewing');
   assert.ok(storyButton());
   locked(true);
-  assert.ok(tree.root.findAllByType('Text').some(node => node.props.children === 'storyChatAwaitingEnd'));
+  assert.equal(tree.root.findAllByType('Text').some(node => ['storyChatAwaitingEnd', 'storyChatLocked'].includes(node.props.children)), false);
   const unfinished = eventStore.consumePendingEvent();
   assert.ok(unfinished.onComplete);
   // Leaving the player early does not invoke its completion callback.
@@ -327,6 +327,20 @@ process.once('beforeExit', () => { if (!completed) { console.error('FAIL unfinis
   assert.equal(badges()[0].props.children, '99+');
   await React.act(async () => badgeChat.clear());
   assert.equal(badges().length, 0, 'reset clears unread badge');
+  await unmount();
+  await mount({ characterName: 'final-reply-button-test' });
+  const finalStoryButton = () => tree.root.findAllByType('TouchableOpacity').find(node => node.findAllByType('Text').some(text => text.props.children === 'bondStory'));
+  await type('third pair');
+  await React.act(async () => { sending = send().props.onPress(); });
+  await React.act(async () => chatCalls.at(-1).resolve({ reply: 'first sentence|last sentence', eventReady: true }));
+  locked(true);
+  assert.equal(finalStoryButton(), undefined, 'story button stays hidden while final reply is typing');
+  assert.ok(tree.root.findByType('FlatList').props.data.some(message => message.sender === 'typing'));
+  await delay(); await React.act(async () => sending);
+  assert.ok(finalStoryButton(), 'story button appears after the last character sentence');
+  assert.equal(tree.root.findByType('FlatList').props.data.at(-1).text, 'last sentence');
+  assert.equal(tree.root.findAllByType('Text').some(node => ['storyChatAwaitingEnd', 'storyChatLocked'].includes(node.props.children)), false, 'no three-pair completion notice');
+  locked(true);
   await unmount();
   completed = true;
   console.log('PASS input/send/Enter lock during requests and multi-sentence replies, rapid duplicate prevention, greeting lock, empty/error recovery, missing key and saved chat');

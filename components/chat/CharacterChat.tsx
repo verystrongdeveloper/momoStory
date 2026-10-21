@@ -298,7 +298,7 @@ const CharacterChat: React.FC<Props> = ({ characterName, room = 'bond', displayN
         }}
       />
 
-      {(savedStory ? !replaying : includeBondStory && eventReady) && (
+      {(savedStory ? !replaying : includeBondStory && eventReady && !isWaiting) && (
         <View style={styles.eventContainer}>
           <Text style={[styles.eventLabel, sizeStyles.eventLabel]}>| {t('bondEvent')} |</Text>
           <TouchableOpacity style={styles.eventButton} onPress={handleEventStart}>
@@ -307,7 +307,6 @@ const CharacterChat: React.FC<Props> = ({ characterName, room = 'bond', displayN
         </View>
       )}
 
-      {!savedStory && eventReady && <Text style={styles.archiveNotice}>{t(storyScript ? 'storyChatAwaitingEnd' : 'storyChatLocked')}</Text>}
       {savedStory && replaying && <Text style={styles.archiveNotice}>{t('chatReplayHint')}</Text>}
       {!savedStory && <View style={styles.inputArea}>
         <TextInput

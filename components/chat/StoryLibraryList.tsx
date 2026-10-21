@@ -1,5 +1,5 @@
 import React, { useEffect, useMemo, useRef, useState } from 'react';
-import { Alert, Platform, ScrollView, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
+import { Alert, Image, Platform, ScrollView, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { avatarOf, displayCharacterName } from '@/constants/characters';
 import { useLayout } from '@/hooks/useLayout';
@@ -14,6 +14,8 @@ import { downloadStory, pickStoryFile } from '@/utils/storyFile';
 import { buildStoryPrompt } from '@/utils/storyPrompt';
 import { useI18n } from '@/i18n';
 import CharacterAvatar from '@/components/CharacterAvatar';
+import { bgMap } from '@/constants/eventAssets';
+import parseEventScript from '@/utils/parseEventScript';
 
 const localeOf = { ko: 'ko-KR', en: 'en-US', ja: 'ja-JP', zh: 'zh-CN' } as const;
 const formatWhen = (createdAt: number, language: keyof typeof localeOf) =>
@@ -30,6 +32,10 @@ export default function StoryLibraryList({ onOpenStory }: { onOpenStory: (story:
   const columns = Math.max(1, Math.floor((shelfWidth + cardGap) / (minCardWidth + cardGap)));
   const cardWidth = shelfWidth > 0 ? (shelfWidth - cardGap * (columns - 1)) / columns : undefined;
   const [stories, setStories] = useState<SavedStory[]>(() => listStories());
+  const previewBackgrounds = useMemo(() => new Map(stories.map(story => {
+    const firstBg = parseEventScript(story.script).find(line => line.bg)?.bg;
+    return [story.id, firstBg ? bgMap[firstBg] : undefined];
+  })), [stories]);
   const [search, setSearch] = useState('');
   const [searchMode, setSearchMode] = useState<'title' | 'content'>('title');
   const searchEntries = useMemo(() => stories.map((story) => ({
@@ -311,6 +317,7 @@ export default function StoryLibraryList({ onOpenStory }: { onOpenStory: (story:
           <View style={[styles.grid, { gap: cardGap }]}>
             {filteredStories.map((story) => {
               const portrait = avatarOf(story.character);
+              const background = previewBackgrounds.get(story.id);
               const menuOpen = menuId === story.id;
               return (
                 <View
@@ -319,10 +326,11 @@ export default function StoryLibraryList({ onOpenStory }: { onOpenStory: (story:
                   style={[styles.card, cardWidth !== undefined && { width: cardWidth }, menuOpen && styles.cardMenuOpen]}
                 >
                   <TouchableOpacity style={styles.coverHit} onPress={() => open(story)} activeOpacity={0.92}>
+                    {background && <Image source={background} resizeMode="cover" style={styles.previewBackground} />}
                     {portrait ? (
-                      <CharacterAvatar characterName={story.character} source={portrait} style={styles.portrait} />
+                      <CharacterAvatar characterName={story.character} source={portrait} style={[styles.portrait, background && styles.transparentPortrait]} />
                     ) : (
-                      <View style={[styles.portrait, styles.portraitFallback]}>
+                      <View style={[styles.portrait, styles.portraitFallback, background && styles.transparentPortrait]}>
                         <Text style={styles.fallbackText}>{displayCharacterName(story.character, language).slice(0, 1)}</Text>
                       </View>
                     )}
@@ -337,7 +345,7 @@ export default function StoryLibraryList({ onOpenStory }: { onOpenStory: (story:
                     <Ionicons name="ellipsis-horizontal" size={16} color="#5c6570" />
                   </TouchableOpacity>
                   <TouchableOpacity style={styles.body} onPress={() => open(story)} activeOpacity={0.92}>
-                    <Text style={styles.name} numberOfLines={2}>
+                    <Text style={styles.name} numberOfLines={1} ellipsizeMode="tail">
                       {story.title}
                     </Text>
                     <Text style={styles.character} numberOfLines={1}>
@@ -745,6 +753,8 @@ const styles = StyleSheet.create({
     height: '100%',
     backgroundColor: '#f3d5dc',
   },
+  previewBackground: { position: 'absolute', top: 0, right: 0, bottom: 0, left: 0, width: '100%', height: '100%' },
+  transparentPortrait: { backgroundColor: 'transparent' },
   portraitFallback: {
     alignItems: 'center',
     justifyContent: 'center',

@@ -5,16 +5,21 @@ const ts = require('typescript');
 const React = require('react');
 const Renderer = require('react-test-renderer');
 global.IS_REACT_ACT_ENVIRONMENT = true;
-function load(file, mocks) {
+function load(file, mocks, clock = { setTimeout, clearTimeout }) {
   const mod = { exports: {} };
   const code = ts.transpileModule(fs.readFileSync(path.join(__dirname, '..', file), 'utf8'), {
     compilerOptions: { module: ts.ModuleKind.CommonJS, jsx: ts.JsxEmit.React, esModuleInterop: true, target: ts.ScriptTarget.ES2022 },
   }).outputText;
-  new Function('require', 'module', 'exports', code)((id) => Object.hasOwn(mocks, id) ? mocks[id] : require(id), mod, mod.exports);
+  new Function('require', 'module', 'exports', 'setTimeout', 'clearTimeout', code)((id) => Object.hasOwn(mocks, id) ? mocks[id] : require(id), mod, mod.exports, clock.setTimeout, clock.clearTimeout);
   return mod.exports;
 }
 (async () => {
   const rn = { Modal: 'Modal', Pressable: 'Pressable', ScrollView: 'ScrollView', Text: 'Text', TouchableOpacity: 'TouchableOpacity', View: 'View', TextInput: 'TextInput', Image: 'Image', ActivityIndicator: 'ActivityIndicator', Platform: { OS: 'android' }, StyleSheet: { absoluteFillObject: {}, create: s => s } };
+  const timers = new Map(); let nextTimer = 0;
+  const clock = { setTimeout: (callback, delay) => { timers.set(++nextTimer, { callback, delay }); return nextTimer; }, clearTimeout: id => timers.delete(id) };
+  const fades = [];
+  rn.Animated = { View: 'AnimatedView', Value: class { constructor(value) { this.value = value; } setValue(value) { this.value = value; } },
+    timing: (value, options) => { const animation = { value, options, start(callback) { this.callback = callback; }, stop() { this.stopped = true; } }; fades.push(animation); return animation; } };
   const i18n = { useI18n: () => ({ language: 'ko', t: key => key }) };
   const story = { id: 'id', title: 'test', character: '호시노', script: '호시노 : 안녕', createdAt: 1 };
   let pickerCalls = 0, prepareCalls = [], closed = 0, target, pickerOverride, resolvePrepare;
@@ -27,7 +32,7 @@ function load(file, mocks) {
   const dimensions = load('services/videoExport/timeline.ts', { '@/utils/parseEventScript': {}, '../../utils/eventPresentation': {}, '../../utils/chatPresentation': {} });
   const uiMocks = { react: React, 'react-native': rn, '@/i18n': i18n, '@/store/videoExportJob': jobs, '@/services/videoExport/timeline': dimensions };
   const Options = load('components/chat/VideoExportModal.tsx', uiMocks).default;
-  const Host = load('components/layout/VideoExportHost.tsx', { ...uiMocks, 'react-native-safe-area-context': { useSafeAreaInsets: () => ({ top: 0 }) }, '@/platform/VideoExportWorker': 'VideoExportWorker' }).default;
+  const Host = load('components/layout/VideoExportHost.tsx', { ...uiMocks, 'react-native-safe-area-context': { useSafeAreaInsets: () => ({ top: 0 }) }, '@/platform/VideoExportWorker': 'VideoExportWorker' }, clock).default;
   function Harness({ screen = 'library' }) {
     const [show, setShow] = React.useState(true);
     return React.createElement(React.Fragment, null,
@@ -62,7 +67,15 @@ function load(file, mocks) {
   assert.equal(jobs.cancelVideoExport(running.id), false);
   await React.act(async () => worker().props.onComplete());
   assert.ok(has('videoSavedDownloads')); assert.equal(tree.root.findAllByType('VideoExportWorker').length, 0);
-  await React.act(async () => button('close').props.onPress());
+  assert.equal(timers.size, 1);
+  const [timerId, timer] = [...timers][0];
+  assert.equal(timer.delay, 5000, 'completion stays fully visible for five seconds');
+  assert.equal(fades.length, 0);
+  timers.delete(timerId);
+  await React.act(async () => timer.callback());
+  assert.equal(fades.at(-1).options.duration, 350);
+  assert.equal(jobs.getVideoExportJob().status, 'done', 'notice stays mounted during fade');
+  await React.act(async () => fades.at(-1).callback({ finished: true }));
   assert.equal(jobs.getVideoExportJob(), null);
   await React.act(async () => tree.unmount());
 
@@ -75,6 +88,7 @@ function load(file, mocks) {
   await React.act(async () => resolvePrepare({ title: 'late result' }));
   assert.equal(tree.root.findAllByType('VideoExportWorker').length, 0);
   assert.ok(has('videoExportCanceled'));
+  assert.equal(timers.size, 0, 'cancellation does not auto-dismiss');
   await React.act(async () => button('close').props.onPress());
   await React.act(async () => tree.unmount());
 
@@ -105,6 +119,17 @@ function load(file, mocks) {
   assert.equal(worker().props.destination, target);
   await React.act(async () => worker().props.onComplete());
   assert.ok(has('videoSavedFile'));
+  const [desktopTimerId, desktopTimer] = [...timers][0];
+  timers.delete(desktopTimerId);
+  await React.act(async () => desktopTimer.callback());
+  const oldFade = fades.at(-1);
+  let nextJob;
+  await React.act(async () => { nextJob = jobs.beginVideoExport(story, '16:9', 'ko', {}, true); await nextJob.ready; });
+  assert.ok(oldFade.stopped, 'a new export stops the previous fade');
+  assert.equal(oldFade.value.value, 1, 'a new job restores banner opacity');
+  await React.act(async () => oldFade.callback({ finished: true }));
+  assert.equal(jobs.getVideoExportJob().id, nextJob.id, 'an old fade cannot dismiss a newer job');
+  await React.act(async () => jobs.cancelVideoExport(nextJob.id));
   await React.act(async () => jobs.dismissVideoExport());
   await React.act(async () => tree.unmount());
 
@@ -117,6 +142,7 @@ function load(file, mocks) {
       jobs.failVideoExport(id, new Error('failure'));
     });
     assert.ok(has({ preparing: 'videoPrepareFailed', encoding: 'videoEncodeFailed', saving: 'videoSaveFailed' }[phase]));
+    assert.equal(timers.size, 0, 'errors remain available to read');
     await React.act(async () => resolvePrepare({ title: 'late result' }));
     assert.equal(tree.root.findAllByType('VideoExportWorker').length, 0);
     await React.act(async () => jobs.dismissVideoExport());

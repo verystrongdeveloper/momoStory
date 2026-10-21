@@ -7,15 +7,28 @@ const ts = require('typescript');
 // resource name already marked downloaded, so downloading it is a no-op.
 const resources = new Map();
 const copied = [];
+const bundledFiles = new Map();
+const cachedFiles = new Map();
+const fileContents = new Map();
 class Asset {
-  constructor({ name = '', type, uri }) {
-    Object.assign(this, { name, type, uri, localUri: null, downloaded: false });
+  constructor({ name = '', type, uri, hash = null }) {
+    Object.assign(this, { name, type, uri, hash, localUri: null, downloaded: false });
   }
   static fromModule(source) { return resources.get(source); }
   async downloadAsync() {
     if (this.downloaded) return this;
     copied.push(this.uri);
     if (this.uri === 'broken_resource') throw new Error('resource unavailable');
+    if (bundledFiles.has(this.uri)) {
+      // Match ExpoAsset Android: without a content hash, an existing resource-name
+      // cache is returned forever, including after installing a newer APK.
+      const key = this.hash ?? `uri:${this.uri}`;
+      if (!cachedFiles.has(key)) cachedFiles.set(key, bundledFiles.get(this.uri));
+      this.localUri = `file:///cache/ExponentAsset-${key}.${this.type}`;
+      fileContents.set(this.localUri, cachedFiles.get(key));
+      this.downloaded = true;
+      return this;
+    }
     this.localUri = this.uri.startsWith('file:') ? this.uri : `file:///cache/${this.name}.${this.type}`;
     this.downloaded = true;
     return this;
@@ -24,7 +37,7 @@ class Asset {
 class File {
   constructor(uri) { assert.ok(uri.startsWith('file:'), `Not a readable file: ${uri}`); this.uri = uri; }
   async base64() { return 'YXNzZXQ='; }
-  async text() { return 'renderer script'; }
+  async text() { return fileContents.get(this.uri) ?? 'renderer script'; }
 }
 const mod = { exports: {} };
 const code = ts.transpileModule(fs.readFileSync(path.join(__dirname, '../platform/videoAsset.ts'), 'utf8'), {
@@ -57,6 +70,14 @@ new Function('require', 'module', 'exports', code)((id) => {
   assert.equal(await videoAssetUrl(3, 'image/png'), 'data:image/jpeg;base64,YXNzZXQ=');
   const renderer = new Asset({ name: 'renderer', type: 'txt', uri: 'file:///cache/renderer.txt' });
   assert.equal(await (await readableVideoAsset(renderer)).text(), 'renderer script');
+  const rendererUri = 'assets_videorendererjs';
+  cachedFiles.set(`uri:${rendererUri}`, 'old renderer without typing bubbles');
+  bundledFiles.set(rendererUri, 'new renderer with typing bubbles');
+  const updatedRenderer = new Asset({ name: 'video-renderer', type: 'txt', uri: rendererUri, hash: 'renderer-v110-content-hash' });
+  assert.equal(await (await readableVideoAsset(updatedRenderer)).text(), 'new renderer with typing bubbles', 'APK upgrade must not reuse the previous resource-name cache');
+  bundledFiles.set(rendererUri, 'next renderer');
+  const nextRenderer = new Asset({ name: 'video-renderer', type: 'txt', uri: rendererUri, hash: 'renderer-next-content-hash' });
+  assert.equal(await (await readableVideoAsset(nextRenderer)).text(), 'next renderer', 'same Android resource name may contain different renderer versions');
   await assert.rejects(readableVideoAsset(new Asset({ type: 'png', uri: 'broken_resource' })), /resource unavailable/);
   console.log('PASS APK drawable-to-cache copy, shared asset preservation, MIME, cached/dev assets, renderer and read failures');
 })().catch(error => { console.error(error); process.exitCode = 1; });

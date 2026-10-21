@@ -6,8 +6,10 @@ export async function readableVideoAsset(asset: Asset): Promise<File> {
   // fromModule marks these as downloaded, so its downloadAsync is a no-op.
   // A separate Asset forces Expo's native resource-to-cache copy without
   // changing the shared Asset used by React Native's Image component.
+  // Preserve the content hash: Android resource names stay the same across APK
+  // upgrades, and a hashless download would reuse the old renderer/image cache.
   const readable = !asset.uri.includes(':')
-    ? new Asset({ name: asset.name, type: asset.type, uri: asset.uri })
+    ? new Asset({ name: asset.name, type: asset.type, uri: asset.uri, hash: asset.hash })
     : asset;
   await readable.downloadAsync();
   return new File(readable.localUri ?? readable.uri);

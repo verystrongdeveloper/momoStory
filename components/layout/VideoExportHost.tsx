@@ -1,5 +1,5 @@
-import React, { useSyncExternalStore } from 'react';
-import { Platform, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import React, { useEffect, useRef, useSyncExternalStore } from 'react';
+import { Animated, Platform, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useI18n } from '@/i18n';
 import VideoExportWorker from '@/platform/VideoExportWorker';
@@ -9,6 +9,21 @@ export default function VideoExportHost() {
   const { t } = useI18n();
   const insets = useSafeAreaInsets();
   const job = useSyncExternalStore(subscribeVideoExportJob, getVideoExportJob, () => null);
+  const opacity = useRef(new Animated.Value(1)).current;
+  useEffect(() => {
+    opacity.setValue(1);
+    if (job?.status !== 'done') return;
+    const id = job.id;
+    let fade: Animated.CompositeAnimation | undefined;
+    const timer = setTimeout(() => {
+      fade = Animated.timing(opacity, { toValue: 0, duration: 350, useNativeDriver: true });
+      fade.start(({ finished }) => {
+        const current = getVideoExportJob();
+        if (finished && current?.id === id && current.status === 'done') dismissVideoExport();
+      });
+    }, 5000);
+    return () => { clearTimeout(timer); fade?.stop(); };
+  }, [job?.id, job?.status, opacity]);
   if (!job || job.status === 'picking') return null;
   const working = job.status === 'working';
   const saving = working && job.progress.phase === 'saving';
@@ -16,7 +31,7 @@ export default function VideoExportHost() {
     : t(job.status === 'error' ? job.error : job.status === 'canceled' ? 'videoExportCanceled'
       : Platform.OS === 'android' ? 'videoSavedDownloads' : job.destination?.kind === 'save-as' ? 'videoSavedFile' : 'videoDownloadStarted');
   return <View pointerEvents="box-none" style={styles.root}>
-    <View style={[styles.banner, { top: insets.top + 64 }]}>
+    <Animated.View style={[styles.banner, { top: insets.top + 64, opacity }]}>
       <View style={styles.texts}>
         <Text style={styles.title} numberOfLines={1}>{job.title}</Text>
         <Text style={[styles.status, job.status === 'error' && styles.error]} accessibilityLiveRegion="polite">{label}</Text>
@@ -25,7 +40,7 @@ export default function VideoExportHost() {
       <TouchableOpacity accessibilityRole="button" disabled={saving} onPress={() => working ? cancelVideoExport(job.id) : dismissVideoExport()} style={[styles.button, saving && styles.disabled]}>
         <Text style={styles.buttonText}>{t(working ? 'cancel' : 'close')}</Text>
       </TouchableOpacity>
-    </View>
+    </Animated.View>
     {working && job.payload && <VideoExportWorker key={job.id} payload={job.payload} destination={job.destination}
       options={{ signal: job.controller.signal, onProgress: progress => reportVideoExport(job.id, progress) }}
       onComplete={() => completeVideoExport(job.id)} onError={error => failVideoExport(job.id, error)} />}

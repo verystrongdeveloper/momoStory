@@ -22,6 +22,11 @@ const invalid = (changes, code) => assert.throws(() => validatePublicStory({ ...
 (async () => {
   assert.deepEqual(validatePublicStory({ ...sample, apiKey: 'must-not-upload', author: 'forged', preferences: {} }, assets), sample);
   assert.equal(validatePublicStory({ ...sample, character: '마리', script: 'title : Test\n마리 : 안녕하세요, 선생님.\nendEvent' }, assets).character, '마리');
+  const fubuki = { ...sample, clientId: 'fubuki', character: '후부키', script: 'title : Test\n후부키(생활안전국) : 잠깐 쉬자. [emotion : fubuki_default.png]\nselection : (1)"좋아" [speaker : Fubuki, dialogue : 여기 앉아., emotion : fubuki_smug.png]\nendEvent' };
+  assert.equal(validatePublicStory(fubuki, assets).character, '후부키');
+  for (const speaker of ['후부키', 'Fubuki', 'フブキ', '吹雪']) for (const emotion of assets.emotions.후부키) {
+    validatePublicStory({ ...fubuki, script: `title : Test\n${speaker}(생활안전국) : hi [emotion : ${emotion}]\nendEvent` }, assets);
+  }
   for (const speaker of ['호시노', 'Hoshino', 'ホシノ', '星野', 'Hina', 'ヒナ', '日奈', '마리', 'Mari', 'マリー', '玛丽']) validatePublicStory({ ...sample, script: `타이틀 : Test\n${speaker} : hi\nendEvent` }, assets);
   for (const animation of ['shakeX', 'shakeY', 'slideX', 'slideY']) validatePublicStory({ ...sample, script: `title : Test\nanimation : ${animation}\n호시노 : hi\nendEvent` }, assets);
   validatePublicStory({ ...sample, script: 'title : Test\nbg : BG_AbydosCouncilRoom.jpg\n[music : Aira.mp3]\n호시노 : hi\nendEvent' }, assets);
@@ -86,6 +91,9 @@ const invalid = (changes, code) => assert.throws(() => validatePublicStory({ ...
   assert.equal(calls[0][0], 'trusted-actor'); assert.deepEqual(calls[0][2], sample);
   assert.equal((await invoke('publish', { ...sample, script: 'invalid' })).status, 400);
   assert.equal(calls.length, 1);
+  assert.equal((await invoke('publish', fubuki)).status, 200);
+  assert.equal(calls.at(-1)[2].character, '후부키', 'Edge validation accepts Fubuki before forwarding to PostgreSQL');
+  assert.equal((await invoke('list', { character: '후부키' })).status, 200);
   assert.equal((await invoke('list', { offset: -1 })).status, 400);
   assert.equal((await invoke('list', { query: {} })).status, 400);
   for (const character of [null, {}, ['호시노'], 'x'.repeat(101)]) assert.equal((await invoke('list', { character })).status, 400);
@@ -119,6 +127,7 @@ const invalid = (changes, code) => assert.throws(() => validatePublicStory({ ...
     await db.exec(fs.readFileSync(path.join(root, 'supabase/migrations/202610200003_fix_community_preview_backgrounds.sql'), 'utf8'));
     await db.exec(fs.readFileSync(path.join(root, 'supabase/migrations/202610210001_community_character_filter.sql'), 'utf8'));
     await db.exec(fs.readFileSync(path.join(root, 'supabase/migrations/202610210002_community_pagination.sql'), 'utf8'));
+    await db.exec(fs.readFileSync(path.join(root, 'supabase/migrations/202610210003_add_fubuki.sql'), 'utf8'));
     const actor = '11111111-1111-4111-8111-111111111111', other = '22222222-2222-4222-8222-222222222222';
     await db.query('insert into auth.users values($1),($2)', [actor, other]);
     await db.query("insert into public.community_posts(author, client_id, title, character, script) values($1, 'mari-migration-check', 'Mari', '마리', 'test')", [actor]);
@@ -126,6 +135,15 @@ const invalid = (changes, code) => assert.throws(() => validatePublicStory({ ...
     const rpc = async (action, data = {}, user = actor) => (action === 'list'
       ? await db.query('select public.community_list($1::uuid, $2::jsonb) as result', [user, JSON.stringify(data)])
       : await db.query('select public.community_api($1::uuid, $2::text, $3::jsonb) as result', [user, action, JSON.stringify(data)])).rows[0].result;
+    // Publish, filter and read Fubuki through the real SQL API as a separate actor.
+    const fubukiPost = await rpc('publish', fubuki, other);
+    assert.ok(fubukiPost.id);
+    const fubukiPage = await rpc('list', { character: '후부키', pagination: true }, other);
+    assert.equal(fubukiPage.total, 1);
+    assert.equal(fubukiPage.posts[0].character, '후부키');
+    assert.equal((await rpc('detail', { id: fubukiPost.id }, other)).script, fubuki.script);
+    await rpc('deletePost', { id: fubukiPost.id }, other);
+    await db.query('delete from public.community_limits where actor = $1', [other]);
     await db.query("insert into public.community_posts(author, client_id, title, character, script) values($1, 'preview-check', 'Preview fixture', '호시노', E'title : Preview fixture\\nbg : BG_First.jpg\\n호시노 : hi [bg : BG_Second.jpg]')", [actor]);
     assert.equal((await rpc('list', { query: 'Preview fixture' }))[0].preview_bg, 'BG_First', 'standalone background commands use the first asset');
     await db.query("delete from public.community_posts where client_id = 'preview-check'");

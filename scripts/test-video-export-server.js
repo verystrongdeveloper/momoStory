@@ -51,7 +51,7 @@ http.createServer((request, response) => {
   if (request.url === '/test.js') { response.setHeader('Content-Type', 'text/javascript'); return response.end(code); }
   if (request.method === 'POST' && /^\/result\/(?:(?:landscape|portrait)-(?:720p|1080p)\.mp4|native-bridge\.mp4|(?:16x9|9x16)-(?:720p|1080p)-(?:chat|dialogue|selection|title|expression|motion)\.png)$/.test(request.url)) {
     const chunks = []; let length = 0;
-    request.on('data', (chunk) => { length += chunk.length; if (length > 150 * 1024 * 1024) { request.destroy(); return; } chunks.push(chunk); });
+    request.on('data', (chunk) => { length += chunk.length; if (length > 512 * 1024 * 1024) { request.destroy(); return; } chunks.push(chunk); });
     request.on('end', () => { fs.writeFileSync(path.join(outputDir, path.basename(request.url)), Buffer.concat(chunks)); response.end('OK'); });
     return;
   }

@@ -8,6 +8,7 @@ import { videoFileName } from '@/services/videoExport/types';
 import { decodeBase64 } from '@/services/videoExport/base64';
 import type { VideoExportWorkerProps } from './VideoExportWorker.types';
 import { readableVideoAsset } from './videoAsset';
+import { MAX_VIDEO_BYTES } from '@/services/videoExport/limits';
 
 export default function VideoExportWorker(props: VideoExportWorkerProps) {
   const latest = useRef(props); latest.current = props;
@@ -59,7 +60,8 @@ export default function VideoExportWorker(props: VideoExportWorkerProps) {
       } else if (message.type === 'progress' && typeof message.progress === 'number') {
         latest.current.options.onProgress({ phase: 'encoding', progress: Math.min(0.95, Math.max(0.1, message.progress)) });
       } else if (message.type === 'begin') {
-        if (!Number.isSafeInteger(message.size) || message.size <= 0 || message.size > 150 * 1024 * 1024 || handle.current) throw new Error('VIDEO_TOO_LARGE');
+        if (!Number.isSafeInteger(message.size) || message.size <= 0 || handle.current) throw new Error('VIDEO_ENCODE_FAILED');
+        if (message.size > MAX_VIDEO_BYTES) throw new Error('VIDEO_TOO_LARGE');
         expected.current = message.size;
         const temp = new Directory(Paths.cache, `video-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`);
         temp.create(); directory.current = temp;

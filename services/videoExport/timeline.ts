@@ -3,6 +3,7 @@ import type { SavedChatMessage, StoryRecord } from '@/storage/types';
 import parseEventScript from '@/utils/parseEventScript';
 import { EVENT_TIMING } from '../../utils/eventPresentation';
 import { CHAT_POP_DURATION, chatSoundKey, type ChatSoundId } from '../../utils/chatPresentation';
+import { AUDIO_BITRATE, MAX_VIDEO_BYTES, VIDEO_SIZE_HEADROOM } from './limits';
 
 export type VideoRatio = '16:9' | '9:16';
 export type VideoQuality = '720p' | '1080p';
@@ -105,6 +106,9 @@ export function videoDimensions(ratio: VideoRatio, quality: VideoQuality = '720p
   return ratio === '16:9' ? { width: long, height: short } : { width: short, height: long };
 }
 
-export function videoBitrate(quality: VideoQuality = '720p') {
-  return quality === '1080p' ? 5_000_000 : 2_000_000;
+export function videoBitrate(quality: VideoQuality = '720p', duration = 0) {
+  const nominal = quality === '1080p' ? 5_000_000 : 2_000_000;
+  if (!(duration > 0)) return nominal;
+  const sizeSafe = Math.floor((MAX_VIDEO_BYTES * VIDEO_SIZE_HEADROOM * 8) / duration - AUDIO_BITRATE);
+  return Math.max(800_000, Math.min(nominal, sizeSafe));
 }

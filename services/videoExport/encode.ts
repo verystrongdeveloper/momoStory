@@ -3,20 +3,38 @@ import { registerAacEncoder } from '@mediabunny/aac-encoder';
 import { videoBitrate, videoDimensions } from './timeline';
 import { checkAborted, type ExportOptions, type VideoPayload } from './types';
 import { paintVideo, type VideoImages } from './paint';
+import { AUDIO_BITRATE, MAX_VIDEO_BYTES, MAX_VIDEO_SECONDS } from './limits';
 
 const FPS = 24;
 const SAMPLE_RATE = 48000;
-const MAX_VIDEO_BYTES = 150 * 1024 * 1024;
 
 export async function encodeVideo(payload: VideoPayload, options: ExportOptions): Promise<ArrayBuffer> {
   checkAborted(options.signal);
+  if (payload.timeline.duration > MAX_VIDEO_SECONDS) throw new Error('VIDEO_TOO_LONG');
+  const initial = videoBitrate(payload.quality, payload.timeline.duration);
+  // Retain the full story and chosen resolution; only reduce bitrate on size failure.
+  const bitrates = [initial, Math.floor(initial * 0.65), Math.floor(initial * 0.4)];
+  for (let attempt = 0; attempt < bitrates.length; attempt++) {
+    checkAborted(options.signal);
+    try { return await encodeVideoAttempt(payload, options, bitrates[attempt]); }
+    catch (error) {
+      checkAborted(options.signal);
+      if (!(error instanceof Error) || error.message !== 'VIDEO_TOO_LARGE' || attempt === bitrates.length - 1) throw error;
+      // Give the UI a chance to process cancellation between complete attempts.
+      options.onProgress({ phase: 'encoding', progress: 0.1 });
+      await new Promise<void>(resolve => setTimeout(resolve, 0));
+    }
+  }
+  throw new Error('VIDEO_ENCODE_FAILED');
+}
+
+async function encodeVideoAttempt(payload: VideoPayload, options: ExportOptions, bitrate: number): Promise<ArrayBuffer> {
+  checkAborted(options.signal);
   const { width, height } = videoDimensions(payload.ratio, payload.quality);
-  const bitrate = videoBitrate(payload.quality);
   if (!(await canEncodeVideo('avc', { width, height, bitrate, frameRate: FPS }))) throw new Error(payload.quality === '1080p' ? 'VIDEO_QUALITY_UNSUPPORTED' : 'VIDEO_UNSUPPORTED');
   // Keep layout breakpoints and composition identical at both output resolutions.
   // Draw directly into the full-resolution canvas, including text and original assets.
   const layout = videoDimensions(payload.ratio);
-  if (payload.timeline.duration > 600) throw new Error('VIDEO_TOO_LONG');
   const canvas = document.createElement('canvas');
   canvas.width = width; canvas.height = height;
   const context = canvas.getContext('2d', { alpha: false });
@@ -52,7 +70,7 @@ export async function encodeVideo(payload: VideoPayload, options: ExportOptions)
     output = new Output({ target, format: new Mp4OutputFormat({ fastStart: 'in-memory' }) });
     const video = new CanvasSource(canvas, { codec: 'avc', bitrate, keyFrameInterval: 2 });
     output.addVideoTrack(video, { frameRate: FPS });
-    const audio = hasAudio ? new AudioBufferSource({ codec: 'aac', bitrate: 128_000 }) : null;
+    const audio = hasAudio ? new AudioBufferSource({ codec: 'aac', bitrate: AUDIO_BITRATE }) : null;
     if (audio) output.addAudioTrack(audio);
     await output.start();
     const totalFrames = Math.ceil(payload.timeline.duration * FPS);
@@ -107,6 +125,7 @@ export async function encodeVideo(payload: VideoPayload, options: ExportOptions)
     await output.finalize();
     checkAborted(options.signal);
     if (!target.buffer) throw new Error('VIDEO_ENCODE_FAILED');
+    if (target.buffer.byteLength > MAX_VIDEO_BYTES) throw new Error('VIDEO_TOO_LARGE');
     return target.buffer;
   } catch (error) {
     await output?.cancel().catch(() => undefined);
@@ -115,6 +134,7 @@ export async function encodeVideo(payload: VideoPayload, options: ExportOptions)
     options.signal.removeEventListener('abort', abort);
     document.fonts.delete(font);
     await audioContext?.close().catch(() => undefined);
+    images.clear(); buffers.clear();
     canvas.width = 0; canvas.height = 0;
   }
 }

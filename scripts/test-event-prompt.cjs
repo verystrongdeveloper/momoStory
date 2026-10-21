@@ -23,7 +23,7 @@ assert.ok(resources.공통.expression.includes('Headpat.png'));
 assert.ok(!resources.공통.expression.includes('Headpat.webp'));
 assert.ok(resources.공통.sound.includes('SE_Crow_04.wav'));
 const parse = loadTs('utils/parseEventScript.ts', () => { throw new Error('Unexpected dependency'); }).default;
-for (const name of ['호시노', '히나', '마리']) {
+for (const name of Object.keys(personas)) {
   const prompt = buildEventPromptPro(name, [{ user: '안녕', ai: '왔어?' }], [{ name, emotions: resources[name].emotions }], '최근 대화에서 이어진 일상');
   assert.ok(prompt.includes(personas[name]), 'story generation must receive the shared character persona');
   assert.ok(buildChatPrompt(name).includes(personas[name]), 'chat generation must receive the same persona');
@@ -43,6 +43,7 @@ for (const name of ['호시노', '히나', '마리']) {
   assert.ok(prompt.includes('선생의 기존 메시지를 selection으로 바꾸어 재연하지 않는다'));
   assert.ok(prompt.includes('말만 바꾸거나 다른 언어로 번역해 다시 주고받는 것도 금지'));
   assert.ok(prompt.includes('채팅 요약이나 회상으로 시작하지 않으며'));
+  assert.ok(prompt.includes('약 300줄 내외'));
   for (const language of ['ko', 'en', 'ja', 'zh']) {
     const localized = withGenerationLanguage(prompt, language, 'event');
     assert.ok(localized.includes(prompt));
@@ -58,6 +59,23 @@ for (const name of ['호시노', '히나', '마리']) {
     if (line.bg) assert.ok(maps.bgMap[line.bg]);
     if (line.emotion) assert.ok(maps.emotionMap[line.emotion]);
   }
+}
+const characters = loadTs('constants/characters.ts', id => id).CHARACTERS;
+for (const character of characters) {
+  assert.ok(personas[character.name], `missing persona: ${character.name}`);
+  for (const file of resources[character.name].emotions) {
+    const source = maps.emotionMap[file.replace(/\.(png|jpg)$/, '')];
+    assert.ok(source, `missing sprite map: ${file}`);
+    assert.ok(fs.existsSync(path.resolve(__dirname, '../constants', source)), `missing sprite file: ${source}`);
+  }
+}
+assert.deepEqual([...resources.후부키.emotions].sort(), fs.readdirSync(path.join(__dirname, '../assets/images/fubuki')).sort());
+const { keepAssetSpeakers, getAvailableCharacters } = require('../shared/prompts/characterList');
+assert.ok(getAvailableCharacters().includes('후부키'));
+for (const [language, name] of Object.entries({ ko: '후부키', en: 'Fubuki', ja: 'フブキ', zh: '吹雪' })) {
+  const localized = keepAssetSpeakers('title : Break\n후부키(생활안전국) : 잠깐 쉬자. [emotion : fubuki_default.png]\nendEvent', ['후부키'], language);
+  assert.ok(localized.includes(`${name}(`), 'Fubuki dialogue survives speaker filtering in every supported language');
+  assert.ok(localized.includes('fubuki_default.png'));
 }
 assert.equal(require('../server/src/utils/promptBuilderPro').buildEventPromptPro, buildEventPromptPro);
 const selector = buildSelectionPrompt([{ user: '내일 같이 청소하자.', ai: '응, 교실에서 기다릴게.' }]);

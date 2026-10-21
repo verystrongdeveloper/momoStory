@@ -29,7 +29,12 @@ function load(file, mocks, clock = { setTimeout, clearTimeout }) {
     '@/platform/videoSave': { chooseVideoSaveTarget: (...args) => { pickerCalls++; return pickerOverride ? pickerOverride(...args) : Promise.resolve(target); } },
   };
   const jobs = load('store/videoExportJob.ts', dependencies);
-  const dimensions = load('services/videoExport/timeline.ts', { '@/utils/parseEventScript': {}, '../../utils/eventPresentation': {}, '../../utils/chatPresentation': {} });
+  const dimensions = load('services/videoExport/timeline.ts', {
+    '@/utils/parseEventScript': load('utils/parseEventScript.ts', {}),
+    '../../utils/eventPresentation': load('utils/eventPresentation.ts', {}),
+    '../../utils/chatPresentation': load('utils/chatPresentation.ts', {}),
+    './limits': load('services/videoExport/limits.ts', {}),
+  });
   const uiMocks = { react: React, 'react-native': rn, '@/i18n': i18n, '@/store/videoExportJob': jobs, '@/services/videoExport/timeline': dimensions };
   const Options = load('components/chat/VideoExportModal.tsx', uiMocks).default;
   const Host = load('components/layout/VideoExportHost.tsx', { ...uiMocks, 'react-native-safe-area-context': { useSafeAreaInsets: () => ({ top: 0 }) }, '@/platform/VideoExportWorker': 'VideoExportWorker' }, clock).default;

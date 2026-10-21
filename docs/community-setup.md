@@ -33,6 +33,8 @@ CLI가 없는 경우 먼저 공식 Supabase CLI 설치 안내를 따른다. 함�
 
 ## 릴리즈 빌드 연결
 
+후부키를 지원하는 앱 배포 전에는 `202610210003_add_fubuki.sql` 마이그레이션과 `community` 함수 재배포를 함께 적용한다. 상세 목록과 검증은 [후부키 추가](fubuki.md)를 참고한다.
+
 공식 릴리즈 워크플로에는 공개 커뮤니티의 클라이언트 연결 기본값이 있다. 다른 프로젝트를 사용하려면 GitHub Actions 저장소 Variables에 아래 두 값을 등록해 기본값을 덮어쓴다.
 
 - `EXPO_PUBLIC_SUPABASE_URL`

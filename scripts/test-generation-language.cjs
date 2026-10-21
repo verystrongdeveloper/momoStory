@@ -13,10 +13,10 @@ function load(file, mocks = {}, globals = {}) {
     compilerOptions: { module: ts.ModuleKind.CommonJS, target: ts.ScriptTarget.ES2022, esModuleInterop: true },
   }).outputText : source;
   new Function('require', 'module', 'exports', ...Object.keys(globals), code)(
-    id => Object.hasOwn(mocks, id) ? mocks[id] : localRequire(id), module, module.exports, ...Object.values(globals));
+    id => Object.hasOwn(mocks, id) ? mocks[id] : id === '../senseiMode' ? { getSenseiMode: () => 'mild' } : localRequire(id), module, module.exports, ...Object.values(globals));
   return module.exports;
 }
-const modelPolicy = { ...require('../shared/geminiModels'), modelOrder: async (_key, selection = 'auto') => selection === 'auto' ? ['gemini-test-flash', 'gemini-test-flash-lite'] : [selection], rememberModel() {} };
+const modelPolicy = { ...require('../shared/geminiModels'), normalizeModel: value => typeof value === 'string' && value.startsWith('gemini-test-') ? value : 'auto', modelOrder: async (_key, selection = 'auto') => selection === 'auto' ? ['gemini-test-flash', 'gemini-test-flash-lite'] : [selection], rememberModel() {} };
 const { normalizeGenerationLanguage, withGenerationLanguage } = require('../shared/prompts/generationLanguage');
 const languages = { ko: 'Korean', en: 'English', ja: 'Japanese', zh: 'Simplified Chinese' };
 const names = { ko: '호시노', en: 'Hoshino', ja: 'ホシノ', zh: '星野' };

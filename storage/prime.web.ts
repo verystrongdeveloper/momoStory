@@ -28,6 +28,7 @@ export function readInitialSync(): StorageSnapshot | null {
       apiKey,
       language: DEFAULT_PREFERENCES.language,
       geminiModel: DEFAULT_PREFERENCES.geminiModel,
+      senseiMode: DEFAULT_PREFERENCES.senseiMode,
       chatSize: DEFAULT_PREFERENCES.chatSize,
       rememberApiKey: apiKey.length > 0,
       bgmVolume: parseVolume(localStorage.getItem(OLD_VOLUME)),

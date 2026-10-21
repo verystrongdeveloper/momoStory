@@ -16,6 +16,7 @@ const mocks = {
   '../../app.json': appConfig, './GeminiKeyField': 'GeminiKeyField',
   './ChatSoundPicker': 'ChatSoundPicker',
   './GeminiModelPicker': 'GeminiModelPicker',
+  './SenseiModePicker': 'SenseiModePicker',
   '@/platform/openExternalUrl': { openExternalUrl: async url => { opened = url; } },
   '@/services/appUpdate': { checkAppUpdate: async (version) => {
     checkedVersion = version;

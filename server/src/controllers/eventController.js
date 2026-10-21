@@ -4,13 +4,15 @@ const { buildSelectionPrompt } = require('../utils/selectionPromptBuilder');
 const { buildEventPromptPro } = require('../utils/promptBuilderPro');
 const { getDialogHistory, readKey } = require('./chatController');
 const { resources } = require('../config/prompts');
-const { getAvailableCharacters, hasStoryAssets, keepAssetSpeakers } = require('../utils/characterList');
+const { hasStoryAssets, keepAssetSpeakers, parseStorySelection } = require('../utils/characterList');
+const { normalizeSenseiMode } = require('../../../shared/senseiMode');
 
 const SELECTOR_SYSTEM = `너는 스토리 기획자다. 캐릭터처럼 말하지 않는다. 요청한 JSON만 출력한다. 대사·거절·설명 금지.`;
 const EVENT_WRITER_SYSTEM = `너는 블루 아카이브 인연 스토리 스크립트 작성기다. 캐릭터처럼 대답하지 말고, 요청한 출력 형식 그대로 스크립트만 작성한다.`;
 
 exports.createEvent = async (req, res) => {
   const { character } = req.body;
+  const senseiMode = normalizeSenseiMode(req.body.senseiMode);
   const apiKey = readKey(req, res);
   if (!apiKey) return;
   if (!character) {
@@ -26,7 +28,7 @@ exports.createEvent = async (req, res) => {
   try {
     /* 1) 등장 인물 선정 — 캐릭터 채팅 세션과 분리한다 */
     const selector = await getChat(character, GEMINI_MODEL, 'select', SELECTOR_SYSTEM, apiKey, req.body.language, 'bond', req.body.model);
-    const selPrompt = buildSelectionPrompt(dialogHistory);
+    const selPrompt = buildSelectionPrompt(dialogHistory, senseiMode);
     console.log('🧠 [등장 인물 선정 프롬프트]');
     console.log(selPrompt);
     const selRes = await selector.sendMessage(selPrompt);
@@ -39,18 +41,7 @@ exports.createEvent = async (req, res) => {
 
     console.log(`📦 [${GEMINI_MODEL} 응답]`);
     console.log(rawSelText);
-    const jsonMatch = rawSelText.match(/\{[\s\S]*}/);
-    let selection;
-    if (!jsonMatch) {
-      console.warn('[등장 인물 선정] JSON 아님, 메인 캐릭터만으로 진행');
-      selection = {
-        characters: [],
-        reason: '선정 응답 없음',
-        direction: `최근 대화를 이어 '${character}' 중심의 인연 스토리를 진행한다.`,
-      };
-    } else {
-      selection = JSON.parse(jsonMatch[0]);
-    }
+    const selection = parseStorySelection(character, rawSelText);
     console.log('📦 [추출된 JSON]');
     console.log(selection);
 
@@ -85,6 +76,7 @@ exports.createEvent = async (req, res) => {
       dialogHistory,
       allCharsWithEmotions, // ⬅️ 변경된 인자
       selection.direction,
+      senseiMode,
     );
     const eventRes = await proChat.sendMessage(eventPrompt);
 
@@ -92,7 +84,7 @@ exports.createEvent = async (req, res) => {
     const rawScript = typeof eventRes.response.text === 'function'
       ? await eventRes.response.text()
       : eventRes.response.text;
-    const script = keepAssetSpeakers(rawScript.trim(), getAvailableCharacters(), req.body.language);
+    const script = keepAssetSpeakers(rawScript.trim(), allCharsWithEmotions.map(info => info.name), req.body.language);
 
     if (!script.includes('endEvent')) {
       console.warn(`[${character}] 이벤트 스크립트 형식 경고`);

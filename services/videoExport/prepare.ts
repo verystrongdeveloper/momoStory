@@ -8,13 +8,14 @@ import { buildVideoTimeline, type VideoRatio } from './timeline';
 import { checkAborted, type ExportOptions, type VideoPayload } from './types';
 import { normalizeChatSound } from '../../utils/chatPresentation';
 import { chatSoundSources } from '@/constants/chatSounds';
+import { MAX_VIDEO_SECONDS } from './limits';
 
 export async function prepareVideo(
   story: StoryRecord, ratio: VideoRatio, language: AppLanguage,
   labels: VideoPayload['labels'], options: ExportOptions,
 ): Promise<VideoPayload> {
   const timeline = buildVideoTimeline(story, getSetting('bgmVolume'), getSetting('sfxVolume'), normalizeChatSound(getSetting('chatSound')), options.includeChat !== false);
-  if (timeline.duration > 600) throw new Error('VIDEO_TOO_LONG');
+  if (timeline.duration > MAX_VIDEO_SECONDS) throw new Error('VIDEO_TOO_LONG');
   const images: Record<string, string> = {};
   const sounds: Record<string, string> = {};
   const spriteAspects: Record<string, number> = {};

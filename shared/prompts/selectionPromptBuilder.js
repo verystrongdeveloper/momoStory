@@ -1,11 +1,13 @@
 const { getAvailableCharacters } = require('./characterList');
+const { senseiModeGuide } = require('../senseiMode');
 
 /**
  * @typedef {{user:string, ai:string}} DialogPair
  * @param  {DialogPair[]} dialogHistory
+ * @param {'mild'|'spicy'} [senseiMode]
  * @returns {string}
  */
-function buildSelectionPrompt(dialogHistory) {
+function buildSelectionPrompt(dialogHistory, senseiMode = 'mild') {
   const charList = getAvailableCharacters();
 
   const historyTXT = dialogHistory
@@ -13,6 +15,8 @@ function buildSelectionPrompt(dialogHistory) {
     .join('\n');
 
   return `역할극 금지. JSON 외 텍스트 금지.
+
+${senseiModeGuide(senseiMode)}
 
 [등장 인물 선정]
 아래는 선생과 메인 캐릭터의 최근 3쌍 대화입니다.

@@ -9,6 +9,7 @@ function load(file, mocks = {}) {
   new Function('require', 'module', 'exports', code)(id => {
     if (Object.hasOwn(mocks, id)) return mocks[id];
     if (id === '../shared/geminiModels') return require('../shared/geminiModels');
+    if (id === '../shared/senseiMode') return require('../shared/senseiMode');
     if (id.startsWith('.')) return load(path.relative(root, path.resolve(root, path.dirname(file), `${id}.ts`)), mocks);
     return require(id);
   }, mod, mod.exports);
@@ -42,11 +43,15 @@ function load(file, mocks = {}) {
   await new Promise(resolve => setImmediate(resolve));
   assert.equal(types.parsePreferences(raw).greetMode, true, 'other preferences still persist');
   assert.equal(types.parsePreferences('{}').geminiModel, 'auto', 'existing users default to automatic');
-  storage.saveSetting('geminiModel', 'gemini-4-pro');
+  assert.equal(types.parsePreferences('{}').senseiMode, 'mild');
+  assert.equal(types.parsePreferences('{"senseiMode":"unknown"}').senseiMode, 'mild');
+  storage.saveSetting('senseiMode', 'spicy');
+  storage.saveSetting('geminiModel', 'gemini-4-argon');
   await new Promise(resolve => setImmediate(resolve));
   const restored = load('storage/index.ts', mocks);
   await restored.hydrateStorage();
-  assert.equal(restored.getSetting('geminiModel'), 'gemini-4-pro', 'model selection survives restart');
+  assert.equal(restored.getSetting('geminiModel'), 'gemini-4-argon', 'model selection survives restart');
+  assert.equal(restored.getSetting('senseiMode'), 'spicy', 'Sensei mode survives restart');
   assert.equal(types.parsePreferences('{"geminiModel":"../invalid"}').geminiModel, 'auto');
 
   let resolveReply, rejectReply, resets = [];

@@ -5,9 +5,10 @@ import { migrateLegacyStorage } from './migrate';
 import { readInitialSync } from './prime';
 import { AppLanguage, DEFAULT_PREFERENCES, Preferences, StoryRecord, clampChatSize, clampVolume } from './types';
 import { normalizeModel } from '../shared/geminiModels';
+import { normalizeSenseiMode, type SenseiMode } from '../shared/senseiMode';
 import { normalizeChatSound, type ChatSoundId } from '../utils/chatPresentation';
 
-type SettingKey = 'geminiModel' | 'language' | 'chatSound' | 'chatSize' | 'bgmVolume' | 'sfxVolume' | 'greetMode' | 'rememberApiKey' | 'termsAccepted' | 'tutorialSeen';
+type SettingKey = 'senseiMode' | 'geminiModel' | 'language' | 'chatSound' | 'chatSize' | 'bgmVolume' | 'sfxVolume' | 'greetMode' | 'rememberApiKey' | 'termsAccepted' | 'tutorialSeen';
 
 let synced = readInitialSync() != null;
 
@@ -50,6 +51,7 @@ export function getRememberApiKey() {
 
 export function getSetting(key: 'chatSize' | 'bgmVolume' | 'sfxVolume'): number;
 export function getSetting(key: 'geminiModel'): string;
+export function getSetting(key: 'senseiMode'): SenseiMode;
 export function getSetting(key: 'language'): AppLanguage;
 export function getSetting(key: 'chatSound'): ChatSoundId;
 export function getSetting(key: 'greetMode' | 'rememberApiKey' | 'termsAccepted' | 'tutorialSeen'): boolean;
@@ -65,6 +67,7 @@ async function persistAll() {
   const prefs: Preferences = {
     language: memory.language,
     geminiModel: memory.geminiModel,
+    senseiMode: memory.senseiMode,
     chatSize: memory.chatSize,
     bgmVolume: memory.bgmVolume,
     sfxVolume: memory.sfxVolume,
@@ -88,7 +91,11 @@ export function saveApiKey(key: string, remember = memory.rememberApiKey) {
 }
 
 export function saveSetting(key: SettingKey, value: number | boolean | string) {
-  if (key === 'geminiModel') {
+  if (key === 'senseiMode') {
+    const next = normalizeSenseiMode(value);
+    if (next === memory.senseiMode) return;
+    memory.senseiMode = next;
+  } else if (key === 'geminiModel') {
     const next = normalizeModel(value);
     if (next === memory.geminiModel) return;
     memory.geminiModel = next;
@@ -143,6 +150,7 @@ async function pullAll() {
     apiKey,
     language: prefs.language,
     geminiModel: prefs.geminiModel,
+    senseiMode: prefs.senseiMode,
     chatSize: prefs.chatSize,
     bgmVolume: prefs.bgmVolume,
     sfxVolume: prefs.sfxVolume,

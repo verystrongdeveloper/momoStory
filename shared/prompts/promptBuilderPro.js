@@ -2,6 +2,7 @@
 // 짧은 페르소나 + 공통 규칙으로 이벤트 스크립트 프롬프트를 만든다.
 
 const { COMMON_RULES, SENSEI_PROFILE, getPersona, resources } = require('./index');
+const { senseiModeGuide } = require('../senseiMode');
 
 /**
  * @typedef {{user:string, ai:string}} DialogPair
@@ -9,9 +10,10 @@ const { COMMON_RULES, SENSEI_PROFILE, getPersona, resources } = require('./index
  * @param {DialogPair[]} dialogHistory
  * @param {Array<{name: string, emotions: string[]}>} allCharsWithEmotions
  * @param {string} direction
+ * @param {'mild'|'spicy'} [senseiMode]
  * @returns {string}
  */
-function buildEventPromptPro(mainChar, dialogHistory, allCharsWithEmotions, direction) {
+function buildEventPromptPro(mainChar, dialogHistory, allCharsWithEmotions, direction, senseiMode = 'mild') {
   const historyTXT = dialogHistory
     .map((d, i) => `(${i + 1}) 선생: "${d.user}"\n     ${mainChar}: "${d.ai}"`)
     .join('\n\n');
@@ -32,6 +34,8 @@ function buildEventPromptPro(mainChar, dialogHistory, allCharsWithEmotions, dire
 모바일 게임 <블루 아카이브>의 인연 스토리를 선생 1인칭으로 작성한다.
 
 ${SENSEI_PROFILE}
+
+${senseiModeGuide(senseiMode)}
 
 ${COMMON_RULES}
 

@@ -149,6 +149,16 @@ const resources = {
     ],
   },
 
+  후부키: {
+    emotions: [
+      'fubuki_default.png', 'fubuki_bored.png', 'fubuki_flustered.png',
+      'fubuki_grin.png', 'fubuki_laugh.png', 'fubuki_pout.png',
+      'fubuki_shocked.png', 'fubuki_sigh.png', 'fubuki_smug.png',
+      'fubuki_surprised.png', 'fubuki_talking.png', 'fubuki_teary.png',
+      'fubuki_uneasy.png', 'fubuki_worried.png', 'fubuki_yawn.png',
+    ],
+  },
+
   마리: {
     emotions: [
       'mari_angry.png',

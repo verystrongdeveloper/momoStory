@@ -1,10 +1,11 @@
 import { resources } from '../../shared/prompts';
 import { buildEventPromptPro } from '../../shared/prompts/promptBuilderPro';
 import { buildSelectionPrompt } from '../../shared/prompts/selectionPromptBuilder';
-import { getAvailableCharacters, hasStoryAssets, keepAssetSpeakers } from '../../shared/prompts/characterList';
+import { hasStoryAssets, keepAssetSpeakers, parseStorySelection } from '../../shared/prompts/characterList';
 import { getGeminiKey } from '@/services/geminiKey';
 import { getAppLanguage } from '@/services/appLanguage';
 import { getGeminiModel } from '../geminiModel';
+import { getSenseiMode } from '../senseiMode';
 import { dialogKey, resetChatSessions, sendWithFallback, userApiKey } from './rest';
 import type { ChatRoom } from '@/shared/chatRoom';
 
@@ -59,22 +60,14 @@ export const directClient = {
   async createEvent(character: string) {
     const language = getAppLanguage();
     const model = getGeminiModel();
+    const senseiMode = getSenseiMode();
     const apiKey = readKey();
     if (!character) throw new Error('character 누락');
     const dialogHistory = chatLogs.get(dialogKey(character, apiKey)) ?? [];
     if (dialogHistory.length !== 3) throw new Error('dialogHistory 부족(3쌍 필요)');
 
-    const rawSelText = await sendWithFallback(character, 'select', buildSelectionPrompt(dialogHistory), SELECTOR_SYSTEM, apiKey, language, 'bond', model);
-    const jsonMatch = rawSelText.match(/\{[\s\S]*}/);
-    let selection: { characters?: { name?: string }[]; direction?: string };
-    if (!jsonMatch) {
-      selection = {
-        characters: [],
-        direction: `최근 대화를 이어 '${character}' 중심의 인연 스토리를 진행한다.`,
-      };
-    } else {
-      selection = JSON.parse(jsonMatch[0]);
-    }
+    const rawSelText = await sendWithFallback(character, 'select', buildSelectionPrompt(dialogHistory, senseiMode), SELECTOR_SYSTEM, apiKey, language, 'bond', model);
+    const selection = parseStorySelection(character, rawSelText);
 
     const allCharsWithEmotions: { name: string; emotions: string[] }[] = [
       { name: character, emotions: resources[character]?.emotions ?? [] },
@@ -88,10 +81,10 @@ export const directClient = {
       }
     }
 
-    const eventPrompt = buildEventPromptPro(character, dialogHistory, allCharsWithEmotions, selection.direction ?? '');
+    const eventPrompt = buildEventPromptPro(character, dialogHistory, allCharsWithEmotions, selection.direction ?? '', senseiMode);
     const script = keepAssetSpeakers(
       (await sendWithFallback(character, 'event', eventPrompt, EVENT_WRITER_SYSTEM, apiKey, language, 'bond', model)).trim(),
-      getAvailableCharacters(),
+      allCharsWithEmotions.map(info => info.name),
       language,
     );
     return { eventScript: script };

@@ -17,7 +17,8 @@ function load(file, mocks = {}) {
 }
 
 const parser = load('utils/parseEventScript.ts');
-const { buildVideoTimeline, videoDimensions } = load('services/videoExport/timeline.ts', { '@/utils/parseEventScript': parser });
+const limits = load('services/videoExport/limits.ts');
+const { buildVideoTimeline, videoDimensions, videoBitrate } = load('services/videoExport/timeline.ts', { '@/utils/parseEventScript': parser, './limits': limits });
 const { videoFileName } = load('services/videoExport/types.ts');
 const { decodeBase64 } = load('services/videoExport/base64.ts');
 const { paintVideo, titleAnimationAt } = load('services/videoExport/paint.ts');
@@ -123,6 +124,11 @@ assert.deepEqual(videoDimensions('16:9'), { width: 1280, height: 720 });
 assert.deepEqual(videoDimensions('9:16'), { width: 720, height: 1280 });
 assert.deepEqual(videoDimensions('16:9', '1080p'), { width: 1920, height: 1080 });
 assert.deepEqual(videoDimensions('9:16', '1080p'), { width: 1080, height: 1920 });
+assert.equal(videoBitrate('720p'), 2_000_000);
+assert.equal(videoBitrate('1080p'), 5_000_000);
+assert.equal(videoBitrate('1080p', 600), 5_000_000, '512 MiB permits ten-minute 1080p exports at the original bitrate');
+const tenMinuteBytes = (videoBitrate('1080p', 600) + limits.AUDIO_BITRATE) * 600 / 8;
+assert.ok(tenMinuteBytes < limits.MAX_VIDEO_BYTES * 0.9, 'ten-minute target leaves room for muxing and hardware encoder variance');
 const storyOnly = buildVideoTimeline(story, 0.4, 0.5, 'bell', false);
 assert.deepEqual(storyOnly.messages, []);
 assert.ok(storyOnly.scenes.every(scene => scene.kind === 'story' && !scene.showStoryButton));

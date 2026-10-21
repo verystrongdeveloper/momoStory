@@ -62,6 +62,20 @@ export const CHARACTERS: Character[] = [
       backgroundColor: '#f7e7d7',
     },
   },
+  {
+    name: '후부키',
+    status: '커피 with 도넛!',
+    displayName: { ko: '후부키', en: 'Fubuki', ja: 'フブキ', zh: '吹雪' },
+    displayStatus: { ko: '커피 with 도넛!', en: 'Coffee with donuts!', ja: 'コーヒーにはドーナツ！', zh: '咖啡配甜甜圈！' },
+    image: require('../assets/images/fubuki/fubuki_default.png'),
+    avatar: {
+      image: require('../assets/images/fubuki/fubuki_smug.png'),
+      fit: 'contain',
+      scale: 2.4,
+      offsetY: 0.46,
+      backgroundColor: '#e8edf7',
+    },
+  },
 ];
 
 const byName = new Map(CHARACTERS.map((c) => [c.name, c]));

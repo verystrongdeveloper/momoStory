@@ -12,6 +12,7 @@ import {
 } from 'react-native';
 import GeminiKeyField from './GeminiKeyField';
 import GeminiModelPicker from './GeminiModelPicker';
+import SenseiModePicker from './SenseiModePicker';
 import ChatSoundPicker from './ChatSoundPicker';
 import InAppUpdate from './InAppUpdate';
 import Constants from 'expo-constants';
@@ -210,6 +211,8 @@ export default function SettingsPanel({
         <Text style={styles.hint}>{t('volumeHint')}</Text>
         <ChatSoundPicker />
       </View>
+
+      <SenseiModePicker />
 
       <View style={styles.keyWrap} onLayout={(event) => setKeyOffset(event.nativeEvent.layout.y)}>
         <GeminiKeyField onFocus={revealApiKey} />

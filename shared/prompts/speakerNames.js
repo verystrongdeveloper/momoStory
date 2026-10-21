@@ -1,9 +1,12 @@
 const NAMES = {
+  후부키: { ko: '후부키', en: 'Fubuki', ja: 'フブキ', zh: '吹雪' },
   호시노: { ko: '호시노', en: 'Hoshino', ja: 'ホシノ', zh: '星野' },
   히나: { ko: '히나', en: 'Hina', ja: 'ヒナ', zh: '日奈' },
   마리: { ko: '마리', en: 'Mari', ja: 'マリー', zh: '玛丽' },
 };
 const AFFILIATIONS = {
+  '발키리 경찰학교': { en: 'Valkyrie Police School', ja: 'ヴァルキューレ警察学校', zh: '瓦尔基里警察学校' },
+  생활안전국: { en: 'Public Safety Bureau', ja: '生活安全局', zh: '生活安全局' },
   '아비도스 고등학교': { en: 'Abydos High School', ja: 'アビドス高等学校', zh: '阿拜多斯高中' },
   '게헨나 학원': { en: 'Gehenna Academy', ja: 'ゲヘナ学園', zh: '格黑娜学园' },
   대책위원회: { en: 'Foreclosure Task Force', ja: '対策委員会', zh: '对策委员会' },

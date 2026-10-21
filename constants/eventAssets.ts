@@ -81,6 +81,22 @@ export const bgMap: Record<string, any> = {
 
 /* 표정. 파일이 있는 캐릭터만 넣는다. */
 export const emotionMap: Record<string, any> = {
+  fubuki_bored: require('../assets/images/fubuki/fubuki_bored.png'),
+  fubuki_default: require('../assets/images/fubuki/fubuki_default.png'),
+  fubuki_flustered: require('../assets/images/fubuki/fubuki_flustered.png'),
+  fubuki_grin: require('../assets/images/fubuki/fubuki_grin.png'),
+  fubuki_laugh: require('../assets/images/fubuki/fubuki_laugh.png'),
+  fubuki_pout: require('../assets/images/fubuki/fubuki_pout.png'),
+  fubuki_shocked: require('../assets/images/fubuki/fubuki_shocked.png'),
+  fubuki_sigh: require('../assets/images/fubuki/fubuki_sigh.png'),
+  fubuki_smug: require('../assets/images/fubuki/fubuki_smug.png'),
+  fubuki_surprised: require('../assets/images/fubuki/fubuki_surprised.png'),
+  fubuki_talking: require('../assets/images/fubuki/fubuki_talking.png'),
+  fubuki_teary: require('../assets/images/fubuki/fubuki_teary.png'),
+  fubuki_uneasy: require('../assets/images/fubuki/fubuki_uneasy.png'),
+  fubuki_worried: require('../assets/images/fubuki/fubuki_worried.png'),
+  fubuki_yawn: require('../assets/images/fubuki/fubuki_yawn.png'),
+
   hoshino_bigLaugh: require('../assets/images/hoshino/hoshino_bigLaugh.png'),
   hoshino_confidence: require('../assets/images/hoshino/hoshino_confidence.png'),
   hoshino_difficult: require('../assets/images/hoshino/hoshino_difficult.png'),

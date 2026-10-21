@@ -1,9 +1,11 @@
 // Shared by the installed app and Express. Never persist or log API credentials.
+const CURRENT_MODELS = ['gemini-4-argon', 'gemini-3.8-flash', 'gemini-3.1-flash-lite'];
+const CURRENT_MODEL_SET = new Set(CURRENT_MODELS);
 const FALLBACK_MODELS = ['gemini-3.7-flash', 'gemini-3.6-flash', 'gemini-3.5-flash', 'gemini-3.5-flash-lite'];
 const cache = new Map();
 const TTL = 10 * 60 * 1000;
 function normalizeModel(value) {
-  return typeof value === 'string' && /^gemini-[a-z0-9][a-z0-9._-]{0,119}$/.test(value) ? value : 'auto';
+  return typeof value === 'string' && CURRENT_MODEL_SET.has(value) ? value : 'auto';
 }
 function compareModels(a, b) {
   const preview = id => /preview|experimental|(?:^|-)exp(?:-|$)/.test(id) ? 1 : 0;
@@ -15,7 +17,7 @@ async function listGeminiModels(apiKey, force = false) {
   const existing = cache.get(apiKey);
   if (existing?.flight) return existing.flight;
   if (!force && existing?.models && Date.now() - existing.time < TTL) return existing.models;
-  const entry = { models: existing?.models, time: existing?.time || 0, preferred: undefined, flight: undefined };
+  const entry = { models: existing?.models, allModels: existing?.allModels, time: existing?.time || 0, preferred: undefined, flight: undefined };
   const flight = (async () => {
     const controller = new AbortController();
     const timer = setTimeout(() => controller.abort(), 15000);
@@ -30,7 +32,7 @@ async function listGeminiModels(apiKey, force = false) {
         if (!Array.isArray(data.models)) throw new Error('MODEL_LIST_FAILED');
         for (const model of data.models) {
           const id = typeof model.name === 'string' ? model.name.replace(/^models\//, '') : '';
-          if (normalizeModel(id) === 'auto' || !Array.isArray(model.supportedGenerationMethods) || !model.supportedGenerationMethods.includes('generateContent')) continue;
+          if (!/^gemini-[a-z0-9][a-z0-9._-]{0,119}$/.test(id) || !Array.isArray(model.supportedGenerationMethods) || !model.supportedGenerationMethods.includes('generateContent')) continue;
           // Image/audio/live and task-specific models cannot serve this text conversation UI.
           if (/image|vision|tts|audio|live|embedding|robotics|computer-use|deep-research|nano-banana/.test(id)) continue;
           models.set(id, { id, label: typeof model.displayName === 'string' ? model.displayName : id });
@@ -39,7 +41,8 @@ async function listGeminiModels(apiKey, force = false) {
         if (token && seenTokens.has(token)) throw new Error('MODEL_LIST_FAILED');
         seenTokens.add(token);
       } while (token);
-      entry.models = [...models.values()].sort(compareModels); entry.time = Date.now();
+      entry.allModels = [...models.values()].sort(compareModels);
+      entry.models = CURRENT_MODELS.flatMap(id => models.has(id) ? [models.get(id)] : []); entry.time = Date.now();
       return entry.models;
     } finally { clearTimeout(timer); }
   })();
@@ -52,7 +55,10 @@ async function modelOrder(apiKey, selection = 'auto', force = false) {
   const chosen = normalizeModel(selection);
   if (chosen !== 'auto') return [chosen];
   let models;
-  try { models = await listGeminiModels(apiKey, force); }
+  try {
+    await listGeminiModels(apiKey, force);
+    models = cache.get(apiKey)?.allModels || [];
+  }
   catch { return [...FALLBACK_MODELS]; }
   // Automatic mode stays in the Flash family; Pro remains an explicit choice.
   const order = models.filter(model => model.id.includes('flash')).map(model => model.id);

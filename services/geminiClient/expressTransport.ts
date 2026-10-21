@@ -1,4 +1,5 @@
 import { getGeminiModel } from '../geminiModel';
+import { getSenseiMode } from '../senseiMode';
 import { getGeminiKey } from '@/services/geminiKey';
 import { getAppLanguage } from '@/services/appLanguage';
 import { GEMINI_OFFLINE_MESSAGE, throwIfOffline } from './errors';
@@ -37,5 +38,5 @@ export const expressTransport = {
     post<{ reply: string; eventReady: boolean }>('/api/chat', { character, message, room }),
 
   createEvent: (character: string) =>
-    post<{ eventScript: string }>('/api/event', { character }),
+    post<{ eventScript: string }>('/api/event', { character, senseiMode: getSenseiMode() }),
 };

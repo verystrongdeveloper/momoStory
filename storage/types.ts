@@ -1,10 +1,12 @@
 import { normalizeModel } from '../shared/geminiModels';
+import { normalizeSenseiMode, type SenseiMode } from '../shared/senseiMode';
 import { normalizeChatSound, type ChatSoundId } from '../utils/chatPresentation';
 export type AppLanguage = 'ko' | 'en' | 'ja' | 'zh';
 
 export type Preferences = {
   language: AppLanguage;
   geminiModel: string;
+  senseiMode: SenseiMode;
   chatSize: number;
   bgmVolume: number;
   sfxVolume: number;
@@ -38,6 +40,7 @@ export type StorageSnapshot = Preferences & {
 export const DEFAULT_PREFERENCES: Preferences = {
   language: 'en',
   geminiModel: 'auto',
+  senseiMode: 'mild',
   chatSize: 1,
   bgmVolume: 0.5,
   sfxVolume: 0.5,
@@ -121,6 +124,7 @@ export function parsePreferences(raw: string | null): Preferences {
     return {
       language: parsed.language === 'ko' || parsed.language === 'en' || parsed.language === 'ja' || parsed.language === 'zh' ? parsed.language : DEFAULT_PREFERENCES.language,
       geminiModel: normalizeModel(parsed.geminiModel),
+      senseiMode: normalizeSenseiMode(parsed.senseiMode),
       chatSize: typeof parsed.chatSize === 'number' ? clampChatSize(parsed.chatSize) ?? DEFAULT_PREFERENCES.chatSize : DEFAULT_PREFERENCES.chatSize,
       bgmVolume: clampVolume(Number(parsed.bgmVolume)) ?? DEFAULT_PREFERENCES.bgmVolume,
       sfxVolume: clampVolume(Number(parsed.sfxVolume)) ?? DEFAULT_PREFERENCES.sfxVolume,

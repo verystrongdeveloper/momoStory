@@ -45,6 +45,7 @@ export async function migrateLegacyStorage(): Promise<boolean> {
     const prefs = {
       language: DEFAULT_PREFERENCES.language,
       geminiModel: DEFAULT_PREFERENCES.geminiModel,
+      senseiMode: DEFAULT_PREFERENCES.senseiMode,
       chatSize: DEFAULT_PREFERENCES.chatSize,
       bgmVolume: parseVolume(oldVolumeRaw),
       sfxVolume: DEFAULT_PREFERENCES.sfxVolume,

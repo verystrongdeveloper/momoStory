@@ -1,5 +1,5 @@
 import React, { useEffect, useRef, useState, useSyncExternalStore } from 'react';
-import { ActivityIndicator, Image, Modal, ScrollView, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
+import { ActivityIndicator, Image, Modal, ScrollView, StyleSheet, Text, TextInput, TouchableOpacity, View, type ImageSourcePropType } from 'react-native';
 import { useI18n } from '@/i18n';
 import { avatarOf, displayCharacterName } from '@/constants/characters';
 import CharacterChat from '@/components/chat/CharacterChat';
@@ -8,9 +8,35 @@ import { charCount } from '@/shared/community/validation';
 import { importSharedStory, listStories, subscribeStories } from '@/store/storyLibrary';
 import CharacterAvatar from '@/components/CharacterAvatar';
 import { bgMap } from '@/constants/eventAssets';
+import { Ionicons } from '@expo/vector-icons';
+import CharacterFilter from '@/components/chat/CharacterFilter';
 
 function Button({ label, onPress, disabled = false, selected = false }: { label: string; onPress: () => void; disabled?: boolean; selected?: boolean }) {
   return <TouchableOpacity accessibilityRole="button" accessibilityState={{ disabled, selected }} disabled={disabled} onPress={onPress} style={[styles.button, selected && styles.selected, disabled && styles.disabled]}><Text style={styles.buttonText}>{label}</Text></TouchableOpacity>;
+}
+function RefreshButton({ onPress, disabled }: { onPress: () => void; disabled: boolean }) {
+  const { t } = useI18n();
+  return <TouchableOpacity accessibilityRole="button" accessibilityLabel={t('communityRefresh')} disabled={disabled}
+    style={[styles.refresh, disabled && styles.disabled]} onPress={onPress}><Ionicons name="refresh-outline" size={22} color="#87616e" /></TouchableOpacity>;
+}
+
+function ArchiveThumbnail({ character, background }: { character: string; background?: ImageSourcePropType }) {
+  const { t } = useI18n();
+  const avatar = avatarOf(character);
+  const [backgroundReady, setBackgroundReady] = useState(!background);
+  const [avatarReady, setAvatarReady] = useState(!avatar);
+  const [failed, setFailed] = useState(false);
+  const ready = backgroundReady && avatarReady && !failed;
+  return <View style={styles.preview}>
+    <View style={[styles.previewLayers, { opacity: ready ? 1 : 0 }]}>
+      {background && <Image source={background} resizeMode="cover" style={styles.background} onLoad={() => setBackgroundReady(true)} onError={() => setFailed(true)} />}
+      {avatar && <CharacterAvatar characterName={character} source={avatar} style={styles.avatar} onLoad={() => setAvatarReady(true)} onError={() => setFailed(true)} />}
+    </View>
+    {!ready && <View style={styles.previewPlaceholder} pointerEvents="none">
+      {failed ? <Text style={styles.previewError}>{t('communityPreviewUnavailable')}</Text>
+        : <ActivityIndicator color="#dc7896" accessibilityLabel={t('communityPreviewLoading')} />}
+    </View>}
+  </View>;
 }
 
 export default function CommunityPanel() {
@@ -20,6 +46,7 @@ export default function CommunityPanel() {
   const [period, setPeriod] = useState<RankingPeriod>('all');
   const [input, setInput] = useState('');
   const [query, setQuery] = useState('');
+  const [character, setCharacter] = useState('');
   const [posts, setPosts] = useState<CommunityPost[]>([]);
   const [selected, setSelected] = useState<CommunityPost | null>(null);
   const [busy, setBusy] = useState(false);
@@ -35,18 +62,18 @@ export default function CommunityPanel() {
     const id = ++generation.current;
     pending.current = true; setBusy(true); setPosts([]); setMore(false); setNotice('');
     if (!communityConfigured()) { setNotice(t('communitySetup')); pending.current = false; setBusy(false); return; }
-    void community.list({ liked, sort, period, query, offset: 0 }).then(rows => {
+    void community.list({ liked, sort, period, query, character, offset: 0 }).then(rows => {
       if (generation.current === id) { setPosts(rows); setMore(rows.length === 20); }
     }).catch(error => { if (generation.current === id) setNotice(t(communityErrorKey(error))); })
       .finally(() => { if (generation.current === id) { pending.current = false; setBusy(false); } });
     return () => { generation.current++; };
-  }, [liked, sort, period, query, reload, t]);
+  }, [liked, sort, period, query, character, reload, t]);
   const loadMore = async () => {
     if (pending.current) return;
     const id = generation.current;
     pending.current = true; setBusy(true); setNotice('');
     try {
-      const rows = await community.list({ liked, sort, period, query, offset: posts.length });
+      const rows = await community.list({ liked, sort, period, query, character, offset: posts.length });
       if (generation.current === id) {
         setPosts(previous => [...previous, ...rows.filter(row => !previous.some(item => item.id === row.id))]);
         setMore(rows.length === 20);
@@ -57,7 +84,8 @@ export default function CommunityPanel() {
   if (selected) return <CommunityPostView key={selected.id} id={selected.id} onBack={() => { setSelected(null); setReload(value => value + 1); }} />;
   return <View style={styles.root}>
     <ScrollView contentContainerStyle={styles.content} keyboardShouldPersistTaps="handled">
-      <View style={styles.row}><Text style={styles.title}>{t('community')}</Text><Button label={t('communityRefresh')} onPress={() => setReload(value => value + 1)} disabled={busy} /></View>
+      <View style={styles.row}><Text style={styles.title}>{t('community')}</Text><RefreshButton onPress={() => setReload(value => value + 1)} disabled={busy} /></View>
+      <CharacterFilter value={character} onChange={setCharacter} />
       <View style={styles.controls}>
         <Button label={t('communityAll')} selected={!liked} onPress={() => setLiked(false)} />
         <Button label={t('communityLiked')} selected={liked} onPress={() => setLiked(true)} />
@@ -75,13 +103,9 @@ export default function CommunityPanel() {
       {!!notice && <Text accessibilityRole="alert" style={styles.notice}>{notice}</Text>}
       {!posts.length && !busy && !notice && <Text style={styles.hint}>{t('communityEmpty')}</Text>}
       <View style={styles.grid} onLayout={event => setGridWidth(event.nativeEvent.layout.width)}>{posts.map(post => {
-        const avatar = avatarOf(post.character);
         const background = post.preview_bg ? bgMap[post.preview_bg] : undefined;
         return <TouchableOpacity key={post.id} accessibilityRole="button" accessibilityLabel={post.title} style={[styles.card, { width: cardWidth }]} onPress={() => setSelected(post)}>
-          <View style={styles.preview}>
-            {background && <Image source={background} resizeMode="cover" style={styles.background} />}
-            {avatar && <CharacterAvatar characterName={post.character} source={avatar} style={styles.avatar} />}
-          </View>
+          <ArchiveThumbnail key={`${post.character}:${post.preview_bg ?? ''}`} character={post.character} background={background} />
           <Text style={styles.cardTitle} numberOfLines={1} ellipsizeMode="tail">{post.title}</Text>
           <Text style={styles.hint}>{displayCharacterName(post.character, language)}</Text>
           <Text style={styles.hint}>{post.liked ? '♥' : '♡'} {post.likes} · {t('communityViews', { count: post.views })} · {t('communityCommentCount', { count: post.comment_count ?? 0 })}</Text>
@@ -147,7 +171,7 @@ function CommunityPostView({ id, onBack }: { id: string; onBack: () => void }) {
     <CharacterChat key={detail.id} characterName={detail.character} displayName={displayCharacterName(detail.character, language)} characterImage={avatarOf(detail.character)} savedStory={communityStory(detail)} />
   </View>;
   return <View style={styles.root}><ScrollView contentContainerStyle={styles.content} keyboardShouldPersistTaps="handled">
-    <View style={styles.controls}><Button label={t('previous')} onPress={onBack} /><Button label={t('communityRefresh')} disabled={busy || loading} onPress={() => setReload(value => value + 1)} /></View>
+    <View style={styles.controls}><Button label={t('previous')} onPress={onBack} /><RefreshButton disabled={busy || loading} onPress={() => setReload(value => value + 1)} /></View>
     {loading && <ActivityIndicator color="#e780a0" />}
     {!!notice && <Text accessibilityRole="alert" style={styles.notice}>{notice}</Text>}
     {detail && <>
@@ -198,6 +222,7 @@ const styles = StyleSheet.create({
   periods: { flexDirection: 'row', gap: 8 },
   toolbar: { padding: 12, flexDirection: 'row', alignItems: 'center', gap: 12 },
   button: { paddingVertical: 10, paddingHorizontal: 14, borderRadius: 10, backgroundColor: '#e9eef5', alignSelf: 'flex-start' },
+  refresh: { minWidth: 44, minHeight: 44, alignItems: 'center', justifyContent: 'center', borderRadius: 10, backgroundColor: '#e9eef5' },
   buttonText: { color: '#365170', fontWeight: '600' },
   selected: { backgroundColor: '#f8d6e3' },
   disabled: { opacity: 0.45 },
@@ -209,6 +234,9 @@ const styles = StyleSheet.create({
   card: { flexGrow: 0, flexShrink: 0, minWidth: 0, padding: 10, borderRadius: 12, backgroundColor: 'white', gap: 8, borderWidth: 1, borderColor: '#e4e8ef' },
   cardTitle: { fontSize: 15, lineHeight: 21, fontWeight: '700', color: '#33425a' },
   preview: { width: '100%', aspectRatio: 1.2, maxHeight: 150, overflow: 'hidden', backgroundColor: '#f3d5dc' },
+  previewLayers: { position: 'absolute', top: 0, right: 0, bottom: 0, left: 0 },
+  previewPlaceholder: { position: 'absolute', top: 0, right: 0, bottom: 0, left: 0, alignItems: 'center', justifyContent: 'center', backgroundColor: '#f7e9ee', padding: 12 },
+  previewError: { color: '#87616e', fontSize: 12, textAlign: 'center' },
   background: { position: 'absolute', top: 0, right: 0, bottom: 0, left: 0, width: '100%', height: '100%' },
   avatar: { position: 'absolute', top: 0, right: 0, bottom: 0, left: 0, backgroundColor: 'transparent' },
   storyTitle: { fontSize: 17, fontWeight: '700', color: '#33425a', flexShrink: 1 },

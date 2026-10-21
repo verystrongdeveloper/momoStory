@@ -134,6 +134,7 @@ function load(file, mocks) {
 
   story.script = 'title : Thumbnail\n호시노 : first [bg : BG_AbydosCouncilRoom.jpg]\n호시노 : next [bg : BG_Second.jpg]\nendEvent';
   const List = load('components/chat/StoryLibraryList.tsx', {
+    './CharacterFilter': 'CharacterFilter',
     '@/constants/eventAssets': { bgMap: { BG_AbydosCouncilRoom: 'first-background', BG_Second: 'second-background' } },
     '@/utils/parseEventScript': load('utils/parseEventScript.ts', {}),
     './StoryScriptEditor': 'StoryScriptEditor',

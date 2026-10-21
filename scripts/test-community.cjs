@@ -88,6 +88,9 @@ const invalid = (changes, code) => assert.throws(() => validatePublicStory({ ...
   assert.equal(calls.length, 1);
   assert.equal((await invoke('list', { offset: -1 })).status, 400);
   assert.equal((await invoke('list', { query: {} })).status, 400);
+  for (const character of [null, {}, ['호시노'], 'x'.repeat(101)]) assert.equal((await invoke('list', { character })).status, 400);
+  assert.equal((await invoke('list', { character: ' 호시노 ' })).status, 200);
+  assert.equal(calls.at(-1)[2].character, '호시노');
   assert.equal((await invoke('list', { liked: 'true' })).status, 400);
   for (const period of ['invalid', ['day'], {}, null]) assert.equal((await invoke('list', { period })).status, 400);
   for (const period of ['all', 'day', 'week', 'month', 'year']) {
@@ -114,6 +117,7 @@ const invalid = (changes, code) => assert.throws(() => validatePublicStory({ ...
     await db.exec(fs.readFileSync(path.join(root, 'supabase/migrations/202610200001_add_mari.sql'), 'utf8'));
     await db.exec(fs.readFileSync(path.join(root, 'supabase/migrations/202610200002_community_preview_backgrounds.sql'), 'utf8'));
     await db.exec(fs.readFileSync(path.join(root, 'supabase/migrations/202610200003_fix_community_preview_backgrounds.sql'), 'utf8'));
+    await db.exec(fs.readFileSync(path.join(root, 'supabase/migrations/202610210001_community_character_filter.sql'), 'utf8'));
     const actor = '11111111-1111-4111-8111-111111111111', other = '22222222-2222-4222-8222-222222222222';
     await db.query('insert into auth.users values($1),($2)', [actor, other]);
     await db.query("insert into public.community_posts(author, client_id, title, character, script) values($1, 'mari-migration-check', 'Mari', '마리', 'test')", [actor]);
@@ -124,6 +128,18 @@ const invalid = (changes, code) => assert.throws(() => validatePublicStory({ ...
     await db.query("insert into public.community_posts(author, client_id, title, character, script) values($1, 'preview-check', 'Preview fixture', '호시노', E'title : Preview fixture\\nbg : BG_First.jpg\\n호시노 : hi [bg : BG_Second.jpg]')", [actor]);
     assert.equal((await rpc('list', { query: 'Preview fixture' }))[0].preview_bg, 'BG_First', 'standalone background commands use the first asset');
     await db.query("delete from public.community_posts where client_id = 'preview-check'");
+    await db.query("insert into public.community_posts(author, client_id, title, character, script) select $1, 'filter-' || i, 'Filter fixture ' || i, case when i <= 21 then '호시노' else '히나' end, 'test' from generate_series(1, 23) i", [actor]);
+    assert.equal((await rpc('list', { query: 'Filter fixture' })).length, 20);
+    const filteredHina = await rpc('list', { query: 'Filter fixture', character: '히나' });
+    assert.equal(filteredHina.length, 2, 'character filter applies before pagination');
+    assert.ok(filteredHina.every(post => post.character === '히나'));
+    assert.equal((await rpc('list', { query: 'Filter fixture', character: '호시노', offset: 20 })).length, 1);
+    assert.equal((await rpc('list', { query: 'Filter fixture', character: '마리' })).length, 0);
+    assert.equal((await rpc('list', { query: 'Filter fixture', character: '히나', sort: 'popular', period: 'day' })).length, 2);
+    await db.query('insert into public.community_likes(post_id, actor) values($1, $2)', [filteredHina[0].id, actor]);
+    assert.equal((await rpc('list', { query: 'Filter fixture', character: '히나', liked: true })).length, 1);
+    assert.equal((await rpc('list', { query: 'Filter fixture', character: '호시노', liked: true })).length, 0);
+    await db.query("delete from public.community_posts where client_id like 'filter-%'");
     const cooldown = async (action, user = actor) => db.query("update public.community_limits set last_at = now() - interval '2 minutes' where actor = $1 and action = $2", [user, action]);
     const first = await rpc('publish', sample);
     assert.ok(first.id);

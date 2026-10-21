@@ -1,5 +1,6 @@
 export const scriptEditorTranslations = {
   ko: {
+    scriptScrollMode: '스크롤 모드', scriptResumeEditing: '편집 모드', scriptScrollTop: '맨 위', scriptScrollBottom: '맨 아래', scriptScrollHint: '키보드 없이 스크롤할 수 있습니다. 수정할 줄을 누르면 편집합니다.', scriptEditLine: '{line}번째 줄 편집',
     scriptChecking: '대본 검사 중…', scriptIssueCount: '대본 오류 {count}개 · 누르면 해당 줄로 이동', scriptValid: '대본 형식 검사: 오류 없음',
     scriptError_INVALID_TITLE_LINE: '첫 줄은 타이틀 : 제목 또는 title : 제목이어야 합니다.',
     scriptError_INVALID_TITLE: '제목은 100자 이하여야 합니다.', scriptError_MISSING_END: '마지막 줄에 endEvent가 필요합니다.',
@@ -13,6 +14,7 @@ export const scriptEditorTranslations = {
     scriptError_INVALID_STORY: '대본에 사용할 수 없는 제어 문자가 있습니다.',
   },
   en: {
+    scriptScrollMode: 'Scroll mode', scriptResumeEditing: 'Edit mode', scriptScrollTop: 'Top', scriptScrollBottom: 'Bottom', scriptScrollHint: 'Scroll without opening the keyboard. Tap a line to edit it.', scriptEditLine: 'Edit line {line}',
     scriptChecking: 'Checking script…', scriptIssueCount: '{count} script errors · select to jump to a line', scriptValid: 'Script format: no errors',
     scriptError_INVALID_TITLE_LINE: 'Start with 타이틀 : Title or title : Title.',
     scriptError_INVALID_TITLE: 'The title must be 100 characters or fewer.', scriptError_MISSING_END: 'The last line must be endEvent.',
@@ -26,6 +28,7 @@ export const scriptEditorTranslations = {
     scriptError_INVALID_STORY: 'The script contains unsupported control characters.',
   },
   ja: {
+    scriptScrollMode: 'スクロールモード', scriptResumeEditing: '編集モード', scriptScrollTop: '先頭', scriptScrollBottom: '末尾', scriptScrollHint: 'キーボードを開かずにスクロールできます。行をタップすると編集できます。', scriptEditLine: '{line}行目を編集',
     scriptChecking: '台本を確認中…', scriptIssueCount: '台本エラー {count}件・押すと該当行へ移動', scriptValid: '台本形式：エラーなし',
     scriptError_INVALID_TITLE_LINE: '最初の行は「타이틀 : 題名」または「title : 題名」にしてください。',
     scriptError_INVALID_TITLE: 'タイトルは100文字以内です。', scriptError_MISSING_END: '最後の行にendEventが必要です。',
@@ -39,6 +42,7 @@ export const scriptEditorTranslations = {
     scriptError_INVALID_STORY: '台本に未対応の制御文字があります。',
   },
   zh: {
+    scriptScrollMode: '滚动模式', scriptResumeEditing: '编辑模式', scriptScrollTop: '顶部', scriptScrollBottom: '底部', scriptScrollHint: '无需打开键盘即可滚动。点击某一行即可编辑。', scriptEditLine: '编辑第{line}行',
     scriptChecking: '正在检查剧本…', scriptIssueCount: '{count}处剧本错误 · 点击跳转', scriptValid: '剧本格式：无错误',
     scriptError_INVALID_TITLE_LINE: '首行须为“타이틀 : 标题”或“title : 标题”。',
     scriptError_INVALID_TITLE: '标题不得超过100字。', scriptError_MISSING_END: '最后一行需要endEvent。',

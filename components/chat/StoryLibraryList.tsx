@@ -16,6 +16,7 @@ import { useI18n } from '@/i18n';
 import CharacterAvatar from '@/components/CharacterAvatar';
 import { bgMap } from '@/constants/eventAssets';
 import parseEventScript from '@/utils/parseEventScript';
+import CharacterFilter from './CharacterFilter';
 
 const localeOf = { ko: 'ko-KR', en: 'en-US', ja: 'ja-JP', zh: 'zh-CN' } as const;
 const formatWhen = (createdAt: number, language: keyof typeof localeOf) =>
@@ -37,6 +38,7 @@ export default function StoryLibraryList({ onOpenStory }: { onOpenStory: (story:
     return [story.id, firstBg ? bgMap[firstBg] : undefined];
   })), [stories]);
   const [search, setSearch] = useState('');
+  const [character, setCharacter] = useState('');
   const [searchMode, setSearchMode] = useState<'title' | 'content'>('title');
   const searchEntries = useMemo(() => stories.map((story) => ({
     story,
@@ -44,9 +46,9 @@ export default function StoryLibraryList({ onOpenStory }: { onOpenStory: (story:
     content: normalizeSearch([story.script, ...(story.chatMessages ?? []).map((message) => message.text)].join('\n')),
   })), [stories]);
   const query = normalizeSearch(search);
-  const filteredStories = useMemo(() => query
-    ? searchEntries.filter((entry) => entry[searchMode].includes(query)).map((entry) => entry.story)
-    : stories, [stories, searchEntries, query, searchMode]);
+  const filteredStories = useMemo(() => searchEntries
+    .filter(entry => (!character || entry.story.character === character) && (!query || entry[searchMode].includes(query)))
+    .map(entry => entry.story), [searchEntries, query, searchMode, character]);
   const [editing, setEditing] = useState<SavedStory | 'new' | null>(null);
   const [draft, setDraft] = useState('');
   const [editorTab, setEditorTab] = useState<'story' | 'assets'>('story');
@@ -258,6 +260,7 @@ export default function StoryLibraryList({ onOpenStory }: { onOpenStory: (story:
           </View>
         </View>
         <View style={styles.searchControls}>
+          <CharacterFilter value={character} characters={stories.map(story => story.character)} onChange={value => { setCharacter(value); setMenuId(null); setConfirmId(null); }} />
           <View style={styles.searchModes} accessibilityRole="radiogroup" accessibilityLabel={t('storySearchMode')}>
             {(['title', 'content'] as const).map((mode) => (
               <TouchableOpacity

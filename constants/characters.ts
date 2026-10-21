@@ -50,9 +50,9 @@ export const CHARACTERS: Character[] = [
   },
   {
     name: '마리',
-    status: '',
+    status: '늘 평안하세요',
     displayName: { ko: '마리', en: 'Mari', ja: 'マリー', zh: '玛丽' },
-    displayStatus: { ko: '', en: '', ja: '', zh: '' },
+    displayStatus: { ko: '늘 평안하세요', en: '', ja: '', zh: '' },
     image: require('../assets/images/mari/mari_default.png'),
     avatar: {
       image: require('../assets/images/mari/mari_smile.png'),

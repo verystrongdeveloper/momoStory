@@ -48,5 +48,26 @@ new Function('require', 'module', 'exports', code)(id => {
     assert.ok(tree.root.findByType('StoryHeader').props.title.includes('conversationWithStory'));
     await React.act(async () => tree.unmount());
   }
-  console.log('PASS desktop/mobile profile picker, cancel, chat/bond navigation and room title');
+  let greet = false;
+  const greetListeners = new Set();
+  const toggleModule = { exports: {} };
+  const toggleCode = ts.transpileModule(fs.readFileSync(path.join(__dirname, '../components/layout/GreetModeToggle.tsx'), 'utf8'), {
+    compilerOptions: { module: ts.ModuleKind.CommonJS, target: ts.ScriptTarget.ES2022, jsx: ts.JsxEmit.React, esModuleInterop: true },
+  }).outputText;
+  new Function('require', 'module', 'exports', toggleCode)(id => id === 'react-native' ? { ...rn, Pressable: 'Pressable' } : id === '@/services/greetMode' ? {
+    getGreetMode: () => greet,
+    setGreetMode: value => { greet = value; greetListeners.forEach(listener => listener()); },
+    subscribeGreetMode: listener => { greetListeners.add(listener); return () => greetListeners.delete(listener); },
+  } : mocks[id], toggleModule, toggleModule.exports);
+  let toggleTree;
+  await React.act(async () => { toggleTree = Renderer.create(React.createElement(toggleModule.exports.default)); });
+  const control = () => toggleTree.root.findByProps({ accessibilityRole: 'switch' });
+  assert.equal(control().props.accessibilityState.checked, false);
+  await React.act(async () => control().props.onPress());
+  assert.equal(greet, true);
+  assert.equal(control().props.accessibilityState.checked, true);
+  await React.act(async () => control().props.onPress());
+  assert.equal(greet, false);
+  await React.act(async () => toggleTree.unmount());
+  console.log('PASS desktop/mobile profile picker, cancel, chat/bond navigation, room title and accessible greeting toggle');
 })().catch(error => { console.error(error); process.exitCode = 1; });

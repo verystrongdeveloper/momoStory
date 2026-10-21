@@ -14,13 +14,15 @@ interface Props {
   characterName: string;
   source?: ImageSourcePropType;
   style?: StyleProp<ViewStyle>;
+  onLoad?: () => void;
+  onError?: () => void;
 }
 
 /**
  * 캐릭터별 확대/위치 설정으로 원본 전신 이미지를 프로필 프레임에 맞춰 보여준다.
  * offset 값은 프레임 크기에 대한 비율이므로 아바타 크기가 달라도 같은 구도를 유지한다.
  */
-export default function CharacterAvatar({ characterName, source, style }: Props) {
+export default function CharacterAvatar({ characterName, source, style, onLoad, onError }: Props) {
   const [size, setSize] = useState({ width: 0, height: 0 });
   const crop = avatarCropOf(characterName);
   const image = crop.image ?? source ?? avatarOf(characterName);
@@ -41,7 +43,7 @@ export default function CharacterAvatar({ characterName, source, style }: Props)
       style={[styles.frame, crop.backgroundColor ? { backgroundColor: crop.backgroundColor } : null, style]}
     >
       <View pointerEvents="none" style={[styles.offsetLayer, { transform: [{ translateX: offsetX }, { translateY: offsetY }] }]}>
-        <Image source={image} resizeMode={crop.fit ?? 'cover'} style={[styles.image, { transform: [{ scale }] }]} />
+        <Image source={image} resizeMode={crop.fit ?? 'cover'} onLoad={onLoad} onError={onError} style={[styles.image, { transform: [{ scale }] }]} />
       </View>
     </View>
   );

@@ -36,6 +36,9 @@ export default function GeminiKeyField({ onFocus }: { onFocus?: () => void }) {
             setValue(next);
           }}
           placeholder={t('apiKeyPlaceholder')}
+          placeholderTextColor="#777"
+          selectionColor="#d85b76"
+          cursorColor="#d85b76"
           secureTextEntry
           autoCapitalize="none"
           autoCorrect={false}
@@ -86,6 +89,8 @@ const styles = StyleSheet.create({
   },
   input: {
     flex: 1,
+    minWidth: 0,
+    minHeight: 44,
     borderWidth: 1,
     borderColor: '#aaa',
     borderRadius: 6,
@@ -93,6 +98,7 @@ const styles = StyleSheet.create({
     paddingVertical: 8,
     marginRight: 8,
     backgroundColor: '#fff',
+    color: '#222',
     fontSize: 14,
   },
   rememberRow: {

@@ -12,7 +12,7 @@ function load(file, mocks) {
   new Function('require', 'module', 'exports', code)(id => Object.hasOwn(mocks, id) ? mocks[id] : require(id), mod, mod.exports);
   return mod.exports;
 }
-const rn = Object.fromEntries(['View', 'Text', 'Modal', 'TextInput', 'ScrollView', 'TouchableOpacity', 'ActivityIndicator', 'Image'].map(name => [name, name]));
+const rn = Object.fromEntries(['View', 'Text', 'Modal', 'Pressable', 'TextInput', 'ScrollView', 'TouchableOpacity', 'ActivityIndicator', 'Image'].map(name => [name, name]));
 rn.StyleSheet = { create: value => value };
 const translate = (key, values) => key === 'communityCommentCount' ? `${key}:${values.count}` : key;
 const i18n = { useI18n: () => ({ t: translate, language: 'ko' }) };
@@ -20,7 +20,7 @@ const post = { id: '11111111-1111-4111-8111-111111111111', title: 'Public story'
 const detail = { ...post, script: 'title : Public story\n호시노 : hi\nendEvent', chat_messages: [{ sender: 'user', text: 'hi' }], comments: [] };
 const validation = load('shared/community/validation.ts', {});
 const chars = { avatarOf: () => 'avatar', displayCharacterName: name => name };
-const button = (tree, key) => tree.root.findAllByType('TouchableOpacity').find(node => node.findAllByType('Text').some(text => text.props.children === key));
+const button = (tree, key) => tree.root.findAllByType('TouchableOpacity').find(node => node.props.accessibilityLabel === key || node.findAllByType('Text').some(text => text.props.children === key));
 const has = (tree, key) => tree.root.findAllByType('Text').some(text => text.props.children === key);
 const hasCount = (tree, count) => tree.root.findAllByType('Text').some(text => JSON.stringify(text.props.children).includes(`communityCommentCount:${count}`));
 (async () => {
@@ -47,7 +47,7 @@ const hasCount = (tree, count) => tree.root.findAllByType('Text').some(text => J
   await React.act(async () => tree.unmount());
 
   let queries = [], likes = [], commentBodies = [], views = [], failComment = false;
-  api.community.list = async options => { queries.push(options); return [post]; };
+  api.community.list = async options => { queries.push(options); return options.character && options.character !== post.character ? [] : [post]; };
   api.community.detail = async () => ({ ...detail, liked: likes.at(-1)?.[1] ?? false });
   api.community.view = async id => { views.push(id); };
   api.community.like = async (...args) => { likes.push(args); };
@@ -64,7 +64,7 @@ const hasCount = (tree, count) => tree.root.findAllByType('Text').some(text => J
     },
     '../shared/prompts/speakerNames': { canonicalCharacterName: name => name },
   });
-  const Panel = load('components/community/CommunityPanel.tsx', { react: React, 'react-native': rn, '@/i18n': i18n, '@/constants/characters': chars, '@/constants/eventAssets': { bgMap: { BG_AbydosCouncilRoom: 'background' } }, '@/components/CharacterAvatar': 'CharacterAvatar', '@/components/chat/CharacterChat': 'CharacterChat', '@/services/community/client': api, '@/shared/community/validation': validation, '@/store/storyLibrary': library }).default;
+  const Panel = load('components/community/CommunityPanel.tsx', { react: React, 'react-native': rn, '@expo/vector-icons': { Ionicons: 'Ionicons' }, '@/components/chat/CharacterFilter': 'CharacterFilter', '@/i18n': i18n, '@/constants/characters': chars, '@/constants/eventAssets': { bgMap: { BG_AbydosCouncilRoom: 'background' } }, '@/components/CharacterAvatar': 'CharacterAvatar', '@/components/chat/CharacterChat': 'CharacterChat', '@/services/community/client': api, '@/shared/community/validation': validation, '@/store/storyLibrary': library }).default;
   await React.act(async () => { tree = Renderer.create(React.createElement(Panel)); });
   assert.ok(has(tree, 'communitySetup')); assert.equal(queries.length, 0);
   await React.act(async () => tree.unmount()); configured = true;
@@ -75,10 +75,26 @@ const hasCount = (tree, count) => tree.root.findAllByType('Text').some(text => J
   assert.equal(avatarStyle.position, 'absolute', 'native character layer must have explicit bounds without absoluteFillObject');
   for (const edge of ['top', 'right', 'bottom', 'left']) assert.equal(avatarStyle[edge], 0);
   assert.equal(avatarStyle.backgroundColor, 'transparent', 'story background remains visible behind the character');
+  const thumbnailLoading = () => tree.root.findAllByProps({ accessibilityLabel: 'communityPreviewLoading' });
+  assert.equal(thumbnailLoading().length, 1);
+  await React.act(async () => tree.root.findByType('Image').props.onLoad());
+  assert.equal(thumbnailLoading().length, 1, 'background alone cannot reveal an incomplete thumbnail');
+  await React.act(async () => tree.root.findByType('CharacterAvatar').props.onLoad());
+  assert.equal(thumbnailLoading().length, 0, 'thumbnail is revealed only after both images load');
   assert.ok(hasCount(tree, 0), 'cards explicitly show zero comments');
+  await React.act(async () => tree.root.findByType('CharacterFilter').props.onChange('히나'));
+  assert.equal(queries.at(-1).character, '히나'); assert.equal(queries.at(-1).offset, 0);
+  assert.equal(tree.root.findAllByProps({ accessibilityLabel: post.title }).length, 0);
+  await React.act(async () => tree.root.findByType('CharacterFilter').props.onChange('호시노'));
+  assert.ok(hasCount(tree, 0));
+  await React.act(async () => tree.root.findByType('CharacterFilter').props.onChange(''));
   post.comment_count = 7;
   await React.act(async () => button(tree, 'communityRefresh').props.onPress());
   assert.ok(hasCount(tree, 7), 'refresh displays the server total');
+  assert.equal(thumbnailLoading().length, 1, 'reloaded cards start with a loading placeholder');
+  await React.act(async () => tree.root.findByType('CharacterAvatar').props.onError());
+  assert.equal(thumbnailLoading().length, 0, 'failed images do not leave an endless spinner');
+  assert.ok(has(tree, 'communityPreviewUnavailable'));
   await React.act(async () => button(tree, 'communityLiked').props.onPress());
   assert.equal(queries.at(-1).liked, true);
   await React.act(async () => button(tree, 'communityPopular').props.onPress());
@@ -139,6 +155,7 @@ const hasCount = (tree, count) => tree.root.findAllByType('Text').some(text => J
   await React.act(async () => tree.unmount());
   // Verify the library menu opens the actual publish modal path.
   const Library = load('components/chat/StoryLibraryList.tsx', {
+    './CharacterFilter': 'CharacterFilter',
     '@/constants/eventAssets': { bgMap: {} }, '@/utils/parseEventScript': load('utils/parseEventScript.ts', {}),
     './StoryScriptEditor': 'StoryScriptEditor',
     react: React, 'react-native': { ...rn, Platform: { OS: 'web' } }, '@expo/vector-icons': { Ionicons: 'Ionicons' }, '@/constants/characters': chars,
@@ -148,11 +165,36 @@ const hasCount = (tree, count) => tree.root.findAllByType('Text').some(text => J
   await React.act(async () => { tree = Renderer.create(React.createElement(Library, { onOpenStory() {} })); });
   assert.equal(tree.root.findAllByType('Image').length, 0, 'stories without BG keep the original library thumbnail');
   assert.equal(tree.root.findByType('CharacterAvatar').props.style[0].backgroundColor, '#f3d5dc');
+  await React.act(async () => tree.root.findByType('CharacterFilter').props.onChange('히나'));
+  assert.equal(tree.root.findAllByType('CharacterAvatar').length, 0, 'library filters by card character');
+  await React.act(async () => tree.root.findByType('CharacterFilter').props.onChange('호시노'));
+  assert.equal(tree.root.findAllByType('CharacterAvatar').length, 1);
   await React.act(async () => tree.root.findByProps({ accessibilityLabel: 'storyMenu' }).props.onPress());
   await React.act(async () => button(tree, 'communityPublish').props.onPress());
   assert.equal(tree.root.findByType('PublishStoryModal').props.story.id, post.id);
   await React.act(async () => tree.unmount());
   const translations = load('i18n/community.ts', {}).communityTranslations;
+  const Filter = load('components/chat/CharacterFilter.tsx', { react: React, 'react-native': rn, '@/i18n': i18n, '@/constants/characters': { ...chars, CHARACTERS: [{ name: '호시노' }, { name: '히나' }, { name: '마리' }] } }).default;
+  let filterSelection;
+  await React.act(async () => { tree = Renderer.create(React.createElement(Filter, { value: '', characters: ['호시노', 'extra'], onChange: value => { filterSelection = value; } })); });
+  assert.equal(tree.root.findAllByProps({ accessibilityRole: 'radio' }).length, 0, 'filter options stay collapsed');
+  await React.act(async () => button(tree, 'characterFilter').props.onPress());
+  assert.equal(tree.root.findAllByProps({ accessibilityRole: 'radio' }).length, 5, 'all plus unique known/local characters');
+  await React.act(async () => button(tree, '히나').props.onPress());
+  assert.equal(filterSelection, '히나');
+  assert.equal(tree.root.findAllByType('Modal').length, 0, 'selection closes the picker');
+  await React.act(async () => { tree.update(React.createElement(Filter, { value: '히나', onChange: value => { filterSelection = value; } })); });
+  assert.ok(has(tree, '히나'), 'collapsed control shows current character');
+  await React.act(async () => button(tree, 'characterFilter').props.onPress());
+  await React.act(async () => tree.root.findByType('Modal').props.onRequestClose());
+  assert.equal(filterSelection, '히나', 'dismissal preserves selection');
+  await React.act(async () => tree.unmount());
+  const Avatar = load('components/CharacterAvatar.tsx', { react: React, 'react-native': rn, '@/constants/characters': { ...chars, avatarCropOf: () => ({}) } }).default;
+  let avatarLoaded = 0, avatarFailed = 0;
+  await React.act(async () => { tree = Renderer.create(React.createElement(Avatar, { characterName: '호시노', onLoad: () => avatarLoaded++, onError: () => avatarFailed++ })); });
+  await React.act(async () => { tree.root.findByType('Image').props.onLoad(); tree.root.findByType('Image').props.onError(); });
+  assert.equal(avatarLoaded, 1); assert.equal(avatarFailed, 1);
+  await React.act(async () => tree.unmount());
   for (const language of ['en', 'ja', 'zh']) assert.deepEqual(Object.keys(translations[language]).sort(), Object.keys(translations.ko).sort());
   console.log('PASS setup state, publish consent/duplicate guard, liked feed/search/sort, read-only chat-story playback, likes/comments/rate errors/Unicode lengths, library publish entry and four-language UI');
 })().catch(error => { console.error(error); process.exitCode = 1; });

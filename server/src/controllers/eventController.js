@@ -25,7 +25,7 @@ exports.createEvent = async (req, res) => {
 
   try {
     /* 1) 등장 인물 선정 — 캐릭터 채팅 세션과 분리한다 */
-    const selector = await getChat(character, GEMINI_MODEL, 'select', SELECTOR_SYSTEM, apiKey, req.body.language);
+    const selector = await getChat(character, GEMINI_MODEL, 'select', SELECTOR_SYSTEM, apiKey, req.body.language, 'bond', req.body.model);
     const selPrompt = buildSelectionPrompt(dialogHistory);
     console.log('🧠 [등장 인물 선정 프롬프트]');
     console.log(selPrompt);
@@ -78,7 +78,7 @@ exports.createEvent = async (req, res) => {
     console.log(JSON.stringify(allCharsWithEmotions, null, 2));
 
     /* 2) 이벤트 스크립트 생성. 채팅 세션과 섞이지 않도록 세션을 분리한다. */
-    const proChat = await getChat(character, GEMINI_MODEL, 'event', EVENT_WRITER_SYSTEM, apiKey, req.body.language);
+    const proChat = await getChat(character, GEMINI_MODEL, 'event', EVENT_WRITER_SYSTEM, apiKey, req.body.language, 'bond', req.body.model);
     // ★ 변경: Pro 모델에게는 이제 '모든' 캐릭터(메인 + 추가)와 그들의 감정 리스트를 함께 넘겨줍니다.
     const eventPrompt = buildEventPromptPro(
       character,

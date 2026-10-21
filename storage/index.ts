@@ -4,9 +4,10 @@ import { readStoryRecords, writeStoryRecords } from './storyStorage';
 import { migrateLegacyStorage } from './migrate';
 import { readInitialSync } from './prime';
 import { AppLanguage, DEFAULT_PREFERENCES, Preferences, StoryRecord, clampChatSize, clampVolume } from './types';
+import { normalizeModel } from '../shared/geminiModels';
 import { normalizeChatSound, type ChatSoundId } from '../utils/chatPresentation';
 
-type SettingKey = 'language' | 'chatSound' | 'chatSize' | 'bgmVolume' | 'sfxVolume' | 'greetMode' | 'rememberApiKey' | 'termsAccepted' | 'tutorialSeen';
+type SettingKey = 'geminiModel' | 'language' | 'chatSound' | 'chatSize' | 'bgmVolume' | 'sfxVolume' | 'greetMode' | 'rememberApiKey' | 'termsAccepted' | 'tutorialSeen';
 
 let synced = readInitialSync() != null;
 
@@ -48,10 +49,11 @@ export function getRememberApiKey() {
 }
 
 export function getSetting(key: 'chatSize' | 'bgmVolume' | 'sfxVolume'): number;
+export function getSetting(key: 'geminiModel'): string;
 export function getSetting(key: 'language'): AppLanguage;
 export function getSetting(key: 'chatSound'): ChatSoundId;
 export function getSetting(key: 'greetMode' | 'rememberApiKey' | 'termsAccepted' | 'tutorialSeen'): boolean;
-export function getSetting(key: SettingKey): number | boolean | AppLanguage | ChatSoundId {
+export function getSetting(key: SettingKey): number | boolean | string {
   return memory[key];
 }
 
@@ -62,6 +64,7 @@ export function loadStories(): StoryRecord[] {
 async function persistAll() {
   const prefs: Preferences = {
     language: memory.language,
+    geminiModel: memory.geminiModel,
     chatSize: memory.chatSize,
     bgmVolume: memory.bgmVolume,
     sfxVolume: memory.sfxVolume,
@@ -84,8 +87,12 @@ export function saveApiKey(key: string, remember = memory.rememberApiKey) {
   if (hydrated) void persistAll().catch(() => undefined);
 }
 
-export function saveSetting(key: SettingKey, value: number | boolean | AppLanguage | ChatSoundId) {
-  if (key === 'language') {
+export function saveSetting(key: SettingKey, value: number | boolean | string) {
+  if (key === 'geminiModel') {
+    const next = normalizeModel(value);
+    if (next === memory.geminiModel) return;
+    memory.geminiModel = next;
+  } else if (key === 'language') {
     if (value !== 'ko' && value !== 'en' && value !== 'ja' && value !== 'zh') return;
     if (value === memory.language) return;
     memory.language = value;
@@ -135,6 +142,7 @@ async function pullAll() {
   memory = {
     apiKey,
     language: prefs.language,
+    geminiModel: prefs.geminiModel,
     chatSize: prefs.chatSize,
     bgmVolume: prefs.bgmVolume,
     sfxVolume: prefs.sfxVolume,

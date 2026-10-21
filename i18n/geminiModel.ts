@@ -1,0 +1,38 @@
+export const geminiModelTranslations = {
+  ko: {
+    geminiModel: 'Gemini 모델', geminiModelAuto: '자동 선택',
+    geminiModelAutoHint: '최신 정식 Flash 모델을 우선 사용하고, 혼잡하거나 종료된 경우 다른 Flash 모델로 전환합니다.',
+    geminiModelManualHint: '선택한 모델만 사용합니다. 변경은 다음 요청부터 적용되며 기존 대화는 유지됩니다. 모델별 요금과 사용 한도는 다를 수 있습니다.',
+    geminiModelRefresh: '모델 목록 새로고침', geminiModelLoading: '모델 목록 불러오는 중',
+    geminiModelKeyRequired: 'API 키를 입력한 뒤 모델 목록을 불러올 수 있습니다.',
+    geminiModelFailed: '모델 목록을 불러오지 못했습니다. API 키와 연결을 확인하고 새로고침해 주세요.',
+    geminiModelEmpty: '사용 가능한 텍스트 모델이 없습니다.',
+  },
+  en: {
+    geminiModel: 'Gemini model', geminiModelAuto: 'Automatic',
+    geminiModelAutoHint: 'Prefers current stable Flash models and switches to another Flash model if busy or retired.',
+    geminiModelManualHint: 'Uses only the selected model, starting with the next request. Existing conversations are kept. Pricing and usage limits may vary by model.',
+    geminiModelRefresh: 'Refresh models', geminiModelLoading: 'Loading models',
+    geminiModelKeyRequired: 'Enter an API key to load models.',
+    geminiModelFailed: 'Could not load models. Check your API key and connection, then refresh.',
+    geminiModelEmpty: 'No text models are available.',
+  },
+  ja: {
+    geminiModel: 'Geminiモデル', geminiModelAuto: '自動選択',
+    geminiModelAutoHint: '最新の正式版Flashを優先し、混雑や提供終了時は別のFlashモデルに切り替えます。',
+    geminiModelManualHint: '選択したモデルのみ使用します。次のリクエストから適用し、会話は保持されます。料金や利用上限はモデルによって異なります。',
+    geminiModelRefresh: 'モデル一覧を更新', geminiModelLoading: 'モデル一覧を読み込み中',
+    geminiModelKeyRequired: 'APIキーを入力するとモデル一覧を取得できます。',
+    geminiModelFailed: 'モデル一覧を取得できませんでした。APIキーと接続を確認して更新してください。',
+    geminiModelEmpty: '利用可能なテキストモデルがありません。',
+  },
+  zh: {
+    geminiModel: 'Gemini模型', geminiModelAuto: '自动选择',
+    geminiModelAutoHint: '优先使用最新稳定版Flash，繁忙或停用时切换至其他Flash模型。',
+    geminiModelManualHint: '仅使用所选模型，从下一次请求生效并保留现有对话。不同模型的费用和使用限额可能不同。',
+    geminiModelRefresh: '刷新模型列表', geminiModelLoading: '正在加载模型列表',
+    geminiModelKeyRequired: '输入API密钥后即可加载模型列表。',
+    geminiModelFailed: '无法加载模型列表。请检查API密钥和网络连接后刷新。',
+    geminiModelEmpty: '没有可用的文本模型。',
+  },
+};

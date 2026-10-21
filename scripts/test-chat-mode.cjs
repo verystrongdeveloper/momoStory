@@ -8,6 +8,7 @@ function load(file, mocks = {}) {
   const code = ts.transpileModule(fs.readFileSync(path.join(root, file), 'utf8'), { compilerOptions: { module: ts.ModuleKind.CommonJS, target: ts.ScriptTarget.ES2022 } }).outputText;
   new Function('require', 'module', 'exports', code)(id => {
     if (Object.hasOwn(mocks, id)) return mocks[id];
+    if (id === '../shared/geminiModels') return require('../shared/geminiModels');
     if (id.startsWith('.')) return load(path.relative(root, path.resolve(root, path.dirname(file), `${id}.ts`)), mocks);
     return require(id);
   }, mod, mod.exports);
@@ -40,6 +41,13 @@ function load(file, mocks = {}) {
   storage.saveSetting('greetMode', true);
   await new Promise(resolve => setImmediate(resolve));
   assert.equal(types.parsePreferences(raw).greetMode, true, 'other preferences still persist');
+  assert.equal(types.parsePreferences('{}').geminiModel, 'auto', 'existing users default to automatic');
+  storage.saveSetting('geminiModel', 'gemini-4-pro');
+  await new Promise(resolve => setImmediate(resolve));
+  const restored = load('storage/index.ts', mocks);
+  await restored.hydrateStorage();
+  assert.equal(restored.getSetting('geminiModel'), 'gemini-4-pro', 'model selection survives restart');
+  assert.equal(types.parsePreferences('{"geminiModel":"../invalid"}').geminiModel, 'auto');
 
   let resolveReply, rejectReply, resets = [];
   const transport = {

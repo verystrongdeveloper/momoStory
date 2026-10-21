@@ -1,3 +1,4 @@
+import { getGeminiModel } from '../geminiModel';
 import { getGeminiKey } from '@/services/geminiKey';
 import { getAppLanguage } from '@/services/appLanguage';
 import { GEMINI_OFFLINE_MESSAGE, throwIfOffline } from './errors';
@@ -8,7 +9,7 @@ const API_URL = process.env.EXPO_PUBLIC_API_URL ?? 'http://localhost:3000';
 async function post<T>(path: string, body: Record<string, unknown>): Promise<T> {
   throwIfOffline();
   const apiKey = getGeminiKey();
-  const payload = { ...body, language: getAppLanguage() };
+  const payload = { ...body, language: getAppLanguage(), model: getGeminiModel() };
   let res: Response;
   try {
     res = await fetch(`${API_URL}${path}`, {

@@ -4,6 +4,7 @@ import { buildSelectionPrompt } from '../../shared/prompts/selectionPromptBuilde
 import { getAvailableCharacters, hasStoryAssets, keepAssetSpeakers } from '../../shared/prompts/characterList';
 import { getGeminiKey } from '@/services/geminiKey';
 import { getAppLanguage } from '@/services/appLanguage';
+import { getGeminiModel } from '../geminiModel';
 import { dialogKey, resetChatSessions, sendWithFallback, userApiKey } from './rest';
 import type { ChatRoom } from '@/shared/chatRoom';
 
@@ -57,12 +58,13 @@ export const directClient = {
 
   async createEvent(character: string) {
     const language = getAppLanguage();
+    const model = getGeminiModel();
     const apiKey = readKey();
     if (!character) throw new Error('character 누락');
     const dialogHistory = chatLogs.get(dialogKey(character, apiKey)) ?? [];
     if (dialogHistory.length !== 3) throw new Error('dialogHistory 부족(3쌍 필요)');
 
-    const rawSelText = await sendWithFallback(character, 'select', buildSelectionPrompt(dialogHistory), SELECTOR_SYSTEM, apiKey, language);
+    const rawSelText = await sendWithFallback(character, 'select', buildSelectionPrompt(dialogHistory), SELECTOR_SYSTEM, apiKey, language, 'bond', model);
     const jsonMatch = rawSelText.match(/\{[\s\S]*}/);
     let selection: { characters?: { name?: string }[]; direction?: string };
     if (!jsonMatch) {
@@ -88,7 +90,7 @@ export const directClient = {
 
     const eventPrompt = buildEventPromptPro(character, dialogHistory, allCharsWithEmotions, selection.direction ?? '');
     const script = keepAssetSpeakers(
-      (await sendWithFallback(character, 'event', eventPrompt, EVENT_WRITER_SYSTEM, apiKey, language)).trim(),
+      (await sendWithFallback(character, 'event', eventPrompt, EVENT_WRITER_SYSTEM, apiKey, language, 'bond', model)).trim(),
       getAvailableCharacters(),
       language,
     );

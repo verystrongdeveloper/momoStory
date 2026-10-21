@@ -11,6 +11,7 @@ import {
   View,
 } from 'react-native';
 import GeminiKeyField from './GeminiKeyField';
+import GeminiModelPicker from './GeminiModelPicker';
 import ChatSoundPicker from './ChatSoundPicker';
 import InAppUpdate from './InAppUpdate';
 import Constants from 'expo-constants';
@@ -212,6 +213,7 @@ export default function SettingsPanel({
 
       <View style={styles.keyWrap} onLayout={(event) => setKeyOffset(event.nativeEvent.layout.y)}>
         <GeminiKeyField onFocus={revealApiKey} />
+        <GeminiModelPicker />
       </View>
 
       <View style={styles.card}>

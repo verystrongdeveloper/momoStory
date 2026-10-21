@@ -1,17 +1,10 @@
+import { modelOrder, rememberModel, canFallback, normalizeModel } from '../../shared/geminiModels';
+import { getGeminiModel } from '../geminiModel';
 import { prompts } from '../../shared/prompts';
 import { GEMINI_OFFLINE_MESSAGE, throwIfOffline } from './errors';
 import { withGenerationLanguage } from '../../shared/prompts/generationLanguage';
 import type { AppLanguage } from '@/storage/types';
 import type { ChatRoom } from '@/shared/chatRoom';
-
-const MODEL_FALLBACKS = [
-  'gemini-3.7-flash',
-  'gemini-3.6-flash',
-  'gemini-3.5-flash',
-  'gemini-3.5-flash-lite',
-];
-
-const GEMINI_MODEL = MODEL_FALLBACKS[0];
 
 type Part = { text: string };
 type Content = { role: 'user' | 'model'; parts: Part[] };
@@ -25,7 +18,7 @@ export function resetChatSessions(character: string, apiKey: string, room: ChatR
   const prefix = `${keyId(apiKey)}:${character}:${room}:`;
   for (const key of sessions.keys()) if (key.startsWith(prefix)) sessions.delete(key);
 }
-let activeModel = GEMINI_MODEL;
+
 
 function keyId(apiKey: string): string {
   let hash = 0;
@@ -35,14 +28,8 @@ function keyId(apiKey: string): string {
   return (hash >>> 0).toString(16).padStart(8, '0');
 }
 
-function orderFrom(modelName: string): string[] {
-  const index = MODEL_FALLBACKS.indexOf(modelName);
-  if (index === -1) return [modelName, ...MODEL_FALLBACKS];
-  return MODEL_FALLBACKS.slice(index).concat(MODEL_FALLBACKS.slice(0, index));
-}
-
-function sessionFor(character: string, modelName: string, sessionKey: string, apiKey: string, room: ChatRoom): Session {
-  const cacheKey = [keyId(apiKey), character, room, modelName, sessionKey].filter(Boolean).join(':');
+function sessionFor(character: string, sessionKey: string, apiKey: string, room: ChatRoom): Session {
+  const cacheKey = [keyId(apiKey), character, room, sessionKey].join(':');
   const existing = sessions.get(cacheKey);
   if (existing) return existing;
   const created: Session = { history: [] };
@@ -63,9 +50,6 @@ class GeminiHttpError extends Error {
   }
 }
 
-function isOverloaded(err: unknown): boolean {
-  return err instanceof GeminiHttpError && (err.status === 503 || err.status === 429);
-}
 
 async function generate(apiKey: string, modelName: string, systemInstruction: string, history: Content[], message: string): Promise<string> {
   throwIfOffline();
@@ -112,7 +96,7 @@ async function generate(apiKey: string, modelName: string, systemInstruction: st
   return text;
 }
 
-/** 서버 geminiService와 같이, 세션은 모델별로 비우고 503/429만 다음 모델로 넘긴다. */
+/** Explicit selection is strict; automatic selection can recover from retired or busy models. */
 export async function sendWithFallback(
   character: string,
   sessionKey: string,
@@ -121,28 +105,38 @@ export async function sendWithFallback(
   apiKey: string,
   language: AppLanguage = 'ko',
   room: ChatRoom = 'bond',
+  modelSelection: string = getGeminiModel(),
 ): Promise<string> {
-  const order = orderFrom(activeModel);
+  const selection = normalizeModel(modelSelection);
+  const order = await modelOrder(apiKey, selection);
+  const attempted = new Set<string>();
+  let refreshed = false;
   const instruction = withGenerationLanguage(systemText(character, systemInstruction), language, sessionKey === 'event' ? 'event' : sessionKey === 'select' ? 'select' : 'chat');
   let lastError: unknown;
 
   for (const modelName of order) {
-    const session = sessionFor(character, modelName, sessionKey, apiKey, room);
+    if (attempted.has(modelName)) continue;
+    attempted.add(modelName);
+    const session = sessionFor(character, sessionKey, apiKey, room);
     try {
       const text = await generate(apiKey, modelName, instruction, session.history, message);
       session.history.push(
         { role: 'user', parts: [{ text: message }] },
         { role: 'model', parts: [{ text }] },
       );
-      activeModel = modelName;
+      if (selection === 'auto') rememberModel(apiKey, modelName);
       return text;
     } catch (err) {
       lastError = err;
-      if (!isOverloaded(err)) throw err;
+      if (selection !== 'auto' || !(err instanceof GeminiHttpError) || !canFallback(err.status)) throw err;
+      if (!refreshed && (err.status === 404 || err.status === 410)) {
+        refreshed = true;
+        order.push(...(await modelOrder(apiKey, 'auto', true)).filter(model => !attempted.has(model)));
+      }
     }
   }
 
-  throw lastError instanceof Error ? lastError : new Error('Gemini 응답 실패');
+  throw lastError instanceof Error ? lastError : new Error('Gemini 응답 실패: 사용 가능한 텍스트 모델을 확인해 주세요.');
 }
 
 export function userApiKey(raw: string): string {

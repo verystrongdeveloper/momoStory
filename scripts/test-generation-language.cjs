@@ -16,6 +16,7 @@ function load(file, mocks = {}, globals = {}) {
     id => Object.hasOwn(mocks, id) ? mocks[id] : localRequire(id), module, module.exports, ...Object.values(globals));
   return module.exports;
 }
+const modelPolicy = { ...require('../shared/geminiModels'), modelOrder: async (_key, selection = 'auto') => selection === 'auto' ? ['gemini-test-flash', 'gemini-test-flash-lite'] : [selection], rememberModel() {} };
 const { normalizeGenerationLanguage, withGenerationLanguage } = require('../shared/prompts/generationLanguage');
 const languages = { ko: 'Korean', en: 'English', ja: 'Japanese', zh: 'Simplified Chinese' };
 const names = { ko: '호시노', en: 'Hoshino', ja: 'ホシノ', zh: '星野' };
@@ -77,13 +78,14 @@ function output(instruction) {
   }
   let selected = 'ko';
   const requests = [];
-  const rest = load('services/geminiClient/rest.ts', { './errors': { throwIfOffline() {} } }, {
+  const rest = load('services/geminiClient/rest.ts', { './errors': { throwIfOffline() {} }, '../geminiModel': { getGeminiModel: () => 'auto' }, '../../shared/geminiModels': modelPolicy }, {
     fetch: async (_url, options) => {
       const body = JSON.parse(options.body); requests.push(body);
       return { ok: true, text: async () => JSON.stringify({ candidates: [{ content: { parts: [{ text: output(body.systemInstruction.parts[0].text) }] } }] }) };
     },
   });
   const direct = load('services/geminiClient/directClient.ts', {
+    '../geminiModel': { getGeminiModel: () => 'auto' },
     '@/services/geminiKey': { getGeminiKey: () => 'test-only-key' },
     '@/services/appLanguage': { getAppLanguage: () => selected }, './rest': rest,
   }).directClient;
@@ -112,7 +114,7 @@ function output(instruction) {
   assert.equal(requests.at(-1).contents.length, 3, 'other API keys keep their model history');
   let attempt = 0;
   const fallbackRequests = [];
-  const retryRest = load('services/geminiClient/rest.ts', { './errors': { throwIfOffline() {} } }, {
+  const retryRest = load('services/geminiClient/rest.ts', { './errors': { throwIfOffline() {} }, '../geminiModel': { getGeminiModel: () => 'auto' }, '../../shared/geminiModels': modelPolicy }, {
     fetch: async (_url, options) => {
       const body = JSON.parse(options.body); fallbackRequests.push(body);
       if (attempt++ === 0) return { ok: false, status: 503, text: async () => '{"error":{"message":"busy"}}' };
@@ -134,6 +136,7 @@ function output(instruction) {
   const snapshots = [];
   selected = 'en';
   const snapshot = load('services/geminiClient/directClient.ts', {
+    '../geminiModel': { getGeminiModel: () => 'auto' },
     '@/services/geminiKey': { getGeminiKey: () => 'snapshot-key' },
     '@/services/appLanguage': { getAppLanguage: () => selected },
     './rest': { ...rest, sendWithFallback: async (_char, session, _message, _system, _key, language) => {
@@ -147,6 +150,7 @@ function output(instruction) {
 
   const transportCalls = [];
   const transport = load('services/geminiClient/expressTransport.ts', {
+    '../geminiModel': { getGeminiModel: () => 'auto' },
     '@/services/geminiKey': { getGeminiKey: () => 'test-only-key' },
     '@/services/appLanguage': { getAppLanguage: () => selected }, './errors': { throwIfOffline() {} },
   }, { fetch: async (_url, options) => { transportCalls.push(JSON.parse(options.body)); return { ok: true, json: async () => ({}) }; } }).expressTransport;
@@ -162,6 +166,7 @@ function output(instruction) {
   const models = [], sdkRequests = [];
   class FakeSDK {
     getGenerativeModel(options) {
+      assert.equal(options.model, 'gemini-test-pro', 'Express greeting, chat, selection and script honor the selected model');
       return { startChat({ history }) {
         models.push({ instruction: options.systemInstruction, history: [...history] });
         const log = [...history];
@@ -177,7 +182,7 @@ function output(instruction) {
       } };
     }
   }
-  const service = load('server/src/services/geminiService.js', { '@google/generative-ai': { GoogleGenerativeAI: FakeSDK } });
+  const service = load('server/src/services/geminiService.js', { '@google/generative-ai': { GoogleGenerativeAI: FakeSDK }, '../../../shared/geminiModels': modelPolicy });
   const chat = load('server/src/controllers/chatController.js', { '../services/geminiService': service });
   const controllerMocks = { '../services/geminiService': service, './chatController': chat };
   const trigger = load('server/src/controllers/triggerController.js', controllerMocks);
@@ -185,7 +190,7 @@ function output(instruction) {
   async function invoke(handler, language, extra = {}) {
     let status = 200, data;
     const response = { status(value) { status = value; return this; }, json(value) { data = value; return this; } };
-    await handler({ body: { character: '호시노', apiKey: 'test-only-key', language, ...extra } }, response);
+    await handler({ body: { character: '호시노', apiKey: 'test-only-key', model: 'gemini-test-pro', language, ...extra } }, response);
     assert.equal(status, 200); return data;
   }
   for (const code of Object.keys(languages)) {

@@ -15,6 +15,7 @@ const mocks = {
   'react': React, 'react-native': rn, 'expo-constants': constants,
   '../../app.json': appConfig, './GeminiKeyField': 'GeminiKeyField',
   './ChatSoundPicker': 'ChatSoundPicker',
+  './GeminiModelPicker': 'GeminiModelPicker',
   '@/platform/openExternalUrl': { openExternalUrl: async url => { opened = url; } },
   '@/services/appUpdate': { checkAppUpdate: async (version) => {
     checkedVersion = version;

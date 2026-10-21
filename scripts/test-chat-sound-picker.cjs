@@ -14,6 +14,7 @@ function load(file, mocks = {}) {
   }).outputText;
   new Function('require', 'module', 'exports', code)(id => {
     if (Object.hasOwn(mocks, id)) return mocks[id];
+    if (id === '../shared/geminiModels') return require('../shared/geminiModels');
     if (id.includes('/assets/')) return id;
     if (id.startsWith('@/') || id.startsWith('.')) {
       const base = id.startsWith('@/') ? id.slice(2) : path.relative(root, path.resolve(root, path.dirname(file), id));

@@ -8,7 +8,7 @@
     "test:editor": "node scripts/test-story-editor.cjs",
     "test:tutorial": "node scripts/test-tutorial.cjs",
     "video:renderer": "node scripts/build-video-renderer.js",
-    "test:video": "node scripts/test-video-timeline.cjs && node scripts/test-video-presentation.cjs && node scripts/test-video-assets.cjs && node scripts/test-video-ui.cjs && node scripts/test-background-transition.cjs",
+    "test:video": "node scripts/test-video-timeline.cjs && node scripts/test-video-presentation.cjs && node scripts/test-video-assets.cjs && node scripts/test-video-ui.cjs && node scripts/test-video-queue.cjs && node scripts/test-background-transition.cjs",
     "test:file-save": "node scripts/test-file-save.cjs && node scripts/test-local-file-save.cjs",
     "test:language": "node scripts/test-generation-language.cjs",
     "test:update": "node scripts/test-app-update.cjs && node scripts/test-external-url.cjs && node scripts/test-settings-version.cjs && node scripts/test-startup-update.cjs && node scripts/test-in-app-update.cjs",

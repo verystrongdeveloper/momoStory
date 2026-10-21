@@ -33,11 +33,11 @@ function load(file, mocks, clock = { setTimeout, clearTimeout }) {
   const uiMocks = { react: React, 'react-native': rn, '@/i18n': i18n, '@/store/videoExportJob': jobs, '@/services/videoExport/timeline': dimensions };
   const Options = load('components/chat/VideoExportModal.tsx', uiMocks).default;
   const Host = load('components/layout/VideoExportHost.tsx', { ...uiMocks, 'react-native-safe-area-context': { useSafeAreaInsets: () => ({ top: 0 }) }, '@/platform/VideoExportWorker': 'VideoExportWorker' }, clock).default;
-  function Harness({ screen = 'library' }) {
-    const [show, setShow] = React.useState(true);
+  function Harness({ screen = 'library', entry = 0 }) {
+    const [closedEntry, setClosedEntry] = React.useState(-1);
     return React.createElement(React.Fragment, null,
       React.createElement('Screen', { screen }),
-      show && React.createElement(Options, { story, onClose() { closed++; setShow(false); } }),
+      closedEntry !== entry && React.createElement(Options, { story, onClose() { closed++; setClosedEntry(entry); } }),
       React.createElement(Host));
   }
   let tree;
@@ -57,7 +57,6 @@ function load(file, mocks, clock = { setTimeout, clearTimeout }) {
   const running = jobs.getVideoExportJob();
   await React.act(async () => tree.update(React.createElement(Harness, { screen: 'chat' })));
   assert.equal(running.controller.signal.aborted, false, 'screen navigation does not cancel export');
-  assert.equal(jobs.beginVideoExport(story, '16:9', 'ko', {}, true), null, 'only one export may run');
   await React.act(async () => resolvePrepare({ title: story.title, ratio: '9:16', quality: prepareCalls[0][4].quality }));
   const worker = () => tree.root.findByType('VideoExportWorker');
   assert.equal(worker().props.payload.ratio, '9:16');
@@ -158,9 +157,33 @@ function load(file, mocks, clock = { setTimeout, clearTimeout }) {
   await React.act(async () => jobs.dismissVideoExport());
   await React.act(async () => tree.unmount());
 
+  target = { kind: 'save-as', save: async () => {}, cancel: async () => {} };
+  await mount();
+  await React.act(async () => button('videoDownload').props.onPress());
+  const queueActive = jobs.getVideoExportJob().id;
+  const firstPreparation = resolvePrepare;
+  const queuePrepareCount = prepareCalls.length;
+  await React.act(async () => tree.update(React.createElement(Harness, { entry: 1 })));
+  assert.ok(button('videoQueueAdd'), 'another story can be queued while encoding');
+  assert.notEqual(button('videoQueueAdd').props.disabled, true);
+  await React.act(async () => { button('videoQueueAdd').props.onPress(); button('videoQueueAdd')?.props.onPress(); });
+  assert.equal(jobs.getVideoExportQueue().length, 2, 'rapid clicks add one queue item');
+  assert.equal(prepareCalls.length, queuePrepareCount, 'waiting work does not prepare in parallel');
+  await React.act(async () => button('videoQueueList').props.onPress());
+  assert.ok(has('videoQueueWaiting'));
+  const queueCancelButtons = tree.root.findAllByType('TouchableOpacity').filter(node => node.props.accessibilityLabel === 'videoQueueCancel');
+  await React.act(async () => queueCancelButtons.at(-1).props.onPress());
+  assert.equal(jobs.getVideoExportJob().id, queueActive);
+  assert.equal(jobs.getVideoExportQueue().at(-1).status, 'canceled');
+  await React.act(async () => tree.root.findByType('Modal').props.onRequestClose());
+  await React.act(async () => firstPreparation({ title: 'active', ratio: '16:9' }));
+  await React.act(async () => worker().props.onComplete());
+  await React.act(async () => button('close').props.onPress());
+  await React.act(async () => tree.unmount());
+
   story.script = 'title : Thumbnail\n호시노 : first [bg : BG_AbydosCouncilRoom.jpg]\n호시노 : next [bg : BG_Second.jpg]\nendEvent';
   const List = load('components/chat/StoryLibraryList.tsx', {
-    './CharacterFilter': 'CharacterFilter',
+    './CharacterFilter': 'CharacterFilter', './Pagination': { __esModule: true, default: 'Pagination', PAGE_SIZE: 20 },
     '@/constants/eventAssets': { bgMap: { BG_AbydosCouncilRoom: 'first-background', BG_Second: 'second-background' } },
     '@/utils/parseEventScript': load('utils/parseEventScript.ts', {}),
     './StoryScriptEditor': 'StoryScriptEditor',

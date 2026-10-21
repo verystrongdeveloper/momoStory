@@ -9,6 +9,8 @@ type Dictionary = Record<string, string>;
 
 const translations: Record<AppLanguage, Dictionary> = {
   ko: {
+    paginationPrevious: '이전 페이지', paginationNext: '다음 페이지', paginationPage: '{page}페이지',
+    videoQueueAdd: '추출 대기열에 추가', videoQueueHint: '현재 작업이 끝나면 예약한 순서대로 추출합니다. 앱을 실행 상태로 유지해 주세요.', videoQueueList: '추출 목록 · 대기 {count}개', videoQueueTitle: '영상 추출 목록', videoQueueWaiting: '대기 중', videoQueueDone: '저장 완료', videoQueueSummary: '{total}개 중 {done}개 완료', videoQueueCancel: '{name} 추출 취소',
     chooseChatRoom: '{name}와 대화', conversationChatOnly: '채팅방', conversationWithStory: '인연스토리 채팅방', conversationChatOnlyHint: '이전에 나눈 대화를 이어서 계속 채팅합니다.', conversationWithStoryHint: '대화 3쌍이 완성되면 인연스토리로 이어집니다.',
     videoBackgroundHint: '추출 중 다른 화면을 사용할 수 있습니다. 앱은 실행 상태로 유지해 주세요.', videoExportBusy: '다른 영상을 추출 중입니다. 완료하거나 취소한 뒤 다시 시도해 주세요.', videoExportCanceled: '영상 추출을 취소했습니다.',
     storyChatLocked: '대화 3쌍이 완성되었습니다. 인연 스토리를 생성해 주세요.', storyChatAwaitingEnd: '스토리를 끝까지 감상하면 새 대화가 자동으로 시작됩니다.',
@@ -47,6 +49,8 @@ const translations: Record<AppLanguage, Dictionary> = {
     termsTitle: '이용 약관', tutorialTitle: '사용 방법', agreeTerms: '위 내용을 확인했고, 이에 동의합니다.', agreeStart: '동의하고 시작', skip: '건너뛰기', previous: '이전', start: '시작하기', next: '다음', openAiStudio: 'Google AI Studio 열기',
   },
   en: {
+    paginationPrevious: 'Previous page', paginationNext: 'Next page', paginationPage: 'Page {page}',
+    videoQueueAdd: 'Add to export queue', videoQueueHint: 'Exports run one at a time in the order added. Keep the app open.', videoQueueList: 'Export list · {count} waiting', videoQueueTitle: 'Video export queue', videoQueueWaiting: 'Waiting', videoQueueDone: 'Saved', videoQueueSummary: '{done} of {total} complete', videoQueueCancel: 'Cancel export: {name}',
     chooseChatRoom: 'Talk with {name}', conversationChatOnly: 'Chat room', conversationWithStory: 'Bond story chat', conversationChatOnlyHint: 'Pick up your previous conversation and keep chatting.', conversationWithStoryHint: 'After three dialogue pairs, continue into a bond story.',
     videoBackgroundHint: 'You can use other screens while exporting. Keep the app running.', videoExportBusy: 'Another video is exporting. Wait for it to finish or cancel it first.', videoExportCanceled: 'Video export canceled.',
     storyChatLocked: 'Three chat exchanges are complete. Generate your bond story to continue.', storyChatAwaitingEnd: 'Finish watching the story to automatically start a new conversation.',
@@ -85,6 +89,8 @@ const translations: Record<AppLanguage, Dictionary> = {
     termsTitle: 'Terms of use', tutorialTitle: 'How to use', agreeTerms: 'I have read and agree to the above.', agreeStart: 'Agree and start', skip: 'Skip', previous: 'Previous', start: 'Start', next: 'Next', openAiStudio: 'Open Google AI Studio',
   },
   ja: {
+    paginationPrevious: '前のページ', paginationNext: '次のページ', paginationPage: '{page}ページ',
+    videoQueueAdd: '書き出しキューに追加', videoQueueHint: '追加した順に1件ずつ書き出します。アプリを開いたままにしてください。', videoQueueList: '書き出し一覧・待機{count}件', videoQueueTitle: '動画書き出し一覧', videoQueueWaiting: '待機中', videoQueueDone: '保存完了', videoQueueSummary: '{total}件中{done}件完了', videoQueueCancel: '{name}の書き出しをキャンセル',
     chooseChatRoom: '{name}と会話', conversationChatOnly: 'チャットルーム', conversationWithStory: '絆ストーリーチャット', conversationChatOnlyHint: '前の会話を引き継いでチャットを続けます。', conversationWithStoryHint: '会話を3往復すると絆ストーリーに進みます。',
     videoBackgroundHint: '書き出し中も他の画面を使えます。アプリは起動したままにしてください。', videoExportBusy: '別の動画を書き出しています。完了するかキャンセルしてから再試行してください。', videoExportCanceled: '動画の書き出しをキャンセルしました。',
     storyChatLocked: '会話が3往復に達しました。絆ストーリーを生成してください。', storyChatAwaitingEnd: 'ストーリーを最後まで見ると、新しい会話が自動で始まります。',
@@ -123,6 +129,8 @@ const translations: Record<AppLanguage, Dictionary> = {
     termsTitle: '利用規約', tutorialTitle: '使い方', agreeTerms: '上記を確認し、同意します。', agreeStart: '同意して始める', skip: 'スキップ', previous: '戻る', start: '始める', next: '次へ', openAiStudio: 'Google AI Studio を開く',
   },
   zh: {
+    paginationPrevious: '上一页', paginationNext: '下一页', paginationPage: '第{page}页',
+    videoQueueAdd: '添加到导出队列', videoQueueHint: '按添加顺序逐个导出。请保持应用运行。', videoQueueList: '导出列表 · {count}项等待', videoQueueTitle: '视频导出队列', videoQueueWaiting: '等待中', videoQueueDone: '保存完成', videoQueueSummary: '已完成{done}/{total}项', videoQueueCancel: '取消导出：{name}',
     chooseChatRoom: '与{name}对话', conversationChatOnly: '聊天室', conversationWithStory: '羁绊故事聊天室', conversationChatOnlyHint: '接着之前的对话继续聊天。', conversationWithStoryHint: '完成三轮对话后进入羁绊故事。',
     videoBackgroundHint: '导出时可以使用其他页面，请保持应用运行。', videoExportBusy: '正在导出其他视频，请等待完成或先取消。', videoExportCanceled: '视频导出已取消。',
     storyChatLocked: '已完成三轮对话，请生成羁绊故事。', storyChatAwaitingEnd: '看完故事后将自动开始新的对话。',

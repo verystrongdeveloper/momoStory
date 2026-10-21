@@ -10,6 +10,7 @@ import CharacterAvatar from '@/components/CharacterAvatar';
 import { bgMap } from '@/constants/eventAssets';
 import { Ionicons } from '@expo/vector-icons';
 import CharacterFilter from '@/components/chat/CharacterFilter';
+import Pagination, { PAGE_SIZE } from '@/components/chat/Pagination';
 
 function Button({ label, onPress, disabled = false, selected = false }: { label: string; onPress: () => void; disabled?: boolean; selected?: boolean }) {
   return <TouchableOpacity accessibilityRole="button" accessibilityState={{ disabled, selected }} disabled={disabled} onPress={onPress} style={[styles.button, selected && styles.selected, disabled && styles.disabled]}><Text style={styles.buttonText}>{label}</Text></TouchableOpacity>;
@@ -51,54 +52,52 @@ export default function CommunityPanel() {
   const [selected, setSelected] = useState<CommunityPost | null>(null);
   const [busy, setBusy] = useState(false);
   const [notice, setNotice] = useState('');
-  const [more, setMore] = useState(false);
+  const [page, setPage] = useState(1);
+  const [total, setTotal] = useState(0);
+  const scrollRef = useRef<ScrollView>(null);
+  const totalPages = Math.max(1, Math.ceil(total / PAGE_SIZE));
   const [reload, setReload] = useState(0);
   const [gridWidth, setGridWidth] = useState(0);
   const columns = gridWidth >= 720 ? 3 : 2;
-  const cardWidth = gridWidth > 0 ? Math.floor((gridWidth - 12 * (columns - 1)) / columns) : '47%';
+  // Web onLayout uses integer offsetWidth, which can round up a fractional CSS width.
+  // Reserve one pixel so the last column cannot wrap because of that rounding.
+  const cardWidth = gridWidth > 0 ? Math.max(0, Math.floor((gridWidth - 12 * (columns - 1) - 1) / columns)) : '47%';
   const generation = useRef(0);
-  const pending = useRef(false);
+
   useEffect(() => {
     const id = ++generation.current;
-    pending.current = true; setBusy(true); setPosts([]); setMore(false); setNotice('');
-    if (!communityConfigured()) { setNotice(t('communitySetup')); pending.current = false; setBusy(false); return; }
-    void community.list({ liked, sort, period, query, character, offset: 0 }).then(rows => {
-      if (generation.current === id) { setPosts(rows); setMore(rows.length === 20); }
-    }).catch(error => { if (generation.current === id) setNotice(t(communityErrorKey(error))); })
-      .finally(() => { if (generation.current === id) { pending.current = false; setBusy(false); } });
-    return () => { generation.current++; };
-  }, [liked, sort, period, query, character, reload, t]);
-  const loadMore = async () => {
-    if (pending.current) return;
-    const id = generation.current;
-    pending.current = true; setBusy(true); setNotice('');
-    try {
-      const rows = await community.list({ liked, sort, period, query, character, offset: posts.length });
+    setBusy(true); setPosts([]); setNotice('');
+    if (!communityConfigured()) { setNotice(t('communitySetup')); setBusy(false); return; }
+    void community.page({ liked, sort, period, query, character, offset: (page - 1) * PAGE_SIZE }).then(result => {
       if (generation.current === id) {
-        setPosts(previous => [...previous, ...rows.filter(row => !previous.some(item => item.id === row.id))]);
-        setMore(rows.length === 20);
+        setTotal(result.total);
+        const lastPage = Math.max(1, Math.ceil(result.total / PAGE_SIZE));
+        if (page > lastPage) { setPage(lastPage); return; }
+        setPosts(result.posts);
       }
-    } catch (error) { if (generation.current === id) setNotice(t(communityErrorKey(error))); }
-    finally { if (generation.current === id) { pending.current = false; setBusy(false); } }
-  };
+    }).catch(error => { if (generation.current === id) setNotice(t(communityErrorKey(error))); })
+      .finally(() => { if (generation.current === id) setBusy(false); });
+    return () => { generation.current++; };
+  }, [liked, sort, period, query, character, page, reload, t]);
+  const changePage = (value: number) => { setPage(value); scrollRef.current?.scrollTo({ y: 0, animated: true }); };
   if (selected) return <CommunityPostView key={selected.id} id={selected.id} onBack={() => { setSelected(null); setReload(value => value + 1); }} />;
   return <View style={styles.root}>
-    <ScrollView contentContainerStyle={styles.content} keyboardShouldPersistTaps="handled">
+    <ScrollView ref={scrollRef} contentContainerStyle={styles.content} keyboardShouldPersistTaps="handled">
       <View style={styles.row}><Text style={styles.title}>{t('community')}</Text><RefreshButton onPress={() => setReload(value => value + 1)} disabled={busy} /></View>
-      <CharacterFilter value={character} onChange={setCharacter} />
+      <CharacterFilter value={character} onChange={value => { setCharacter(value); setPage(1); }} />
       <View style={styles.controls}>
-        <Button label={t('communityAll')} selected={!liked} onPress={() => setLiked(false)} />
-        <Button label={t('communityLiked')} selected={liked} onPress={() => setLiked(true)} />
-        <Button label={t('communityLatest')} selected={sort === 'latest'} onPress={() => setSort('latest')} />
-        <Button label={t('communityPopular')} selected={sort === 'popular'} onPress={() => setSort('popular')} />
+        <Button label={t('communityAll')} selected={!liked} onPress={() => { setLiked(false); setPage(1); }} />
+        <Button label={t('communityLiked')} selected={liked} onPress={() => { setLiked(true); setPage(1); }} />
+        <Button label={t('communityLatest')} selected={sort === 'latest'} onPress={() => { setSort('latest'); setPage(1); }} />
+        <Button label={t('communityPopular')} selected={sort === 'popular'} onPress={() => { setSort('popular'); setPage(1); }} />
       </View>
       {sort === 'popular' && <>
         <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.periodScroll} contentContainerStyle={styles.periods}>
-          {(['all', 'day', 'week', 'month', 'year'] as const).map(value => <Button key={value} label={t(`communityPeriod_${value}`)} selected={period === value} onPress={() => setPeriod(value)} />)}
+          {(['all', 'day', 'week', 'month', 'year'] as const).map(value => <Button key={value} label={t(`communityPeriod_${value}`)} selected={period === value} onPress={() => { setPeriod(value); setPage(1); }} />)}
         </ScrollView>
         <Text style={styles.hint}>{t('communityRankingHint')}</Text>
       </>}
-      <View style={styles.searchRow}><TextInput accessibilityLabel={t('communitySearch')} placeholder={t('communitySearch')} value={input} maxLength={100} onChangeText={setInput} onSubmitEditing={() => setQuery(input.trim())} style={styles.search} /><Button label={t('communitySearchButton')} onPress={() => setQuery(input.trim())} /></View>
+      <View style={styles.searchRow}><TextInput accessibilityLabel={t('communitySearch')} placeholder={t('communitySearch')} value={input} maxLength={100} onChangeText={setInput} onSubmitEditing={() => { setQuery(input.trim()); setPage(1); }} style={styles.search} /><Button label={t('communitySearchButton')} onPress={() => { setQuery(input.trim()); setPage(1); }} /></View>
       <Text style={styles.hint}>{t('communityPrivacy')}</Text>
       {!!notice && <Text accessibilityRole="alert" style={styles.notice}>{notice}</Text>}
       {!posts.length && !busy && !notice && <Text style={styles.hint}>{t('communityEmpty')}</Text>}
@@ -113,7 +112,7 @@ export default function CommunityPanel() {
         </TouchableOpacity>;
       })}</View>
       {busy && <ActivityIndicator color="#e780a0" />}
-      {more && <Button label={t('communityMore')} disabled={busy} onPress={() => void loadMore()} />}
+      <Pagination page={Math.min(page, totalPages)} totalPages={totalPages} disabled={busy} onChange={changePage} />
     </ScrollView>
   </View>;
 }

@@ -3,7 +3,7 @@ import { Modal, ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'rea
 import type { SavedStory } from '@/store/storyLibrary';
 import { useI18n } from '@/i18n';
 import { videoDimensions, type VideoQuality, type VideoRatio } from '@/services/videoExport/timeline';
-import { beginVideoExport, cancelVideoExport, getVideoExportJob, subscribeVideoExportJob, videoExportBusy } from '@/store/videoExportJob';
+import { beginVideoExport, cancelVideoExport, getVideoExportJobById, subscribeVideoExportJob, videoExportBusy } from '@/store/videoExportJob';
 
 export default function VideoExportModal({ story, onClose }: { story: SavedStory; onClose: () => void }) {
   const { language, t } = useI18n();
@@ -21,7 +21,7 @@ export default function VideoExportModal({ story, onClose }: { story: SavedStory
   }, []);
   const close = () => { if (selection.current && !selection.current.detached) cancelVideoExport(selection.current.id); onClose(); };
   const start = async () => {
-    if (selection.current || busy) return;
+    if (selection.current) return;
     setError('');
     const started = beginVideoExport(story, ratio, language, { bondEvent: t('bondEvent'), bondStory: t('bondStory', { name: story.character }) }, includeChat, quality);
     if (!started) { setError('videoExportBusy'); return; }
@@ -34,8 +34,8 @@ export default function VideoExportModal({ story, onClose }: { story: SavedStory
     else {
       selection.current = null;
       setPicking(false);
-      const job = getVideoExportJob();
-      if (job?.id === started.id && job.status === 'error') setError(job.error);
+      const job = getVideoExportJobById(started.id);
+      if (job?.status === 'error') setError(job.error);
     }
   };
   return <Modal transparent animationType="fade" visible onRequestClose={close} statusBarTranslucent>
@@ -73,13 +73,13 @@ export default function VideoExportModal({ story, onClose }: { story: SavedStory
             })}
           </View>
           <Text style={styles.hint}>{t('videoQualityHint')}</Text>
-          {busy && <Text style={styles.hint}>{t('videoExportBusy')}</Text>}
+          {busy && <Text style={styles.hint}>{t('videoQueueHint')}</Text>}
           {!!error && <Text style={styles.error} accessibilityLiveRegion="polite">{t(error)}</Text>}
         </>}
         <View style={styles.actions}>
           <TouchableOpacity onPress={close} style={styles.secondary}><Text style={styles.secondaryText}>{t(picking ? 'cancel' : 'close')}</Text></TouchableOpacity>
-          {!picking && <TouchableOpacity disabled={busy} onPress={() => void start()} style={[styles.primary, busy && { opacity: 0.4 }]} accessibilityRole="button">
-            <Text style={styles.primaryText}>{t('videoDownload')}</Text>
+          {!picking && <TouchableOpacity onPress={() => void start()} style={styles.primary} accessibilityRole="button">
+            <Text style={styles.primaryText}>{t(busy ? 'videoQueueAdd' : 'videoDownload')}</Text>
           </TouchableOpacity>}
         </View>
       </ScrollView>

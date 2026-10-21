@@ -1,0 +1,78 @@
+const assert = require('node:assert/strict');
+const fs = require('node:fs');
+const path = require('node:path');
+const ts = require('typescript');
+const prepares = [], picks = [], canceledTargets = [];
+let picker;
+const mocks = {
+  '@/services/videoExport/prepare': { prepareVideo: (...args) => new Promise((resolve, reject) => prepares.push({ args, resolve, reject })) },
+  '@/services/videoExport/types': { videoFileName: (title, ratio, quality) => `${title}-${ratio}-${quality}` },
+  '@/platform/videoSave': { chooseVideoSaveTarget: (name, signal) => {
+    picks.push({ name, signal });
+    return picker ? picker(name, signal) : Promise.resolve({ kind: 'save-as', save: async () => {}, cancel: async () => canceledTargets.push(name) });
+  } },
+};
+const mod = { exports: {} };
+const code = ts.transpileModule(fs.readFileSync(path.join(__dirname, '../store/videoExportJob.ts'), 'utf8'), { compilerOptions: { module: ts.ModuleKind.CommonJS, target: ts.ScriptTarget.ES2022 } }).outputText;
+new Function('require', 'module', 'exports', code)(id => mocks[id], mod, mod.exports);
+const jobs = mod.exports;
+const story = { id: 'queue', title: 'Queue', character: '호시노', script: 'original', createdAt: 0, chatMessages: [{ sender: 'character', text: 'original chat' }] };
+const add = (ratio = '16:9', includeChat = true, quality = '720p') => jobs.beginVideoExport(story, ratio, 'ko', { bondStory: 'story' }, includeChat, quality);
+const flush = () => new Promise(resolve => setImmediate(resolve));
+(async () => {
+  const first = add(); await first.ready;
+  const second = add('9:16', false, '1080p'); await second.ready;
+  const third = add(); await third.ready;
+  assert.equal(prepares.length, 1, 'only the active job prepares assets');
+  assert.equal(picks.length, 3, 'save destinations are chosen immediately for every queued job');
+  assert.equal(jobs.getVideoExportJobById(second.id).status, 'queued');
+  assert.equal(jobs.getVideoExportQueue().length, 3);
+  story.script = 'edited later'; story.chatMessages[0].text = 'edited later';
+  jobs.cancelVideoExport(third.id);
+  assert.equal(canceledTargets.length, 1);
+  assert.equal(jobs.getVideoExportJob().id, first.id, 'canceling a waiting job leaves encoding intact');
+  prepares[0].resolve({ title: 'first' }); await flush();
+  jobs.completeVideoExport(first.id);
+  assert.equal(jobs.getVideoExportJob().id, second.id);
+  assert.equal(prepares.length, 2);
+  assert.equal(prepares[1].args[0].script, 'original');
+  assert.equal(prepares[1].args[0].chatMessages[0].text, 'original chat', 'queued jobs keep their saved content');
+  assert.equal(prepares[1].args[1], '9:16');
+  assert.equal(prepares[1].args[4].includeChat, false);
+  assert.equal(prepares[1].args[4].quality, '1080p');
+  assert.equal(jobs.cancelVideoExport(first.id), false);
+  jobs.completeVideoExport(first.id);
+  assert.equal(jobs.getVideoExportJob().id, second.id, 'old callbacks cannot complete a newer export');
+  const fourth = add(); await fourth.ready;
+  prepares[1].reject(new Error('failed')); await flush();
+  assert.equal(jobs.getVideoExportJobById(second.id).status, 'error');
+  assert.equal(jobs.getVideoExportJob().id, fourth.id, 'failure advances to the next queued export');
+  const fourthPreparation = prepares.at(-1);
+  let resolvePicker;
+  picker = () => new Promise(resolve => { resolvePicker = resolve; });
+  const fifth = add();
+  assert.equal(add(), null, 'only one OS save picker is open at a time');
+  fourthPreparation.resolve({ title: 'fourth' }); await flush();
+  jobs.completeVideoExport(fourth.id);
+  assert.equal(jobs.getVideoExportJob().status, 'picking');
+  const beforePicker = prepares.length;
+  resolvePicker({ kind: 'save-as', save: async () => {} }); await fifth.ready;
+  assert.equal(prepares.length, beforePicker + 1, 'encoding waits for the destination');
+  picker = undefined;
+  const sixth = add(); await sixth.ready;
+  jobs.cancelVideoExport(fifth.id);
+  assert.equal(jobs.getVideoExportJob().id, sixth.id, 'canceling active work advances the queue');
+  prepares[beforePicker].resolve({ title: 'stale canceled payload' }); await flush();
+  assert.equal(jobs.getVideoExportJob().payload, null, 'stale preparation cannot replace the next job');
+  prepares.at(-1).resolve({ title: 'sixth' }); await flush();
+  jobs.reportVideoExport(sixth.id, { phase: 'saving', progress: 0.98 });
+  assert.equal(jobs.cancelVideoExport(sixth.id), false, 'saving remains protected');
+  jobs.dismissVideoExport();
+  assert.ok(jobs.videoExportBusy(), 'dismissal cannot clear active work');
+  jobs.completeVideoExport(sixth.id);
+  assert.equal(jobs.getVideoExportJob().id, sixth.id, 'final notice belongs to the last finished job, not a previously canceled item');
+  assert.equal(jobs.videoExportBusy(), false);
+  jobs.dismissVideoExport();
+  assert.deepEqual(jobs.getVideoExportQueue(), []);
+  console.log('PASS sequential exports, immediate save selection, content/options snapshots, queued/active cancel, failure recovery, picker ordering and stale callback isolation');
+})().catch(error => { console.error(error); process.exitCode = 1; });

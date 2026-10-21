@@ -47,6 +47,8 @@ const hasCount = (tree, count) => tree.root.findAllByType('Text').some(text => J
   await React.act(async () => tree.unmount());
 
   let queries = [], likes = [], commentBodies = [], views = [], failComment = false;
+  let pageTotal = 1;
+  api.community.page = async options => { const posts = await api.community.list(options); return { posts, total: posts.length ? pageTotal : 0 }; };
   api.community.list = async options => { queries.push(options); return options.character && options.character !== post.character ? [] : [post]; };
   api.community.detail = async () => ({ ...detail, liked: likes.at(-1)?.[1] ?? false });
   api.community.view = async id => { views.push(id); };
@@ -64,12 +66,29 @@ const hasCount = (tree, count) => tree.root.findAllByType('Text').some(text => J
     },
     '../shared/prompts/speakerNames': { canonicalCharacterName: name => name },
   });
-  const Panel = load('components/community/CommunityPanel.tsx', { react: React, 'react-native': rn, '@expo/vector-icons': { Ionicons: 'Ionicons' }, '@/components/chat/CharacterFilter': 'CharacterFilter', '@/i18n': i18n, '@/constants/characters': chars, '@/constants/eventAssets': { bgMap: { BG_AbydosCouncilRoom: 'background' } }, '@/components/CharacterAvatar': 'CharacterAvatar', '@/components/chat/CharacterChat': 'CharacterChat', '@/services/community/client': api, '@/shared/community/validation': validation, '@/store/storyLibrary': library }).default;
+  const Panel = load('components/community/CommunityPanel.tsx', { react: React, 'react-native': rn, '@expo/vector-icons': { Ionicons: 'Ionicons' }, '@/components/chat/CharacterFilter': 'CharacterFilter', '@/components/chat/Pagination': { __esModule: true, default: 'Pagination', PAGE_SIZE: 20 }, '@/i18n': i18n, '@/constants/characters': chars, '@/constants/eventAssets': { bgMap: { BG_AbydosCouncilRoom: 'background' } }, '@/components/CharacterAvatar': 'CharacterAvatar', '@/components/chat/CharacterChat': 'CharacterChat', '@/services/community/client': api, '@/shared/community/validation': validation, '@/store/storyLibrary': library }).default;
   await React.act(async () => { tree = Renderer.create(React.createElement(Panel)); });
   assert.ok(has(tree, 'communitySetup')); assert.equal(queries.length, 0);
   await React.act(async () => tree.unmount()); configured = true;
   await React.act(async () => { tree = Renderer.create(React.createElement(Panel)); });
   assert.equal(queries.at(-1).liked, false);
+  const archiveGrid = () => tree.root.findAllByType('View').find(node => typeof node.props.onLayout === 'function');
+  for (const width of [1794, 1800, 720, 360]) {
+    await React.act(async () => archiveGrid().props.onLayout({ nativeEvent: { layout: { width } } }));
+    const card = tree.root.findByProps({ accessibilityLabel: post.title });
+    const columns = width >= 720 ? 3 : 2;
+    const cardWidth = card.props.style.at(-1).width;
+    assert.ok(cardWidth * columns + 12 * (columns - 1) <= width - 0.5, 'all columns fit even when onLayout rounds the actual CSS width up');
+  }
+  pageTotal = 41;
+  await React.act(async () => button(tree, 'communityRefresh').props.onPress());
+  assert.equal(tree.root.findByType('Pagination').props.totalPages, 3);
+  await React.act(async () => tree.root.findByType('Pagination').props.onChange(3));
+  assert.equal(queries.at(-1).offset, 40);
+  await React.act(async () => tree.root.findByType('CharacterFilter').props.onChange('호시노'));
+  assert.equal(queries.at(-1).offset, 0, 'filter resets archive page');
+  pageTotal = 1;
+  await React.act(async () => tree.root.findByType('CharacterFilter').props.onChange(''));
   assert.equal(tree.root.findByType('Image').props.source, 'background', 'community cards render the first story background behind the character');
   const avatarStyle = tree.root.findByType('CharacterAvatar').props.style;
   assert.equal(avatarStyle.position, 'absolute', 'native character layer must have explicit bounds without absoluteFillObject');
@@ -154,13 +173,15 @@ const hasCount = (tree, count) => tree.root.findAllByType('Text').some(text => J
   assert.equal(stored.length, 1);
   await React.act(async () => tree.unmount());
   // Verify the library menu opens the actual publish modal path.
+  let libraryRows = [{ ...detail, createdAt: Date.now() }];
+  let notifyLibrary;
   const Library = load('components/chat/StoryLibraryList.tsx', {
-    './CharacterFilter': 'CharacterFilter',
+    './CharacterFilter': 'CharacterFilter', './Pagination': { __esModule: true, default: 'Pagination', PAGE_SIZE: 20 },
     '@/constants/eventAssets': { bgMap: {} }, '@/utils/parseEventScript': load('utils/parseEventScript.ts', {}),
     './StoryScriptEditor': 'StoryScriptEditor',
     react: React, 'react-native': { ...rn, Platform: { OS: 'web' } }, '@expo/vector-icons': { Ionicons: 'Ionicons' }, '@/constants/characters': chars,
     '@/hooks/useLayout': { useLayout: () => ({ isCompact: true }) }, '@/components/CharacterAvatar': 'CharacterAvatar', '@/components/chat/StoryAssetPanel': 'StoryAssetPanel', './VideoExportModal': 'VideoExportModal', '@/components/community/PublishStoryModal': 'PublishStoryModal',
-    '@/store/storyLibrary': { listStories: () => [{ ...detail, createdAt: Date.now() }], subscribeStories: () => () => {} }, '@/utils/insertStoryAsset': {}, '@/platform/clipboard': {}, '@/utils/storyFile': {}, '@/utils/storyPrompt': {}, '@/i18n': i18n,
+    '@/store/storyLibrary': { listStories: () => libraryRows, subscribeStories: listener => { notifyLibrary = listener; return () => {}; } }, '@/utils/insertStoryAsset': {}, '@/platform/clipboard': {}, '@/utils/storyFile': {}, '@/utils/storyPrompt': {}, '@/i18n': i18n,
   }).default;
   await React.act(async () => { tree = Renderer.create(React.createElement(Library, { onOpenStory() {} })); });
   assert.equal(tree.root.findAllByType('Image').length, 0, 'stories without BG keep the original library thumbnail');
@@ -172,6 +193,31 @@ const hasCount = (tree, count) => tree.root.findAllByType('Text').some(text => J
   await React.act(async () => tree.root.findByProps({ accessibilityLabel: 'storyMenu' }).props.onPress());
   await React.act(async () => button(tree, 'communityPublish').props.onPress());
   assert.equal(tree.root.findByType('PublishStoryModal').props.story.id, post.id);
+  await React.act(async () => tree.root.findByType('PublishStoryModal').props.onClose());
+  libraryRows = Array.from({ length: 41 }, (_, i) => ({ ...detail, id: 'paged-' + i, title: 'Story ' + i, createdAt: i }));
+  await React.act(async () => notifyLibrary());
+  assert.equal(tree.root.findAllByType('CharacterAvatar').length, 20);
+  await React.act(async () => tree.root.findByType('Pagination').props.onChange(3));
+  assert.equal(tree.root.findAllByType('CharacterAvatar').length, 1);
+  await React.act(async () => tree.root.findByType('CharacterFilter').props.onChange(''));
+  assert.equal(tree.root.findByType('Pagination').props.page, 1, 'character selection resets library page');
+  await React.act(async () => tree.root.findByType('Pagination').props.onChange(3));
+  libraryRows = libraryRows.slice(0, 20);
+  await React.act(async () => notifyLibrary());
+  assert.equal(tree.root.findByType('Pagination').props.page, 1, 'deleting last page clamps library page');
+  assert.equal(tree.root.findAllByType('CharacterAvatar').length, 20);
+  await React.act(async () => tree.unmount());
+  const Pagination = load('components/chat/Pagination.tsx', { react: React, 'react-native': rn, '@expo/vector-icons': { Ionicons: 'Ionicons' }, '@/i18n': i18n }).default;
+  let changedPage;
+  await React.act(async () => { tree = Renderer.create(React.createElement(Pagination, { page: 1, totalPages: 10, onChange: value => { changedPage = value; } })); });
+  assert.equal(button(tree, 'paginationPrevious').props.disabled, true);
+  assert.equal(tree.root.findAllByType('TouchableOpacity').length, 7, 'page buttons stay compact');
+  await React.act(async () => button(tree, 'paginationNext').props.onPress());
+  assert.equal(changedPage, 2);
+  await React.act(async () => tree.update(React.createElement(Pagination, { page: 10, totalPages: 10, disabled: true, onChange() {} })));
+  assert.ok(tree.root.findAllByType('TouchableOpacity').every(node => node.props.disabled));
+  await React.act(async () => tree.update(React.createElement(Pagination, { page: 1, totalPages: 1, onChange() {} })));
+  assert.equal(tree.toJSON(), null, 'single page hides pagination');
   await React.act(async () => tree.unmount());
   const translations = load('i18n/community.ts', {}).communityTranslations;
   const Filter = load('components/chat/CharacterFilter.tsx', { react: React, 'react-native': rn, '@/i18n': i18n, '@/constants/characters': { ...chars, CHARACTERS: [{ name: '호시노' }, { name: '히나' }, { name: '마리' }] } }).default;

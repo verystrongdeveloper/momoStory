@@ -17,6 +17,7 @@ import CharacterAvatar from '@/components/CharacterAvatar';
 import { bgMap } from '@/constants/eventAssets';
 import parseEventScript from '@/utils/parseEventScript';
 import CharacterFilter from './CharacterFilter';
+import Pagination, { PAGE_SIZE } from './Pagination';
 
 const localeOf = { ko: 'ko-KR', en: 'en-US', ja: 'ja-JP', zh: 'zh-CN' } as const;
 const formatWhen = (createdAt: number, language: keyof typeof localeOf) =>
@@ -31,12 +32,15 @@ export default function StoryLibraryList({ onOpenStory }: { onOpenStory: (story:
   const cardGap = isCompact ? 12 : 20;
   const minCardWidth = isCompact ? 144 : 300;
   const columns = Math.max(1, Math.floor((shelfWidth + cardGap) / (minCardWidth + cardGap)));
-  const cardWidth = shelfWidth > 0 ? (shelfWidth - cardGap * (columns - 1)) / columns : undefined;
+  // onLayout can round a fractional web width up; keep the final card inside the row.
+  const cardWidth = shelfWidth > 0 ? Math.max(0, Math.floor((shelfWidth - cardGap * (columns - 1) - 1) / columns)) : undefined;
   const [stories, setStories] = useState<SavedStory[]>(() => listStories());
   const previewBackgrounds = useMemo(() => new Map(stories.map(story => {
     const firstBg = parseEventScript(story.script).find(line => line.bg)?.bg;
     return [story.id, firstBg ? bgMap[firstBg] : undefined];
   })), [stories]);
+  const scrollRef = useRef<ScrollView>(null);
+  const [page, setPage] = useState(1);
   const [search, setSearch] = useState('');
   const [character, setCharacter] = useState('');
   const [searchMode, setSearchMode] = useState<'title' | 'content'>('title');
@@ -49,6 +53,14 @@ export default function StoryLibraryList({ onOpenStory }: { onOpenStory: (story:
   const filteredStories = useMemo(() => searchEntries
     .filter(entry => (!character || entry.story.character === character) && (!query || entry[searchMode].includes(query)))
     .map(entry => entry.story), [searchEntries, query, searchMode, character]);
+  const totalPages = Math.max(1, Math.ceil(filteredStories.length / PAGE_SIZE));
+  const currentPage = Math.min(page, totalPages);
+  const visibleStories = filteredStories.slice((currentPage - 1) * PAGE_SIZE, currentPage * PAGE_SIZE);
+  useEffect(() => { setPage(value => Math.min(value, totalPages)); }, [totalPages]);
+  const changePage = (value: number) => {
+    setPage(value); setMenuId(null); setConfirmId(null);
+    scrollRef.current?.scrollTo({ y: 0, animated: true });
+  };
   const [editing, setEditing] = useState<SavedStory | 'new' | null>(null);
   const [draft, setDraft] = useState('');
   const [editorTab, setEditorTab] = useState<'story' | 'assets'>('story');
@@ -92,7 +104,7 @@ export default function StoryLibraryList({ onOpenStory }: { onOpenStory: (story:
   };
 
   const changeSearch = (value: string) => {
-    setSearch(value);
+    setSearch(value); setPage(1);
     setMenuId(null);
     setConfirmId(null);
   };
@@ -240,6 +252,7 @@ export default function StoryLibraryList({ onOpenStory }: { onOpenStory: (story:
   return (
     <View style={styles.container}>
       <ScrollView
+        ref={scrollRef}
         style={styles.scroll}
         contentContainerStyle={[styles.content, isCompact && styles.contentCompact]}
         keyboardShouldPersistTaps="handled"
@@ -260,7 +273,7 @@ export default function StoryLibraryList({ onOpenStory }: { onOpenStory: (story:
           </View>
         </View>
         <View style={styles.searchControls}>
-          <CharacterFilter value={character} characters={stories.map(story => story.character)} onChange={value => { setCharacter(value); setMenuId(null); setConfirmId(null); }} />
+          <CharacterFilter value={character} characters={stories.map(story => story.character)} onChange={value => { setCharacter(value); setPage(1); setMenuId(null); setConfirmId(null); }} />
           <View style={styles.searchModes} accessibilityRole="radiogroup" accessibilityLabel={t('storySearchMode')}>
             {(['title', 'content'] as const).map((mode) => (
               <TouchableOpacity
@@ -270,7 +283,7 @@ export default function StoryLibraryList({ onOpenStory }: { onOpenStory: (story:
                 accessibilityLabel={t(mode === 'title' ? 'searchByTitle' : 'searchByContent')}
                 style={[styles.searchMode, searchMode === mode && styles.searchModeActive]}
                 onPress={() => {
-                  setSearchMode(mode);
+                  setSearchMode(mode); setPage(1);
                   setMenuId(null);
                   setConfirmId(null);
                 }}
@@ -318,7 +331,7 @@ export default function StoryLibraryList({ onOpenStory }: { onOpenStory: (story:
           <Text style={styles.empty}>{t('noStorySearchResults')}</Text>
         ) : (
           <View style={[styles.grid, { gap: cardGap }]}>
-            {filteredStories.map((story) => {
+            {visibleStories.map((story) => {
               const portrait = avatarOf(story.character);
               const background = previewBackgrounds.get(story.id);
               const menuOpen = menuId === story.id;
@@ -398,6 +411,7 @@ export default function StoryLibraryList({ onOpenStory }: { onOpenStory: (story:
           </View>
         )}
         </View>
+        <Pagination page={currentPage} totalPages={totalPages} onChange={changePage} />
       </ScrollView>
       {videoStory && <VideoExportModal story={videoStory} onClose={() => setVideoStory(null)} />}
       {publishStory && <PublishStoryModal story={publishStory} onClose={() => setPublishStory(null)} />}

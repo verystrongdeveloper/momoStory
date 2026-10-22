@@ -294,6 +294,7 @@ for (const ratio of ['16:9', '9:16']) {
   const spoken = { type: 'dialogue', character: '호시노(아비도스)', text: '안녕하세요' };
   await React.act(async () => { tree = Renderer.create(React.createElement(RealTextBox, { ref: dialogueRef, currentLine: spoken, lastSpoken: spoken, onPress: () => presses++ })); });
   assert.ok(tree.root.findAllByType('Text').length >= 4);
+  assert.ok(tree.root.findAllByType('Text').some(text => text.props.children === 'SPACE'), 'web dialogue shows SPACE above the caret');
   assert.equal(tree.root.findByType('Pressable').props.style.outlineWidth, 0, 'dialogue surface must not flash a focus outline');
   assert.equal(tree.root.findByType('Pressable').props.style.outlineStyle, 'none');
   for (const text of tree.root.findAllByType('Text')) assert.equal(text.props.selectable, false);
@@ -302,10 +303,18 @@ for (const ratio of ['16:9', '9:16']) {
   await React.act(async () => tree.root.findByType('Pressable').props.onPress());
   assert.equal(presses, 1);
   await React.act(async () => tree.unmount());
+  for (const platform of ['android', 'ios']) {
+    dialogueMocks['react-native'].Platform.OS = platform;
+    await React.act(async () => { tree = Renderer.create(React.createElement(RealTextBox, { currentLine: spoken, lastSpoken: spoken })); });
+    assert.equal(tree.root.findAllByType('Text').some(text => text.props.children === 'SPACE'), false, 'native app has no keyboard hint');
+    await React.act(async () => tree.unmount());
+  }
+  dialogueMocks['react-native'].Platform.OS = 'web';
   let fontLoaded = false, fontError = null;
+  const selectionPlatform = { OS: 'web' };
   const RealSelection = load('components/event/EventSelection.tsx', {
     ...dialogueMocks,
-    'react-native': { View: 'View', Text: 'Text', TouchableOpacity: 'TouchableOpacity', StyleSheet: { create: s => s } },
+    'react-native': { Platform: selectionPlatform, View: 'View', Text: 'Text', TouchableOpacity: 'TouchableOpacity', StyleSheet: { create: s => s } },
     'expo-font': { useFonts: () => [fontLoaded, fontError] },
     '../../assets/fonts/Pretendard-SemiBold.ttf': 1,
   }).default;
@@ -314,12 +323,19 @@ for (const ratio of ['16:9', '9:16']) {
   assert.equal(tree.root.findAllByType('Text').length, 0, 'first choices never flash the fallback font while loading');
   fontLoaded = true;
   await React.act(async () => tree.update(React.cloneElement(selection)));
-  assert.equal(tree.root.findAllByType('Text').length, 2);
-  for (const text of tree.root.findAllByType('Text')) assert.ok(text.props.style.fontFamily.startsWith('PretendardSemiBold'));
+  assert.deepEqual(tree.root.findAllByType('Text').map(text => text.props.children), [1, 'first', 2, 'second'], 'web choices have numbers in display order');
+  for (const text of tree.root.findAllByType('Text').filter(text => typeof text.props.children === 'string')) assert.ok(text.props.style.fontFamily.startsWith('PretendardSemiBold'));
   await React.act(async () => tree.unmount());
   await React.act(async () => { tree = Renderer.create(selection); });
-  assert.equal(tree.root.findAllByType('Text').length, 2, 'later choices use the cached font immediately');
+  assert.equal(tree.root.findAllByType('Text').length, 4, 'later choices use the cached font immediately');
   await React.act(async () => tree.unmount());
+  for (const platform of ['android', 'ios']) {
+    selectionPlatform.OS = platform;
+    await React.act(async () => { tree = Renderer.create(selection); });
+    assert.deepEqual(tree.root.findAllByType('Text').map(text => text.props.children), ['first', 'second'], 'native choices have no number badges');
+    await React.act(async () => tree.unmount());
+  }
+  selectionPlatform.OS = 'web';
   fontLoaded = false; fontError = new Error('font unavailable');
   await React.act(async () => { tree = Renderer.create(selection); });
   assert.equal(tree.root.findAllByType('TouchableOpacity').length, 2, 'a font load failure must not block story choices');

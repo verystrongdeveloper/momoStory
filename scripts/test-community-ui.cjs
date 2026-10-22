@@ -178,7 +178,7 @@ const hasCount = (tree, count) => tree.root.findAllByType('Text').some(text => J
   const Library = load('components/chat/StoryLibraryList.tsx', {
     './CharacterFilter': 'CharacterFilter', './Pagination': { __esModule: true, default: 'Pagination', PAGE_SIZE: 20 },
     '@/constants/eventAssets': { bgMap: {} }, '@/utils/parseEventScript': load('utils/parseEventScript.ts', {}),
-    './StoryScriptEditor': 'StoryScriptEditor',
+    './StoryScriptEditor': 'StoryScriptEditor', './ChatMessageEditor': 'ChatMessageEditor',
     react: React, 'react-native': { ...rn, Platform: { OS: 'web' } }, '@expo/vector-icons': { Ionicons: 'Ionicons' }, '@/constants/characters': chars,
     '@/hooks/useLayout': { useLayout: () => ({ isCompact: true }) }, '@/components/CharacterAvatar': 'CharacterAvatar', '@/components/chat/StoryAssetPanel': 'StoryAssetPanel', './VideoExportModal': 'VideoExportModal', '@/components/community/PublishStoryModal': 'PublishStoryModal',
     '@/store/storyLibrary': { listStories: () => libraryRows, subscribeStories: listener => { notifyLibrary = listener; return () => {}; } }, '@/utils/insertStoryAsset': {}, '@/platform/clipboard': {}, '@/utils/storyFile': {}, '@/utils/storyPrompt': {}, '@/i18n': i18n,

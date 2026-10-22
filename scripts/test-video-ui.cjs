@@ -191,7 +191,7 @@ function load(file, mocks, clock = { setTimeout, clearTimeout }) {
     './CharacterFilter': 'CharacterFilter', './Pagination': { __esModule: true, default: 'Pagination', PAGE_SIZE: 20 },
     '@/constants/eventAssets': { bgMap: { BG_AbydosCouncilRoom: 'first-background', BG_Second: 'second-background' } },
     '@/utils/parseEventScript': load('utils/parseEventScript.ts', {}),
-    './StoryScriptEditor': 'StoryScriptEditor',
+    './StoryScriptEditor': 'StoryScriptEditor', './ChatMessageEditor': 'ChatMessageEditor',
     '@/components/community/PublishStoryModal': 'PublishStoryModal',
     'react-native': rn, '@expo/vector-icons': { Ionicons: 'Ionicons' }, '@/constants/characters': { avatarOf: () => 'avatar', displayCharacterName: (name) => name },
     '@/hooks/useLayout': { useLayout: () => ({ isCompact: true }) }, '@/components/CharacterAvatar': 'CharacterAvatar', '@/components/chat/StoryAssetPanel': 'StoryAssetPanel', './VideoExportModal': 'VideoExportModal',

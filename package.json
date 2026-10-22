@@ -5,7 +5,7 @@
   "scripts": {
     "community:assets": "node scripts/build-community-assets.cjs",
     "test:community": "node scripts/build-community-assets.cjs --check && node scripts/test-community.cjs && node scripts/test-community-client.cjs && node scripts/test-community-ui.cjs",
-    "test:editor": "node scripts/test-story-editor.cjs",
+    "test:editor": "node scripts/test-story-editor.cjs && node scripts/test-chat-editor.cjs",
     "test:tutorial": "node scripts/test-tutorial.cjs",
     "video:renderer": "node scripts/build-video-renderer.js",
     "test:video": "node scripts/test-video-timeline.cjs && node scripts/test-video-encode.cjs && node scripts/test-video-presentation.cjs && node scripts/test-video-assets.cjs && node scripts/test-video-ui.cjs && node scripts/test-video-queue.cjs && node scripts/test-background-transition.cjs",

@@ -7,6 +7,8 @@ import StoryAssetPanel from '@/components/chat/StoryAssetPanel';
 import VideoExportModal from './VideoExportModal';
 import PublishStoryModal from '@/components/community/PublishStoryModal';
 import StoryScriptEditor from './StoryScriptEditor';
+import ChatMessageEditor from './ChatMessageEditor';
+import type { SavedChatMessage } from '@/storage/types';
 import { deleteStory, importStory, listStories, SavedStory, subscribeStories, updateStory } from '@/store/storyLibrary';
 import { insertAssetIntoScript, AssetKind } from '@/utils/insertStoryAsset';
 import { copyText } from '@/platform/clipboard';
@@ -63,7 +65,8 @@ export default function StoryLibraryList({ onOpenStory }: { onOpenStory: (story:
   };
   const [editing, setEditing] = useState<SavedStory | 'new' | null>(null);
   const [draft, setDraft] = useState('');
-  const [editorTab, setEditorTab] = useState<'story' | 'assets'>('story');
+  const [editorTab, setEditorTab] = useState<'story' | 'chat' | 'assets'>('story');
+  const [chatDraft, setChatDraft] = useState<SavedChatMessage[]>([]);
   const [notice, setNotice] = useState('');
   const [confirmId, setConfirmId] = useState<string | null>(null);
   const [menuId, setMenuId] = useState<string | null>(null);
@@ -118,6 +121,7 @@ export default function StoryLibraryList({ onOpenStory }: { onOpenStory: (story:
     setMenuId(null);
     setEditing(story);
     setDraft(story === 'new' ? '' : story.script.replace(/\r\n?/g, '\n'));
+    setChatDraft(story === 'new' ? [] : (story.chatMessages ?? []).map(message => ({ ...message })));
     setEditorTab('story');
     setNotice('');
     selectionRef.current = { start: 0, end: 0 };
@@ -125,15 +129,20 @@ export default function StoryLibraryList({ onOpenStory }: { onOpenStory: (story:
 
   const saveEdit = () => {
     if (!editing) return;
+    if (chatDraft.some(message => !message.text.trim())) {
+      setEditorTab('chat');
+      setNotice(t('chatEditorEmptyMessage'));
+      return;
+    }
     if (editing === 'new') {
       const script = draft.trim();
       if (!script) {
         setNotice(t('emptyDraft'));
         return;
       }
-      importStory(script);
+      importStory(script, chatDraft);
     } else {
-      updateStory(editing.id, draft);
+      updateStory(editing.id, draft, chatDraft);
     }
     setStories(listStories());
     setEditing(null);
@@ -210,8 +219,6 @@ export default function StoryLibraryList({ onOpenStory }: { onOpenStory: (story:
           </View>
         </View>
         {!!notice && <Text style={styles.notice}>{notice}</Text>}
-        <View style={[styles.editorBody, isCompact && styles.editorBodyCompact]}>
-          {isCompact && (
             <View style={styles.editorTabs} accessibilityRole="tablist">
               <TouchableOpacity
                 accessibilityRole="tab"
@@ -223,15 +230,26 @@ export default function StoryLibraryList({ onOpenStory }: { onOpenStory: (story:
               </TouchableOpacity>
               <TouchableOpacity
                 accessibilityRole="tab"
+                accessibilityState={{ selected: editorTab === 'chat' }}
+                onPress={() => setEditorTab('chat')}
+                style={[styles.editorTab, editorTab === 'chat' && styles.editorTabActive]}
+              >
+                <Text style={[styles.editorTabText, editorTab === 'chat' && styles.editorTabTextActive]}>{t('editChat')}</Text>
+              </TouchableOpacity>
+              {isCompact && editorTab !== 'chat' && (
+              <TouchableOpacity
+                accessibilityRole="tab"
                 accessibilityState={{ selected: editorTab === 'assets' }}
                 onPress={() => setEditorTab('assets')}
                 style={[styles.editorTab, editorTab === 'assets' && styles.editorTabActive]}
               >
                 <Text style={[styles.editorTabText, editorTab === 'assets' && styles.editorTabTextActive]}>{t('assets')}</Text>
               </TouchableOpacity>
+              )}
             </View>
-          )}
-          {(!isCompact || editorTab === 'story') && (
+        <View style={[styles.editorBody, isCompact && styles.editorBodyCompact]}>
+          {editorTab === 'chat' && <ChatMessageEditor value={chatDraft} onChange={setChatDraft} />}
+          {editorTab === 'story' && (
             <StoryScriptEditor
               style={[styles.editor, isCompact && styles.editorCompact]}
               value={draft}
@@ -241,7 +259,7 @@ export default function StoryLibraryList({ onOpenStory }: { onOpenStory: (story:
               }}
             />
           )}
-          {(!isCompact || editorTab === 'assets') && (
+          {(editorTab === 'assets' || (!isCompact && editorTab === 'story')) && (
             <StoryAssetPanel character={editing === 'new' ? '' : editing.character} onInsert={insertAsset} fullWidth={isCompact} />
           )}
         </View>
@@ -737,6 +755,7 @@ const styles = StyleSheet.create({
   },
   editorBody: {
     flex: 1,
+    minHeight: 0,
     flexDirection: 'row',
     gap: 16,
     paddingHorizontal: 28,
@@ -750,6 +769,8 @@ const styles = StyleSheet.create({
     paddingBottom: 16,
   },
   editorTabs: {
+    marginHorizontal: 16,
+    marginBottom: 12,
     flexDirection: 'row',
     padding: 4,
     borderRadius: 10,

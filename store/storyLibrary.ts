@@ -42,11 +42,13 @@ export function listStories(): SavedStory[] {
 }
 
 /** 저장본의 대본을 바꾼다. 카드 제목은 대본의 타이틀 줄을 따른다. */
-export function updateStory(id: string, script: string): SavedStory | null {
+export function updateStory(id: string, script: string, chatMessages?: SavedChatMessage[]): SavedStory | null {
   const stories = readStored();
   const index = stories.findIndex((story) => story.id === id);
   if (index < 0) return null;
-  const next = { ...stories[index], script, title: titleOf(script, stories[index].character) };
+  const next = { ...stories[index], script, title: titleOf(script, stories[index].character),
+    ...(chatMessages !== undefined ? { chatMessages: chatMessages.map(message => ({ ...message })) } : {}),
+  };
   stories[index] = next;
   writeStored(stories);
   return next;
@@ -58,8 +60,8 @@ export function deleteStory(id: string) {
 }
 
 /** txt 대본을 라이브러리에 넣는다. 카드의 캐릭터는 첫 화자 이름을 따른다. */
-export function importStory(script: string): SavedStory {
-  return saveStory(characterOf(script), script);
+export function importStory(script: string, chatMessages?: SavedChatMessage[]): SavedStory {
+  return saveStory(characterOf(script), script, chatMessages);
 }
 
 /** 공유 게시글의 고정 ID를 유지하여 반복 가져오기가 기존 저장본을 덮어쓰지 않게 한다. */

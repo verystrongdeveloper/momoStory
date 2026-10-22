@@ -30,6 +30,7 @@ const TextBox = forwardRef<DialogueHandle, Props>(function TextBox({ currentLine
       />
       <EventDialogue ref={ref} character={shown.character ?? ''} text={shown.text} />
       <View style={styles.caretWrap} pointerEvents="none">
+        {Platform.OS === 'web' && currentLine?.type !== 'selection' && <Text selectable={false} style={styles.spaceHint}>SPACE</Text>}
         <Text selectable={false} style={styles.caret}>▾</Text>
       </View>
     </Pressable>
@@ -56,9 +57,21 @@ const makeStyles = (W: number, H: number) =>
       zIndex: 8,
     },
     caretWrap: {
+      alignItems: 'center',
       position: 'absolute',
       right: W * 0.04,
       bottom: H * 0.04,
+    },
+    spaceHint: {
+      color: 'rgba(255,255,255,0.9)',
+      fontSize: storyFont(W, H, 0.014, 10),
+      fontWeight: '700',
+      borderWidth: 1,
+      borderColor: 'rgba(255,255,255,0.55)',
+      borderRadius: 3,
+      backgroundColor: 'rgba(40,61,79,0.75)',
+      paddingHorizontal: 4,
+      paddingVertical: 1,
     },
     caret: {
       color: 'rgba(255,255,255,0.82)',

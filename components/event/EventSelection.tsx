@@ -1,5 +1,5 @@
 import React, { useMemo } from 'react';
-import { StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import { Platform, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useFonts } from 'expo-font';
 import { storyFont, useLayout } from '@/hooks/useLayout';
@@ -41,6 +41,9 @@ const EventSelection: React.FC<Props> = ({ options, onSelect }) => {
             end={{ x: 1, y: 0.5 }}
             style={styles.buttonSurface}
           >
+            {Platform.OS === 'web' && <View style={styles.numberBadge} pointerEvents="none">
+              <Text selectable={false} style={styles.numberText}>{idx + 1}</Text>
+            </View>}
             <Text style={styles.text} numberOfLines={2}>
               {labelOf(opt)}
             </Text>
@@ -76,10 +79,27 @@ const makeStyles = (W: number, H: number, fontLoaded: boolean, isCompact: boolea
       height: '100%',
       alignItems: 'center',
       justifyContent: 'center',
-      paddingHorizontal: cardWidth * 0.05,
+      paddingHorizontal: Platform.OS === 'web' ? Math.max(40, cardWidth * 0.07) : cardWidth * 0.05,
       borderWidth: 2,
       borderColor: '#ffffff',
       backgroundColor: '#e7f3fb',
+    },
+    numberBadge: {
+      position: 'absolute',
+      left: Math.max(10, cardWidth * 0.025),
+      width: Math.max(20, Math.round(short * 0.032)),
+      height: Math.max(20, Math.round(short * 0.032)),
+      alignItems: 'center',
+      justifyContent: 'center',
+      borderRadius: 3,
+      backgroundColor: '#354f66',
+      borderWidth: 1,
+      borderColor: '#ffffff',
+    },
+    numberText: {
+      color: '#ffffff',
+      fontSize: storyFont(W, H, 0.021, 13),
+      fontWeight: '700',
     },
     text: {
       // SemiBold 파일 자체를 쓴다. fontWeight를 올리면 윈도우가 굵기를 합성해

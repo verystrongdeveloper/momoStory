@@ -272,8 +272,9 @@ export default function StoryLibraryList({ onOpenStory }: { onOpenStory: (story:
             </TouchableOpacity>
           </View>
         </View>
-        <View style={styles.searchControls}>
+        <View style={[styles.searchControls, isCompact && styles.searchControlsCompact]}>
           <CharacterFilter value={character} characters={stories.map(story => story.character)} onChange={value => { setCharacter(value); setPage(1); setMenuId(null); setConfirmId(null); }} />
+          <View style={[styles.searchFields, isCompact && styles.searchFieldsCompact]}>
           <View style={styles.searchModes} accessibilityRole="radiogroup" accessibilityLabel={t('storySearchMode')}>
             {(['title', 'content'] as const).map((mode) => (
               <TouchableOpacity
@@ -316,6 +317,7 @@ export default function StoryLibraryList({ onOpenStory }: { onOpenStory: (story:
               <Ionicons name="close-circle" size={20} color="#84909d" />
             </TouchableOpacity>
           )}
+        </View>
         </View>
         </View>
         {!!query && (
@@ -485,11 +487,31 @@ const styles = StyleSheet.create({
     color: '#222',
   },
   searchControls: {
-    width: 420,
-    maxWidth: '100%',
+    width: '100%',
+    maxWidth: 760,
     flexDirection: 'row',
+    flexWrap: 'wrap',
+    alignItems: 'center',
     gap: 8,
     marginBottom: 16,
+  },
+  searchControlsCompact: {
+    flexDirection: 'column',
+    alignItems: 'stretch',
+    gap: 12,
+  },
+  searchFields: {
+    flexGrow: 1,
+    flexBasis: 320,
+    minWidth: 0,
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+  },
+  searchFieldsCompact: {
+    flexGrow: 0,
+    flexBasis: 'auto',
+    width: '100%',
   },
   searchModes: {
     flexDirection: 'row',

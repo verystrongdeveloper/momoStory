@@ -32,8 +32,8 @@ export default function CharacterFilter({ value, onChange, characters = [] }: { 
   </View>;
 }
 const styles = StyleSheet.create({
-  root: { flexDirection: 'row', alignItems: 'center', gap: 10, minWidth: 0 }, label: { fontSize: 13, fontWeight: '600', color: '#67717d', flexShrink: 1 },
-  choice: { flex: 1, minWidth: 0, maxWidth: 220, minHeight: 40, flexDirection: 'row', alignItems: 'center', gap: 8, paddingHorizontal: 12, borderWidth: 1, borderColor: '#d6e0e8', borderRadius: 10, backgroundColor: '#f8fafc' },
+  root: { flexDirection: 'row', alignItems: 'center', gap: 10, minWidth: 0, maxWidth: '100%' }, label: { fontSize: 13, fontWeight: '600', color: '#67717d', flexShrink: 1 },
+  choice: { flex: 1, minWidth: 140, maxWidth: 220, minHeight: 44, flexDirection: 'row', alignItems: 'center', gap: 8, paddingHorizontal: 12, borderWidth: 1, borderColor: '#d6e0e8', borderRadius: 10, backgroundColor: '#f8fafc' },
   choiceLabel: { flex: 1 }, text: { fontSize: 13, fontWeight: '600', color: '#3d6288' },
   backdrop: { flex: 1, justifyContent: 'center', alignItems: 'center', padding: 20, backgroundColor: '#18202b66' },
   menu: { width: 340, maxWidth: '100%', maxHeight: '80%', padding: 16, borderRadius: 16, backgroundColor: '#fff' },

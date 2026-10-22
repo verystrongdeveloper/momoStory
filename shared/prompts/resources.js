@@ -149,6 +149,33 @@ const resources = {
     ],
   },
 
+  케이: {
+    emotions: [
+      'kei_default.png',
+      'kei_smile.png',
+      'kei_laugh.png',
+      'kei_surprised.png',
+      'kei_uneasy.png',
+      'kei_frustrated.png',
+      'kei_gentleSmile.png',
+      'kei_happy.png',
+      'kei_serious.png',
+      'kei_smug.png',
+      'kei_embarrassed.png',
+      'kei_shySmile.png',
+      'kei_flustered.png',
+      'kei_shocked.png',
+      'kei_teary.png',
+      'kei_pout.png',
+      'kei_gloomy.png',
+      'kei_exasperated.png',
+      'kei_yelling.png',
+      'kei_sigh.png',
+      'kei_eyesClosed.png',
+      'kei_crying.png',
+    ],
+  },
+
   후부키: {
     emotions: [
       'fubuki_default.png', 'fubuki_bored.png', 'fubuki_flustered.png',

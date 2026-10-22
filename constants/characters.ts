@@ -21,6 +21,20 @@ export interface Character {
 
 export const CHARACTERS: Character[] = [
   {
+    name: '케이',
+    status: '할 말이 있으면 말씀하세요.',
+    displayName: { ko: '케이', en: 'Kei', ja: 'ケイ', zh: '凯伊' },
+    displayStatus: { ko: '할 말이 있으면 말씀하세요.', en: 'If you have something to say, say it.', ja: '何かあるなら言ってください。', zh: '有什么话就直说吧。' },
+    image: require('../assets/images/kei/kei_default.png'),
+    avatar: {
+      image: require('../assets/images/kei/kei_default.png'),
+      fit: 'contain',
+      scale: 2.4,
+      offsetY: 0.46,
+      backgroundColor: '#f4e8f0',
+    },
+  },
+  {
     name: '호시노',
     status: '낮잠 중 방해금지',
     displayName: { ko: '호시노', en: 'Hoshino', ja: 'ホシノ', zh: '星野' },

@@ -1,10 +1,14 @@
 const NAMES = {
+  케이: { ko: '케이', en: 'Kei', ja: 'ケイ', zh: '凯伊' },
   후부키: { ko: '후부키', en: 'Fubuki', ja: 'フブキ', zh: '吹雪' },
   호시노: { ko: '호시노', en: 'Hoshino', ja: 'ホシノ', zh: '星野' },
   히나: { ko: '히나', en: 'Hina', ja: 'ヒナ', zh: '日奈' },
   마리: { ko: '마리', en: 'Mari', ja: 'マリー', zh: '玛丽' },
 };
 const AFFILIATIONS = {
+  '밀레니엄 사이언스 스쿨': { en: 'Millennium Science School', ja: 'ミレニアムサイエンススクール', zh: '千年科学学园' },
+  초현상특무부: { en: 'Super Phenomenon Task Force', ja: '特異現象捜査部', zh: '超现象特务部' },
+  밀레니엄: { en: 'Millennium', ja: 'ミレニアム', zh: '千年' },
   '발키리 경찰학교': { en: 'Valkyrie Police School', ja: 'ヴァルキューレ警察学校', zh: '瓦尔基里警察学校' },
   생활안전국: { en: 'Public Safety Bureau', ja: '生活安全局', zh: '生活安全局' },
   '아비도스 고등학교': { en: 'Abydos High School', ja: 'アビドス高等学校', zh: '阿拜多斯高中' },

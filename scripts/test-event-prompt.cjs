@@ -70,7 +70,23 @@ for (const character of characters) {
   }
 }
 assert.deepEqual([...resources.후부키.emotions].sort(), fs.readdirSync(path.join(__dirname, '../assets/images/fubuki')).sort());
+assert.deepEqual([...resources.케이.emotions].sort(), fs.readdirSync(path.join(__dirname, '../assets/images/kei')).sort());
 const { keepAssetSpeakers, getAvailableCharacters } = require('../shared/prompts/characterList');
+assert.ok(getAvailableCharacters().includes('케이'));
+assert.ok(buildChatPrompt('케이').includes(personas.케이));
+assert.ok(buildSelectionPrompt([]).includes('케이'));
+const keiPrompt = buildEventPromptPro('케이', [], [{ name: '케이', emotions: resources.케이.emotions }], '함께 게임을 고른다.');
+assert.ok(keiPrompt.includes(personas.케이));
+for (const [language, name] of Object.entries({ ko: '케이', en: 'Kei', ja: 'ケイ', zh: '凯伊' })) {
+  assert.equal(characters.find(character => character.name === '케이').displayName[language], name);
+  for (const file of resources.케이.emotions) {
+    assert.ok(keiPrompt.includes(file));
+    const localized = keepAssetSpeakers(`title : Game\n케이(초현상특무부) : 같이 확인해요. [emotion : ${file}]\nselection : (1)"좋아" [speaker : 케이, dialogue : 이쪽이에요., emotion : ${file}]\nendEvent`, ['케이'], language);
+    assert.ok(localized.includes(`${name}(`));
+    assert.ok(localized.includes(`speaker : ${name}`));
+    assert.equal(parse(localized).filter(line => line.emotion === file.replace('.png', '')).length, 2);
+  }
+}
 assert.ok(getAvailableCharacters().includes('후부키'));
 for (const [language, name] of Object.entries({ ko: '후부키', en: 'Fubuki', ja: 'フブキ', zh: '吹雪' })) {
   const localized = keepAssetSpeakers('title : Break\n후부키(생활안전국) : 잠깐 쉬자. [emotion : fubuki_default.png]\nendEvent', ['후부키'], language);

@@ -237,7 +237,7 @@ const EventPlayer: React.FC<Props> = ({ script, onComplete }) => {
     }
 
     if (line.soundFile) playSFX(line.soundFile);
-    if (line.bg) { setBg(line.bg); bgRef.current = line.bg; }
+    if (line.bg) { setBg(line.bg); bgRef.current = line.bg; bgOpacity.setValue(1); }
     if (line.emotion) {
       if (emoRef.current !== line.emotion) {
         emoRef.current = line.emotion;
@@ -302,10 +302,8 @@ const EventPlayer: React.FC<Props> = ({ script, onComplete }) => {
             bgRef.current = null;
             setEmo(null);
             emoRef.current = null;
-            spriteHiddenRef.current = false;
+            spriteHiddenRef.current = true;
             setLast(null);
-            bgOpacity.setValue(1);
-            emoOpacity.setValue(1);
             nextLine();
           });
           return;

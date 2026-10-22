@@ -65,6 +65,11 @@ for (const ratio of ['16:9', '9:16']) {
   class Value { constructor(value) { this.value = value; } setValue(value) { this.value = value; } }
   const Animated = { Value, View: 'AnimatedView', timing(value, config) {
     return { start(callback) { animations.push({ value, config, finish() { value.setValue(config.toValue); callback?.({ finished: true }); } }); }, stop() {} };
+  }, parallel(items) {
+    return { start(callback) {
+      let remaining = items.length;
+      for (const item of items) item.start(result => { if (--remaining === 0) callback?.(result); });
+    }, stop() { for (const item of items) item.stop(); } };
   } };
   const lines = [
     { type: 'dialogue', text: 'one', bg: 'A.jpg' },
@@ -199,6 +204,36 @@ for (const ratio of ['16:9', '9:16']) {
   await React.act(async () => { tree = Renderer.create(React.createElement(Player, { script: '', onComplete: () => completions++ })); });
   assert.equal(completions, 2, 'explicit endEvent completes and returns home');
   await React.act(async () => tree.unmount());
+  for (const resumeScene of [false, true]) {
+    lines.splice(0, lines.length,
+      { type: 'dialogue', text: 'before', bg: 'A.jpg', emotion: 'first' },
+      { type: 'command', commandType: 'deleteAll' },
+      { type: 'narration', text: 'black screen' },
+      ...(resumeScene ? [{ type: 'dialogue', text: 'after', bg: 'B.jpg', emotion: 'second' }] : []),
+      { type: 'command', commandType: 'endEvent' },
+    );
+    await React.act(async () => { tree = Renderer.create(React.createElement(Player, { script: '' })); });
+    const backgroundOpacity = tree.root.findByType('EventBackground').props.fadeAnim;
+    const spriteOpacity = tree.root.findByType('CharacterSprite').props.fadeAnim;
+    const fadeStart = animations.length;
+    await React.act(async () => advance());
+    const fades = animations.slice(fadeStart);
+    assert.equal(fades.length, 2);
+    await React.act(async () => { for (const fade of fades) fade.finish(); });
+    assert.equal(tree.root.findByType('TextBox').props.currentLine.text, 'black screen');
+    assert.equal(tree.root.findByType('EventBackground').props.bgKey, null);
+    assert.equal(tree.root.findByType('CharacterSprite').props.current, null);
+    assert.equal(backgroundOpacity.value, 0, 'deleteAll must not reveal the old background before its image is removed');
+    assert.equal(spriteOpacity.value, 0, 'deleteAll must keep cached sprite images hidden on the black screen');
+    if (resumeScene) {
+      await React.act(async () => advance());
+      assert.equal(tree.root.findByType('EventBackground').props.bgKey, 'B.jpg');
+      assert.equal(tree.root.findByType('CharacterSprite').props.current, 'second');
+      assert.equal(backgroundOpacity.value, 1, 'a later background must become visible again');
+      assert.equal(spriteOpacity.value, 1, 'a later sprite must become visible again');
+    }
+    await React.act(async () => tree.unmount());
+  }
   global.document = originalDocument;
   // Real dialogue components opt out of native selection and web user-select,
   // while retaining the press handler and typewriter completion API.

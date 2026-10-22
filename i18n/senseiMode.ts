@@ -3,7 +3,7 @@ export const senseiModeTranslations = {
     senseiMode: '선생 모드', senseiModeMild: '순한맛', senseiModeSpicy: '매운맛',
     senseiModeMildHint: '배려와 부드러운 유머 중심. 장난은 가볍게 주고받고, 다정한 선택지와 행동으로 이야기를 이어갑니다.',
     senseiModeSpicyHint: '채팅 속 선생의 성격을 살려 능청스럽게 맞받아치고, 엉뚱한 행동과 장난을 이어가는 선택지를 만듭니다. 캐릭터의 당황과 반격도 이야기로 이어집니다.',
-    senseiModeHint: '자동 저장되며 다음 스토리 생성부터 적용됩니다. 성적 수위를 높이는 모드가 아니며, 캐릭터의 성격과 의사는 유지됩니다.',
+    senseiModeHint: '자동 저장되며 다음 스토리 생성부터 적용됩니다.',
   },
   en: {
     senseiMode: 'Sensei mode', senseiModeMild: 'Mild', senseiModeSpicy: 'Spicy',

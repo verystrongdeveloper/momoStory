@@ -10,7 +10,7 @@ const assets = {
   '/font.ttf': ['assets/fonts/Pretendard-SemiBold.ttf', 'font/ttf'],
   '/chat-pop.wav': ['assets/audio/chat-pop.wav', 'audio/wav'],
   '/bg.jpg': ['assets/images/background/BG_AbydosCouncilRoom.jpg', 'image/jpeg'],
-  '/sprite.png': ['assets/images/hoshino/hoshino_smallsmile.png', 'image/png'],
+  '/sprite.webp': ['assets/images/hoshino/hoshino_smallsmile.webp', 'image/webp'],
   '/avatar.jpg': ['assets/images/hoshino.jpg', 'image/jpeg'],
   '/music.mp3': ['assets/music/Aira.mp3', 'audio/mpeg'],
   '/effect.png': ['assets/images/expression/sweat.png', 'image/png'],
@@ -22,7 +22,7 @@ function nativeFixture() {
   const payload = {
     title: 'native bridge', name: '호시노', ratio: '9:16', quality: '1080p', chatSize: 1,
     font: data('/font.ttf'),
-    images: { avatar: data('/avatar.jpg'), 'bg:BG_AbydosCouncilRoom': data('/bg.jpg'), 'emotion:hoshino_smallsmile': data('/sprite.png') },
+    images: { avatar: data('/avatar.jpg'), 'bg:BG_AbydosCouncilRoom': data('/bg.jpg'), 'emotion:hoshino_smallsmile': data('/sprite.webp') },
     sounds: { 'music:Aira.mp3': data('/music.mp3') }, labels: { bondEvent: '인연 이벤트', bondStory: '호시노의 인연 스토리로' },
     timeline: {
       duration: 5, messages: [{ sender: 'character', text: '모바일 전송 테스트', showImage: true }],

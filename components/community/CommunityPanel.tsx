@@ -11,6 +11,8 @@ import { bgMap } from '@/constants/eventAssets';
 import { Ionicons } from '@expo/vector-icons';
 import CharacterFilter from '@/components/chat/CharacterFilter';
 import Pagination, { PAGE_SIZE } from '@/components/chat/Pagination';
+import { useRouter } from 'expo-router';
+import { setPendingEvent } from '@/store/eventStore';
 
 function Button({ label, onPress, disabled = false, selected = false }: { label: string; onPress: () => void; disabled?: boolean; selected?: boolean }) {
   return <TouchableOpacity accessibilityRole="button" accessibilityState={{ disabled, selected }} disabled={disabled} onPress={onPress} style={[styles.button, selected && styles.selected, disabled && styles.disabled]}><Text style={styles.buttonText}>{label}</Text></TouchableOpacity>;
@@ -119,6 +121,7 @@ export default function CommunityPanel() {
 
 function CommunityPostView({ id, onBack }: { id: string; onBack: () => void }) {
   const { t, language } = useI18n();
+  const router = useRouter();
   const imported = useSyncExternalStore(subscribeStories, () => listStories().some(story => story.id === `community-${id}`), () => false);
   const [detail, setDetail] = useState<CommunityDetail | null>(null);
   const [watching, setWatching] = useState(false);
@@ -165,6 +168,15 @@ function CommunityPostView({ id, onBack }: { id: string; onBack: () => void }) {
       setMore(result.comments.length === 30);
     }
   });
+  const play = () => {
+    if (!detail) return;
+    if (detail.chat_messages.length > 0) {
+      setWatching(true);
+      return;
+    }
+    setPendingEvent(detail.script);
+    router.push('/event');
+  };
   if (watching && detail) return <View style={styles.root}>
     <View style={styles.toolbar}><Button label={t('previous')} onPress={() => setWatching(false)} /><Text style={styles.storyTitle} numberOfLines={1}>{detail.title}</Text></View>
     <CharacterChat key={detail.id} characterName={detail.character} displayName={displayCharacterName(detail.character, language)} characterImage={avatarOf(detail.character)} savedStory={communityStory(detail)} />
@@ -177,7 +189,9 @@ function CommunityPostView({ id, onBack }: { id: string; onBack: () => void }) {
       <Text style={styles.title}>{detail.title}</Text>
       <Text style={styles.hint}>{t('communityViews', { count: detail.views })} · {t('communityLikes', { count: detail.likes })}</Text>
       <View style={styles.controls}>
-        <Button label={t('communityWatch')} onPress={() => setWatching(true)} />
+        <TouchableOpacity accessibilityRole="button" accessibilityLabel={t('communityWatch')} style={styles.refresh} onPress={play}>
+          <Ionicons name="play" size={22} color="#365170" />
+        </TouchableOpacity>
         <Button label={t(imported ? 'communityImported' : 'communityImport')} disabled={imported || loading} onPress={() => {
           try { importSharedStory(communityStory(detail)); setNotice(t('communityImportSuccess')); }
           catch { setNotice(t('communityImportFailed')); }

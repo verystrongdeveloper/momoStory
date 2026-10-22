@@ -1,0 +1,57 @@
+const assert = require('node:assert/strict');
+const crypto = require('node:crypto');
+const fs = require('node:fs');
+const path = require('node:path');
+const ts = require('typescript');
+const sharp = require('sharp');
+const root = path.resolve(__dirname, '..');
+const manifest = require('./fixtures/sprite-webp.json');
+function load(file) {
+  const mod = { exports: {} };
+  new Function('require', 'module', 'exports', ts.transpileModule(fs.readFileSync(path.join(root, file), 'utf8'), {
+    compilerOptions: { module: ts.ModuleKind.CommonJS, target: ts.ScriptTarget.ES2022 },
+  }).outputText)(id => id, mod, mod.exports);
+  return mod.exports;
+}
+(async () => {
+  const { emotionMap } = load('constants/eventAssets.ts');
+  const characters = load('constants/characters.ts').CHARACTERS;
+  assert.equal(manifest.length, Object.keys(emotionMap).length);
+  const files = new Set(manifest.map(entry => entry.file));
+  assert.deepEqual(new Set(Object.values(emotionMap).map(file => file.replace('../', ''))), files);
+  for (const character of characters) {
+    for (const source of [character.image, character.avatar?.image].filter(Boolean)) {
+      assert.ok(fs.existsSync(path.resolve(root, 'constants', source)), `Broken profile image: ${source}`);
+    }
+  }
+  for (const entry of manifest) {
+    const file = path.join(root, entry.file);
+    const bytes = fs.readFileSync(file);
+    assert.equal(bytes.toString('ascii', 0, 4), 'RIFF');
+    assert.equal(bytes.toString('ascii', 8, 12), 'WEBP');
+    assert.ok(bytes.subarray(12, 32).includes(Buffer.from('VP8L')), 'lossless VP8L bitstream required');
+    assert.equal(bytes.length, entry.bytes);
+    assert.ok(bytes.length < entry.originalBytes);
+    const { data, info } = await sharp(bytes).ensureAlpha().raw().toBuffer({ resolveWithObject: true });
+    assert.deepEqual([info.width, info.height, info.channels], [...entry.size, 4]);
+    assert.equal(crypto.createHash('sha256').update(data).digest('hex'), entry.rgbaSha256, `Pixel mismatch: ${entry.file}`);
+    assert.equal(fs.existsSync(path.join(root, entry.original)), false, 'originals must not remain in the bundle');
+  }
+  // Existing saved/public scripts keep their canonical filenames and map to WebP.
+  const { resources } = require('../shared/prompts/resources');
+  const parse = load('utils/parseEventScript.ts').default;
+  const validate = load('shared/community/validation.ts').validatePublicStory;
+  const assets = require('../shared/community/assets.json');
+  for (const character of characters) {
+    for (const legacyName of resources[character.name].emotions) {
+      assert.match(legacyName, /\.(png|jpg)$/);
+      const script = `title : Legacy\n${character.name} : Hi [emotion : ${legacyName}]\nendEvent`;
+      const key = parse(script).find(line => line.emotion).emotion;
+      assert.ok(emotionMap[key]?.endsWith('.webp'), `Legacy sprite does not resolve: ${legacyName}`);
+      validate({ title: 'Legacy', character: character.name, script, chatMessages: [], clientId: 'legacy' }, assets);
+    }
+  }
+  const original = manifest.reduce((sum, entry) => sum + entry.originalBytes, 0);
+  const converted = manifest.reduce((sum, entry) => sum + entry.bytes, 0);
+  console.log(`PASS ${manifest.length} lossless WebP sprites: exact RGBA hashes, dimensions, profile references and legacy script/public validation; ${original} -> ${converted} bytes (${((1 - converted / original) * 100).toFixed(1)}% saved)`);
+})().catch(error => { console.error(error); process.exitCode = 1; });

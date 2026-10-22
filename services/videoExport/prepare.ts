@@ -21,7 +21,7 @@ export async function prepareVideo(
   const spriteAspects: Record<string, number> = {};
   const tasks = new Map<string, { source: Parameters<typeof videoAssetUrl>[0]; mime: string; target: Record<string, string> }>();
   const image = (kind: string, key: string | undefined, map: Record<string, number>) => {
-    if (key && map[key]) tasks.set(`${kind}:${key}`, { source: map[key], mime: /\.jpe?g$/i.test(key) || kind === 'bg' || key.startsWith('hina_') ? 'image/jpeg' : 'image/png', target: images });
+    if (key && map[key]) tasks.set(`${kind}:${key}`, { source: map[key], mime: kind === 'emotion' ? 'image/webp' : /\.jpe?g$/i.test(key) || kind === 'bg' ? 'image/jpeg' : 'image/png', target: images });
   };
   for (const scene of timeline.scenes) {
     image('bg', scene.background, bgMap);

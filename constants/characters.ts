@@ -25,9 +25,9 @@ export const CHARACTERS: Character[] = [
     status: '할 말이 있으면 말씀하세요.',
     displayName: { ko: '케이', en: 'Kei', ja: 'ケイ', zh: '凯伊' },
     displayStatus: { ko: '할 말이 있으면 말씀하세요.', en: 'If you have something to say, say it.', ja: '何かあるなら言ってください。', zh: '有什么话就直说吧。' },
-    image: require('../assets/images/kei/kei_default.png'),
+    image: require('../assets/images/kei/kei_default.webp'),
     avatar: {
-      image: require('../assets/images/kei/kei_default.png'),
+      image: require('../assets/images/kei/kei_default.webp'),
       fit: 'contain',
       scale: 2.4,
       offsetY: 0.46,
@@ -41,7 +41,7 @@ export const CHARACTERS: Character[] = [
     displayStatus: { ko: '낮잠 중 방해금지', en: 'Do not disturb — napping', ja: '昼寝中・起こさないで', zh: '午睡中，请勿打扰' },
     image: require('../assets/images/hoshino.jpg'),
     avatar: {
-      image: require('../assets/images/hoshino/hoshino_smile.png'),
+      image: require('../assets/images/hoshino/hoshino_smile.webp'),
       fit: 'contain',
       scale: 2.4,
       offsetY: 0.46,
@@ -55,7 +55,7 @@ export const CHARACTERS: Character[] = [
     displayStatus: { ko: '', en: '', ja: '', zh: '' },
     image: require('../assets/images/hina.jpg'),
     avatar: {
-      image: require('../assets/images/hina/hina_smile.jpg'),
+      image: require('../assets/images/hina/hina_smile.webp'),
       fit: 'contain',
       scale: 2.4,
       offsetY: 0.46,
@@ -67,9 +67,9 @@ export const CHARACTERS: Character[] = [
     status: '늘 평안하세요',
     displayName: { ko: '마리', en: 'Mari', ja: 'マリー', zh: '玛丽' },
     displayStatus: { ko: '늘 평안하세요', en: '', ja: '', zh: '' },
-    image: require('../assets/images/mari/mari_default.png'),
+    image: require('../assets/images/mari/mari_default.webp'),
     avatar: {
-      image: require('../assets/images/mari/mari_smile.png'),
+      image: require('../assets/images/mari/mari_smile.webp'),
       fit: 'contain',
       scale: 2.4,
       offsetY: 0.46,
@@ -81,9 +81,9 @@ export const CHARACTERS: Character[] = [
     status: '커피 with 도넛!',
     displayName: { ko: '후부키', en: 'Fubuki', ja: 'フブキ', zh: '吹雪' },
     displayStatus: { ko: '커피 with 도넛!', en: 'Coffee with donuts!', ja: 'コーヒーにはドーナツ！', zh: '咖啡配甜甜圈！' },
-    image: require('../assets/images/fubuki/fubuki_default.png'),
+    image: require('../assets/images/fubuki/fubuki_default.webp'),
     avatar: {
-      image: require('../assets/images/fubuki/fubuki_smug.png'),
+      image: require('../assets/images/fubuki/fubuki_smug.webp'),
       fit: 'contain',
       scale: 2.4,
       offsetY: 0.46,

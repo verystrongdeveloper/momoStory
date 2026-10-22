@@ -26,7 +26,7 @@ button.addEventListener('click', async () => {
       const payload: VideoPayload = {
         title: story.title, name: story.character, ratio, quality, chatSize: 1,
         timeline: buildVideoTimeline(story, 0.3, 0.5),
-        images: { 'bg:BG_AbydosCouncilRoom': '/bg.jpg', 'emotion:hoshino_smallsmile': '/sprite.png', 'expression:sweat.png': '/effect.png', avatar: '/avatar.jpg' },
+        images: { 'bg:BG_AbydosCouncilRoom': '/bg.jpg', 'emotion:hoshino_smallsmile': '/sprite.webp', 'expression:sweat.png': '/effect.png', avatar: '/avatar.jpg' },
         spriteAspects: { hoshino_smallsmile: 373 / 668 },
         sounds: { 'sfx:Chat_Pop.wav': '/chat-pop.wav', 'music:Aira.mp3': '/music.mp3', 'sfx:SE_Confirm_01.mp3': '/sfx.mp3', 'sfx:SE_Crow_04.wav': '/sfx.wav' }, font: '/font.ttf',
         labels: { bondEvent: '인연 이벤트', bondStory: '호시노의 인연 스토리로' },

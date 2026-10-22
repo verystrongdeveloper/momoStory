@@ -1,0 +1,794 @@
+[
+  {
+    "file": "assets/images/fubuki/fubuki_bored.webp",
+    "original": "assets/images/fubuki/fubuki_bored.png",
+    "originalBytes": 331067,
+    "bytes": 180612,
+    "size": [
+      371,
+      673
+    ],
+    "rgbaSha256": "a0fc3a91ad37ebf5d02ef5b3ce4e6fa7a01b9102d9a2c4baa854f7e93bfc177c"
+  },
+  {
+    "file": "assets/images/fubuki/fubuki_default.webp",
+    "original": "assets/images/fubuki/fubuki_default.png",
+    "originalBytes": 327598,
+    "bytes": 180078,
+    "size": [
+      371,
+      673
+    ],
+    "rgbaSha256": "17880d921ca553c5442e2311f3578f27b26078b570304422ff2685afe16a18b0"
+  },
+  {
+    "file": "assets/images/fubuki/fubuki_flustered.webp",
+    "original": "assets/images/fubuki/fubuki_flustered.png",
+    "originalBytes": 335421,
+    "bytes": 188806,
+    "size": [
+      371,
+      673
+    ],
+    "rgbaSha256": "0170c3bd564eb624e82e98806273b5d08bf2020dfb33ee2756a4187e5592eeaa"
+  },
+  {
+    "file": "assets/images/fubuki/fubuki_grin.webp",
+    "original": "assets/images/fubuki/fubuki_grin.png",
+    "originalBytes": 328923,
+    "bytes": 179362,
+    "size": [
+      371,
+      673
+    ],
+    "rgbaSha256": "fffadabf0842ceb68f5eb34ceb29ccfb0f0c798ffe060f5f0a0705a6bb52da87"
+  },
+  {
+    "file": "assets/images/fubuki/fubuki_laugh.webp",
+    "original": "assets/images/fubuki/fubuki_laugh.png",
+    "originalBytes": 334636,
+    "bytes": 183288,
+    "size": [
+      371,
+      673
+    ],
+    "rgbaSha256": "bc6ff311453c2f29f8a33bcbf9db43684765663b18fe2c115260766f9793172e"
+  },
+  {
+    "file": "assets/images/fubuki/fubuki_pout.webp",
+    "original": "assets/images/fubuki/fubuki_pout.png",
+    "originalBytes": 328219,
+    "bytes": 184404,
+    "size": [
+      371,
+      673
+    ],
+    "rgbaSha256": "2e83982cf796dec9bda27a77ed4cf12a38cdb70ad9ba4527fa1207c7b3b1dfed"
+  },
+  {
+    "file": "assets/images/fubuki/fubuki_shocked.webp",
+    "original": "assets/images/fubuki/fubuki_shocked.png",
+    "originalBytes": 334915,
+    "bytes": 187194,
+    "size": [
+      371,
+      673
+    ],
+    "rgbaSha256": "19c20bd16eebca03fea925655e7cc608a343438a7be1003117c160adb2d2914d"
+  },
+  {
+    "file": "assets/images/fubuki/fubuki_sigh.webp",
+    "original": "assets/images/fubuki/fubuki_sigh.png",
+    "originalBytes": 327785,
+    "bytes": 184808,
+    "size": [
+      371,
+      673
+    ],
+    "rgbaSha256": "932de6a42b72774f5b8e1109c934daed80664db72d21cc26b873e425554b330d"
+  },
+  {
+    "file": "assets/images/fubuki/fubuki_smug.webp",
+    "original": "assets/images/fubuki/fubuki_smug.png",
+    "originalBytes": 329311,
+    "bytes": 177568,
+    "size": [
+      371,
+      673
+    ],
+    "rgbaSha256": "a069dd4c5e6ca8b5a6931bc374a90ebdd2f075e1e18eea4b7847afb2ee27edd7"
+  },
+  {
+    "file": "assets/images/fubuki/fubuki_surprised.webp",
+    "original": "assets/images/fubuki/fubuki_surprised.png",
+    "originalBytes": 335170,
+    "bytes": 184812,
+    "size": [
+      371,
+      673
+    ],
+    "rgbaSha256": "ee696500b08763c8724ed295ce2ec524564b821f575f0bf1d3ee3d7fcce0295e"
+  },
+  {
+    "file": "assets/images/fubuki/fubuki_talking.webp",
+    "original": "assets/images/fubuki/fubuki_talking.png",
+    "originalBytes": 334806,
+    "bytes": 185034,
+    "size": [
+      371,
+      673
+    ],
+    "rgbaSha256": "82f003939bc132f730c06570a8e23396b07d57a184d1451cb37cfb7a1cedb57a"
+  },
+  {
+    "file": "assets/images/fubuki/fubuki_teary.webp",
+    "original": "assets/images/fubuki/fubuki_teary.png",
+    "originalBytes": 329044,
+    "bytes": 179498,
+    "size": [
+      371,
+      673
+    ],
+    "rgbaSha256": "53cf00ac7ba25984e7ae244f504a63ed4eca75430349437fd9ee5a1fadfd5a1e"
+  },
+  {
+    "file": "assets/images/fubuki/fubuki_uneasy.webp",
+    "original": "assets/images/fubuki/fubuki_uneasy.png",
+    "originalBytes": 330783,
+    "bytes": 181680,
+    "size": [
+      371,
+      673
+    ],
+    "rgbaSha256": "adb7fb40b9daa37b79b7b541be90d871ddb2638a5493ea9d4ea869bae84bc6be"
+  },
+  {
+    "file": "assets/images/fubuki/fubuki_worried.webp",
+    "original": "assets/images/fubuki/fubuki_worried.png",
+    "originalBytes": 332177,
+    "bytes": 188164,
+    "size": [
+      371,
+      673
+    ],
+    "rgbaSha256": "26b70e6fb56d2326b20c1db778b6b7cef6871cb99229307b503cb2ace8727b58"
+  },
+  {
+    "file": "assets/images/fubuki/fubuki_yawn.webp",
+    "original": "assets/images/fubuki/fubuki_yawn.png",
+    "originalBytes": 330266,
+    "bytes": 180008,
+    "size": [
+      371,
+      673
+    ],
+    "rgbaSha256": "ec8c9dae73e0f2c1b8152b2defbed9c139cafd8920afc461b7096f74d1c32743"
+  },
+  {
+    "file": "assets/images/hina/hina_angry.webp",
+    "original": "assets/images/hina/hina_angry.jpg",
+    "originalBytes": 905098,
+    "bytes": 378880,
+    "size": [
+      572,
+      1024
+    ],
+    "rgbaSha256": "bd99143c2baf91cbef55bcd2a3a22626f0ca863827b3e05ad72fc2c267037abf"
+  },
+  {
+    "file": "assets/images/hina/hina_default.webp",
+    "original": "assets/images/hina/hina_default.jpg",
+    "originalBytes": 887194,
+    "bytes": 385524,
+    "size": [
+      572,
+      1024
+    ],
+    "rgbaSha256": "9af1e2485abf53357b59a1a5044b70af262b9e38124456cda89b83b89b66bc33"
+  },
+  {
+    "file": "assets/images/hina/hina_embarrased.webp",
+    "original": "assets/images/hina/hina_embarrased.jpg",
+    "originalBytes": 896542,
+    "bytes": 359964,
+    "size": [
+      572,
+      1024
+    ],
+    "rgbaSha256": "27f73dc148e848420f8a78abf914d31874e31d30da3b56f8fb9f1ac4f1ccb216"
+  },
+  {
+    "file": "assets/images/hina/hina_embarrased2.webp",
+    "original": "assets/images/hina/hina_embarrased2.jpg",
+    "originalBytes": 912161,
+    "bytes": 379744,
+    "size": [
+      572,
+      1024
+    ],
+    "rgbaSha256": "026d36aa0eabc761ad14bdf0fbffaa2f3d06aede2694a0428b229c398281882c"
+  },
+  {
+    "file": "assets/images/hina/hina_embarrased3.webp",
+    "original": "assets/images/hina/hina_embarrased3.jpg",
+    "originalBytes": 894367,
+    "bytes": 385172,
+    "size": [
+      572,
+      1024
+    ],
+    "rgbaSha256": "437614a1641dff3c64b5ede159d7b43a232368b72fe64c153f2d7ef4f123f4f6"
+  },
+  {
+    "file": "assets/images/hina/hina_littlebitembarrased.webp",
+    "original": "assets/images/hina/hina_littlebitembarrased.jpg",
+    "originalBytes": 871258,
+    "bytes": 363564,
+    "size": [
+      572,
+      1024
+    ],
+    "rgbaSha256": "9264d9951be747f861bc3f2e4e699f7d14940db856a8560fe2bd3db83fa0cb72"
+  },
+  {
+    "file": "assets/images/hina/hina_shout.webp",
+    "original": "assets/images/hina/hina_shout.jpg",
+    "originalBytes": 922471,
+    "bytes": 405778,
+    "size": [
+      572,
+      1024
+    ],
+    "rgbaSha256": "0b76ae5fbd25f5499e8a26972e27491e32e410787ae94d03cbc85600d1245791"
+  },
+  {
+    "file": "assets/images/hina/hina_smile.webp",
+    "original": "assets/images/hina/hina_smile.jpg",
+    "originalBytes": 899522,
+    "bytes": 370628,
+    "size": [
+      572,
+      1024
+    ],
+    "rgbaSha256": "56c3b204fe81ddc92c7647e4d83ef4aee40bbd15702425b81311a3429f66b08d"
+  },
+  {
+    "file": "assets/images/hina/hina_surprised.webp",
+    "original": "assets/images/hina/hina_surprised.jpg",
+    "originalBytes": 923493,
+    "bytes": 414058,
+    "size": [
+      572,
+      1024
+    ],
+    "rgbaSha256": "c9237b89be83794a6ba2a53136a2c2e9ea0762ecb10948f916bd9b2b43e9c309"
+  },
+  {
+    "file": "assets/images/hina/hina_sweating.webp",
+    "original": "assets/images/hina/hina_sweating.jpg",
+    "originalBytes": 910300,
+    "bytes": 400528,
+    "size": [
+      572,
+      1024
+    ],
+    "rgbaSha256": "ad87b82434a7478caa4a59793e094d7bb21558707875bbaf9c9d3071ac15ec5c"
+  },
+  {
+    "file": "assets/images/hina/hina_unamused.webp",
+    "original": "assets/images/hina/hina_unamused.jpg",
+    "originalBytes": 899099,
+    "bytes": 377544,
+    "size": [
+      572,
+      1024
+    ],
+    "rgbaSha256": "e5bc0641d7088f37c3e27afc881d9fd98ccd1cd71d4b396e226367d3b9ceda7d"
+  },
+  {
+    "file": "assets/images/hina/hina_upset.webp",
+    "original": "assets/images/hina/hina_upset.jpg",
+    "originalBytes": 881986,
+    "bytes": 375066,
+    "size": [
+      572,
+      1024
+    ],
+    "rgbaSha256": "d56ba2989a9a86b1c7f51e41b2857f374c1c0cc02de3bf6b6872b28b84479582"
+  },
+  {
+    "file": "assets/images/hina/hina_wink.webp",
+    "original": "assets/images/hina/hina_wink.jpg",
+    "originalBytes": 876480,
+    "bytes": 379908,
+    "size": [
+      572,
+      1024
+    ],
+    "rgbaSha256": "ef0c5938ad57383cd6a91ac82594145c3baaac8ad5a5c6a2a367f391e10cf3cf"
+  },
+  {
+    "file": "assets/images/hoshino/hoshino_bigLaugh.webp",
+    "original": "assets/images/hoshino/hoshino_bigLaugh.png",
+    "originalBytes": 257772,
+    "bytes": 141954,
+    "size": [
+      373,
+      668
+    ],
+    "rgbaSha256": "9ebc2ac59fbc3d4eaaa9c1d786b9ac24521705f16de86562acbf933974eb0ec6"
+  },
+  {
+    "file": "assets/images/hoshino/hoshino_confidence.webp",
+    "original": "assets/images/hoshino/hoshino_confidence.png",
+    "originalBytes": 253961,
+    "bytes": 135462,
+    "size": [
+      373,
+      668
+    ],
+    "rgbaSha256": "bab34eedc82c6842a64195fd581828df0df46506692bebbf24910097f33a640b"
+  },
+  {
+    "file": "assets/images/hoshino/hoshino_difficult.webp",
+    "original": "assets/images/hoshino/hoshino_difficult.png",
+    "originalBytes": 255757,
+    "bytes": 138536,
+    "size": [
+      373,
+      668
+    ],
+    "rgbaSha256": "f06c5bda0b3aac073e3b1a4bff123e23e2d0b38dc9603dbd93ae9ac8ffc519a4"
+  },
+  {
+    "file": "assets/images/hoshino/hoshino_feelgood.webp",
+    "original": "assets/images/hoshino/hoshino_feelgood.png",
+    "originalBytes": 256155,
+    "bytes": 137872,
+    "size": [
+      373,
+      668
+    ],
+    "rgbaSha256": "30367c62629e5648f829c55cb88f65ace7a1fb119761a4301fcd3ac3f2c4607a"
+  },
+  {
+    "file": "assets/images/hoshino/hoshino_getserious.webp",
+    "original": "assets/images/hoshino/hoshino_getserious.png",
+    "originalBytes": 257469,
+    "bytes": 142110,
+    "size": [
+      373,
+      668
+    ],
+    "rgbaSha256": "cff89fae3461daf6c2f753fb694fabd3c4d0b39511d7e3ce0b5c1f95e7336f52"
+  },
+  {
+    "file": "assets/images/hoshino/hoshino_kawaiiface.webp",
+    "original": "assets/images/hoshino/hoshino_kawaiiface.png",
+    "originalBytes": 258199,
+    "bytes": 142256,
+    "size": [
+      373,
+      668
+    ],
+    "rgbaSha256": "06f5edecc93ad044ea1db09f4a3f95d0bed7219b4be619856b6659c42b63fab6"
+  },
+  {
+    "file": "assets/images/hoshino/hoshino_kidding.webp",
+    "original": "assets/images/hoshino/hoshino_kidding.png",
+    "originalBytes": 258546,
+    "bytes": 140754,
+    "size": [
+      373,
+      668
+    ],
+    "rgbaSha256": "923f685874f84de6a3726e2aaf4ad2515a11e5343f273bb79420c512f0822551"
+  },
+  {
+    "file": "assets/images/hoshino/hoshino_reluctant.webp",
+    "original": "assets/images/hoshino/hoshino_reluctant.png",
+    "originalBytes": 257589,
+    "bytes": 141976,
+    "size": [
+      373,
+      668
+    ],
+    "rgbaSha256": "7a4fec4ee6b2805493fedf96c48b33edbadef26b16cfb453609b6b3b83de509e"
+  },
+  {
+    "file": "assets/images/hoshino/hoshino_smallsmile.webp",
+    "original": "assets/images/hoshino/hoshino_smallsmile.png",
+    "originalBytes": 258456,
+    "bytes": 140812,
+    "size": [
+      373,
+      668
+    ],
+    "rgbaSha256": "1caaf111003dacde007256437447e759ca553b11280810d5cbc574cfaacb0112"
+  },
+  {
+    "file": "assets/images/hoshino/hoshino_smile.webp",
+    "original": "assets/images/hoshino/hoshino_smile.png",
+    "originalBytes": 262483,
+    "bytes": 139746,
+    "size": [
+      373,
+      668
+    ],
+    "rgbaSha256": "45bf5a98876fca2c7680d6516590a1aa7726a7c48962c8446b1bafe89ee70623"
+  },
+  {
+    "file": "assets/images/hoshino/hoshino_surprised.webp",
+    "original": "assets/images/hoshino/hoshino_surprised.png",
+    "originalBytes": 258415,
+    "bytes": 141396,
+    "size": [
+      373,
+      668
+    ],
+    "rgbaSha256": "a3bee56b04c3183c478abb83c2a1ddbaf442ea93216702b0054b961ad70a120d"
+  },
+  {
+    "file": "assets/images/hoshino/hoshino_yawn.webp",
+    "original": "assets/images/hoshino/hoshino_yawn.png",
+    "originalBytes": 258636,
+    "bytes": 143434,
+    "size": [
+      373,
+      668
+    ],
+    "rgbaSha256": "c248ab7390a1dc37ccf3349a98dd7b2c3efb6f16d13162e17df54e08e6ba21d1"
+  },
+  {
+    "file": "assets/images/kei/kei_crying.webp",
+    "original": "assets/images/kei/kei_crying.png",
+    "originalBytes": 632381,
+    "bytes": 309084,
+    "size": [
+      572,
+      1024
+    ],
+    "rgbaSha256": "aae350ec723846fe3330695ce701b22112fa77c3932a48be7b96e2dfd99e4f7c"
+  },
+  {
+    "file": "assets/images/kei/kei_default.webp",
+    "original": "assets/images/kei/kei_default.png",
+    "originalBytes": 652978,
+    "bytes": 328776,
+    "size": [
+      572,
+      1024
+    ],
+    "rgbaSha256": "a92cb0dcaac919eb4414280123f5cdc01f90bc8724b1be90f377c65049ee7e21"
+  },
+  {
+    "file": "assets/images/kei/kei_embarrassed.webp",
+    "original": "assets/images/kei/kei_embarrassed.png",
+    "originalBytes": 644205,
+    "bytes": 320986,
+    "size": [
+      572,
+      1024
+    ],
+    "rgbaSha256": "f974f93733fb44b2da0cbefceb1f33f3e570c566da9f98044c57428946097986"
+  },
+  {
+    "file": "assets/images/kei/kei_exasperated.webp",
+    "original": "assets/images/kei/kei_exasperated.png",
+    "originalBytes": 292222,
+    "bytes": 154850,
+    "size": [
+      373,
+      668
+    ],
+    "rgbaSha256": "33fd4dd1d673124f53afb751925bc5b2d650b896cc1ade692ee1f7c089e13aaa"
+  },
+  {
+    "file": "assets/images/kei/kei_eyesClosed.webp",
+    "original": "assets/images/kei/kei_eyesClosed.png",
+    "originalBytes": 287348,
+    "bytes": 151286,
+    "size": [
+      373,
+      668
+    ],
+    "rgbaSha256": "c6864464a78d931c213a4bcd2c5dd728bf9c5920271909a5466f7f6f84ea40ae"
+  },
+  {
+    "file": "assets/images/kei/kei_flustered.webp",
+    "original": "assets/images/kei/kei_flustered.png",
+    "originalBytes": 557315,
+    "bytes": 261658,
+    "size": [
+      572,
+      1024
+    ],
+    "rgbaSha256": "265e81d9e9a2188cc34879fa0cd77642002deaecd431d0409e89f2a52014daff"
+  },
+  {
+    "file": "assets/images/kei/kei_frustrated.webp",
+    "original": "assets/images/kei/kei_frustrated.png",
+    "originalBytes": 289106,
+    "bytes": 152734,
+    "size": [
+      373,
+      668
+    ],
+    "rgbaSha256": "cf28643fddce23d6c8b3f467086f9d54f9ff52cd17579bbe1fff84b2814ce808"
+  },
+  {
+    "file": "assets/images/kei/kei_gentleSmile.webp",
+    "original": "assets/images/kei/kei_gentleSmile.png",
+    "originalBytes": 289461,
+    "bytes": 152800,
+    "size": [
+      373,
+      668
+    ],
+    "rgbaSha256": "9bdf0c596ded809a74ed4850d092c1b91de2d73f6b696c2957b4752a08c226d1"
+  },
+  {
+    "file": "assets/images/kei/kei_gloomy.webp",
+    "original": "assets/images/kei/kei_gloomy.png",
+    "originalBytes": 295748,
+    "bytes": 160444,
+    "size": [
+      373,
+      668
+    ],
+    "rgbaSha256": "2c68feb87dc7827d232f63e3515b65f08fd9819f9cd492266be515f1e2b17951"
+  },
+  {
+    "file": "assets/images/kei/kei_happy.webp",
+    "original": "assets/images/kei/kei_happy.png",
+    "originalBytes": 288680,
+    "bytes": 152224,
+    "size": [
+      373,
+      668
+    ],
+    "rgbaSha256": "ca8cf15b743b99319c443746834db1e26b55e6d255e40ae8cb16cebf96ff0e01"
+  },
+  {
+    "file": "assets/images/kei/kei_laugh.webp",
+    "original": "assets/images/kei/kei_laugh.png",
+    "originalBytes": 289594,
+    "bytes": 152380,
+    "size": [
+      373,
+      668
+    ],
+    "rgbaSha256": "bb8b7449f4982c8e666876df32fb201e45f281398ad26ad5044c2569815e4a2d"
+  },
+  {
+    "file": "assets/images/kei/kei_pout.webp",
+    "original": "assets/images/kei/kei_pout.png",
+    "originalBytes": 290559,
+    "bytes": 153184,
+    "size": [
+      373,
+      668
+    ],
+    "rgbaSha256": "9d3eb71bf0840847dea496b7317175309e8b3cb73af518fb4c30c924811c1091"
+  },
+  {
+    "file": "assets/images/kei/kei_serious.webp",
+    "original": "assets/images/kei/kei_serious.png",
+    "originalBytes": 288923,
+    "bytes": 151996,
+    "size": [
+      373,
+      668
+    ],
+    "rgbaSha256": "19bfcd6c5876cd589e1eb5ffeaddec0d3bff150f73a0549473ec011c9decbfe0"
+  },
+  {
+    "file": "assets/images/kei/kei_shocked.webp",
+    "original": "assets/images/kei/kei_shocked.png",
+    "originalBytes": 637409,
+    "bytes": 312708,
+    "size": [
+      572,
+      1024
+    ],
+    "rgbaSha256": "2019a61ed506e92aa7518d84f0fcb7b1aea8fdd7e3e68db52b4b18a97de4cfa1"
+  },
+  {
+    "file": "assets/images/kei/kei_shySmile.webp",
+    "original": "assets/images/kei/kei_shySmile.png",
+    "originalBytes": 567837,
+    "bytes": 270814,
+    "size": [
+      572,
+      1024
+    ],
+    "rgbaSha256": "6582f39420de3f6c6a56a080e702b1f7723f59fef69b94568db2fb5da58e04bc"
+  },
+  {
+    "file": "assets/images/kei/kei_sigh.webp",
+    "original": "assets/images/kei/kei_sigh.png",
+    "originalBytes": 638588,
+    "bytes": 313714,
+    "size": [
+      572,
+      1024
+    ],
+    "rgbaSha256": "e1e672a427ee84b51a40efd866768a02fcd4d9441da5f8c94a048569d4b3070a"
+  },
+  {
+    "file": "assets/images/kei/kei_smile.webp",
+    "original": "assets/images/kei/kei_smile.png",
+    "originalBytes": 641511,
+    "bytes": 316974,
+    "size": [
+      572,
+      1024
+    ],
+    "rgbaSha256": "43afa4c9c4f4efa4843c23ce98014de55d15e75dfe3d1524178697d5ded13eef"
+  },
+  {
+    "file": "assets/images/kei/kei_smug.webp",
+    "original": "assets/images/kei/kei_smug.png",
+    "originalBytes": 289514,
+    "bytes": 152582,
+    "size": [
+      373,
+      668
+    ],
+    "rgbaSha256": "3a0c7d80d3cbdf80884d9a5aef7749394e89b2af4c586baea7e5e3e26e0530b3"
+  },
+  {
+    "file": "assets/images/kei/kei_surprised.webp",
+    "original": "assets/images/kei/kei_surprised.png",
+    "originalBytes": 290523,
+    "bytes": 153402,
+    "size": [
+      373,
+      668
+    ],
+    "rgbaSha256": "c5e4b1df37052576b3bd74b2c050a0b3799e17c7937675144021e2599e7042ca"
+  },
+  {
+    "file": "assets/images/kei/kei_teary.webp",
+    "original": "assets/images/kei/kei_teary.png",
+    "originalBytes": 643182,
+    "bytes": 318348,
+    "size": [
+      572,
+      1024
+    ],
+    "rgbaSha256": "a7a8b32dd125ac34eb2636955f837f0d4dab0da356070c9f9e72583eadc9a387"
+  },
+  {
+    "file": "assets/images/kei/kei_uneasy.webp",
+    "original": "assets/images/kei/kei_uneasy.png",
+    "originalBytes": 289040,
+    "bytes": 152646,
+    "size": [
+      373,
+      668
+    ],
+    "rgbaSha256": "1b3939af03556d89b1bfa3bc9720c7f8d9ab108114a6af2a49dcfd6edde8cc08"
+  },
+  {
+    "file": "assets/images/kei/kei_yelling.webp",
+    "original": "assets/images/kei/kei_yelling.png",
+    "originalBytes": 638302,
+    "bytes": 308340,
+    "size": [
+      572,
+      1024
+    ],
+    "rgbaSha256": "3e96bc77f038908720993224583f12091a0be266cb2e6bd1892479197f1876b9"
+  },
+  {
+    "file": "assets/images/mari/mari_angry.webp",
+    "original": "assets/images/mari/mari_angry.png",
+    "originalBytes": 3789267,
+    "bytes": 1930962,
+    "size": [
+      1340,
+      2400
+    ],
+    "rgbaSha256": "8f31fbabfccb9836866788372890771b0f894bac57e92a484b19392fd140ce73"
+  },
+  {
+    "file": "assets/images/mari/mari_default.webp",
+    "original": "assets/images/mari/mari_default.png",
+    "originalBytes": 3884532,
+    "bytes": 1989300,
+    "size": [
+      1340,
+      2400
+    ],
+    "rgbaSha256": "72e2aab0ee22e94037c4931647b5d3de66d02c3cb4ce659b987c51763867f311"
+  },
+  {
+    "file": "assets/images/mari/mari_embarrassed.webp",
+    "original": "assets/images/mari/mari_embarrassed.png",
+    "originalBytes": 759855,
+    "bytes": 382546,
+    "size": [
+      572,
+      1024
+    ],
+    "rgbaSha256": "61eb6c445cb385eb9c8229285961668c96bbdd02dc050a31a82a1da7b625d044"
+  },
+  {
+    "file": "assets/images/mari/mari_flustered.webp",
+    "original": "assets/images/mari/mari_flustered.png",
+    "originalBytes": 3844637,
+    "bytes": 1956954,
+    "size": [
+      1340,
+      2400
+    ],
+    "rgbaSha256": "d6c63006dfef108b3a524f270a78a193dac84e01453d7afafc337c81d46d302d"
+  },
+  {
+    "file": "assets/images/mari/mari_happy.webp",
+    "original": "assets/images/mari/mari_happy.png",
+    "originalBytes": 3815399,
+    "bytes": 1940336,
+    "size": [
+      1340,
+      2400
+    ],
+    "rgbaSha256": "d4fa03ef65a4ee8d19ef98812ca17207a091224e01803ec548a393f22e36ab40"
+  },
+  {
+    "file": "assets/images/mari/mari_peaceful.webp",
+    "original": "assets/images/mari/mari_peaceful.png",
+    "originalBytes": 3820907,
+    "bytes": 1944320,
+    "size": [
+      1340,
+      2400
+    ],
+    "rgbaSha256": "f6d47fc03bd2de6fbf89f2d78680395da4a9570ca09fd37ca5e92259a2406c71"
+  },
+  {
+    "file": "assets/images/mari/mari_smile.webp",
+    "original": "assets/images/mari/mari_smile.png",
+    "originalBytes": 3810211,
+    "bytes": 1940364,
+    "size": [
+      1340,
+      2400
+    ],
+    "rgbaSha256": "9fda69f89e86b6f8f65ea7646b77229f178564f9453fb6d998ba5470701d97a4"
+  },
+  {
+    "file": "assets/images/mari/mari_teary.webp",
+    "original": "assets/images/mari/mari_teary.png",
+    "originalBytes": 760235,
+    "bytes": 391626,
+    "size": [
+      572,
+      1024
+    ],
+    "rgbaSha256": "5c1884a3a20cc550995abddf55ce1c1e79629b2b179715c55c126b88ea76b32a"
+  },
+  {
+    "file": "assets/images/mari/mari_unamused.webp",
+    "original": "assets/images/mari/mari_unamused.png",
+    "originalBytes": 3841136,
+    "bytes": 1949206,
+    "size": [
+      1340,
+      2400
+    ],
+    "rgbaSha256": "543eabc4cb613a374ea5beb0b7a0aef5164198e523eb294125358b82b06111ec"
+  },
+  {
+    "file": "assets/images/mari/mari_worried.webp",
+    "original": "assets/images/mari/mari_worried.png",
+    "originalBytes": 3798003,
+    "bytes": 1927888,
+    "size": [
+      1340,
+      2400
+    ],
+    "rgbaSha256": "82ab8efd52f0c5836863d7cca6ef8f936aad03ac5b91507d76db255bb5d75ce8"
+  }
+]

@@ -69,8 +69,11 @@ for (const character of characters) {
     assert.ok(fs.existsSync(path.resolve(__dirname, '../constants', source)), `missing sprite file: ${source}`);
   }
 }
-assert.deepEqual([...resources.후부키.emotions].sort(), fs.readdirSync(path.join(__dirname, '../assets/images/fubuki')).sort());
-assert.deepEqual([...resources.케이.emotions].sort(), fs.readdirSync(path.join(__dirname, '../assets/images/kei')).sort());
+for (const [name, folder] of [['후부키', 'fubuki'], ['케이', 'kei']]) {
+  // Public scripts retain their historical PNG names; bundled files are WebP.
+  const expected = resources[name].emotions.map(file => file.replace(/\.(png|jpg)$/, '.webp')).sort();
+  assert.deepEqual(expected, fs.readdirSync(path.join(__dirname, '../assets/images', folder)).sort());
+}
 const { keepAssetSpeakers, getAvailableCharacters } = require('../shared/prompts/characterList');
 assert.ok(getAvailableCharacters().includes('케이'));
 assert.ok(buildChatPrompt('케이').includes(personas.케이));

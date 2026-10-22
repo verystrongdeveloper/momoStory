@@ -25,21 +25,49 @@ const has = (tree, key) => tree.root.findAllByType('Text').some(text => text.pro
 const hasCount = (tree, count) => tree.root.findAllByType('Text').some(text => JSON.stringify(text.props.children).includes(`communityCommentCount:${count}`));
 (async () => {
   let tree, configured = true, published = 0, closed = 0, resolvePublish;
+  const publishPayloads = [];
+  const publishStory = { ...detail, chatMessages: detail.chat_messages.map(message => ({ ...message })) };
+  const originalStory = JSON.stringify(publishStory);
   const errors = error => error.code === 'RATE_LIMIT' ? 'communityRateLimit' : 'communityFailed';
-  const api = { communityConfigured: () => configured, communityErrorKey: errors, community: { publish: () => { published++; return new Promise(resolve => { resolvePublish = resolve; }); } } };
+  const api = { communityConfigured: () => configured, communityErrorKey: errors, community: { publish: story => { publishPayloads.push(story); published++; return new Promise(resolve => { resolvePublish = resolve; }); } } };
   const Publish = load('components/community/PublishStoryModal.tsx', { react: React, 'react-native': rn, '@/i18n': i18n, '@/services/community/client': api }).default;
-  await React.act(async () => { tree = Renderer.create(React.createElement(Publish, { story: detail, onClose: () => closed++ })); });
+  await React.act(async () => { tree = Renderer.create(React.createElement(Publish, { story: publishStory, onClose: () => closed++ })); });
+  assert.equal(tree.root.findAllByProps({ accessibilityRole: 'radio' })[0].props.accessibilityState.checked, true, 'chat is included by default when present');
   assert.equal(button(tree, 'communityPublish').props.disabled, true);
   await React.act(async () => tree.root.findByProps({ accessibilityRole: 'checkbox' }).props.onPress());
   assert.equal(button(tree, 'communityPublish').props.disabled, false);
   await React.act(async () => { button(tree, 'communityPublish').props.onPress(); button(tree, 'communityPublish').props.onPress(); });
   assert.equal(published, 1, 'double-click cannot duplicate publication');
+  assert.deepEqual(publishPayloads.at(-1).chatMessages, publishStory.chatMessages);
+  assert.ok(tree.root.findAllByProps({ accessibilityRole: 'radio' }).every(node => node.props.disabled), 'scope is locked while publishing');
   assert.equal(button(tree, 'cancel').props.disabled, true);
   await React.act(async () => tree.root.findByType('Modal').props.onRequestClose()); assert.equal(closed, 0);
   await React.act(async () => resolvePublish({ id: post.id }));
   assert.ok(has(tree, 'communityPublished'));
   assert.equal(button(tree, 'communityPublish'), undefined);
   await React.act(async () => tree.unmount());
+  await React.act(async () => { tree = Renderer.create(React.createElement(Publish, { story: publishStory, onClose() {} })); });
+  await React.act(async () => tree.root.findByProps({ accessibilityRole: 'checkbox' }).props.onPress());
+  await React.act(async () => tree.root.findAllByProps({ accessibilityRole: 'radio' })[1].props.onPress());
+  assert.equal(button(tree, 'communityPublish').props.disabled, true, 'changing scope requires reviewing the new content');
+  assert.ok(has(tree, 'communityPublishStoryOnlyNotice'));
+  assert.equal(has(tree, 'communityPublishNotice'), false, 'privacy notice matches selected content');
+  await React.act(async () => tree.root.findByProps({ accessibilityRole: 'checkbox' }).props.onPress());
+  await React.act(async () => button(tree, 'communityPublish').props.onPress());
+  assert.deepEqual(publishPayloads.at(-1).chatMessages, [], 'story-only publish sends no chat');
+  assert.equal(publishPayloads.at(-1).script, publishStory.script);
+  assert.equal(publishPayloads.at(-1).id, publishStory.id, 'existing duplicate-post identity stays unchanged');
+  assert.equal(JSON.stringify(publishStory), originalStory, 'publishing scope never changes the local story');
+  await React.act(async () => resolvePublish({ id: post.id }));
+  await React.act(async () => tree.unmount());
+  for (const chatMessages of [undefined, []]) {
+    await React.act(async () => { tree = Renderer.create(React.createElement(Publish, { story: { ...publishStory, chatMessages }, onClose() {} })); });
+    const radios = tree.root.findAllByProps({ accessibilityRole: 'radio' });
+    assert.equal(radios[0].props.disabled, true);
+    assert.equal(radios[1].props.accessibilityState.checked, true, 'stories without chat default to story only');
+    assert.ok(has(tree, 'communityPublishNoChat'));
+    await React.act(async () => tree.unmount());
+  }
   configured = false;
   await React.act(async () => { tree = Renderer.create(React.createElement(Publish, { story: detail, onClose() {} })); });
   assert.ok(has(tree, 'communitySetup'));
@@ -47,6 +75,7 @@ const hasCount = (tree, count) => tree.root.findAllByType('Text').some(text => J
   await React.act(async () => tree.unmount());
 
   let queries = [], likes = [], commentBodies = [], views = [], failComment = false;
+  const playbackRoutes = [], playbackScripts = [];
   let pageTotal = 1;
   api.community.page = async options => { const posts = await api.community.list(options); return { posts, total: posts.length ? pageTotal : 0 }; };
   api.community.list = async options => { queries.push(options); return options.character && options.character !== post.character ? [] : [post]; };
@@ -66,7 +95,10 @@ const hasCount = (tree, count) => tree.root.findAllByType('Text').some(text => J
     },
     '../shared/prompts/speakerNames': { canonicalCharacterName: name => name },
   });
-  const Panel = load('components/community/CommunityPanel.tsx', { react: React, 'react-native': rn, '@expo/vector-icons': { Ionicons: 'Ionicons' }, '@/components/chat/CharacterFilter': 'CharacterFilter', '@/components/chat/Pagination': { __esModule: true, default: 'Pagination', PAGE_SIZE: 20 }, '@/i18n': i18n, '@/constants/characters': chars, '@/constants/eventAssets': { bgMap: { BG_AbydosCouncilRoom: 'background' } }, '@/components/CharacterAvatar': 'CharacterAvatar', '@/components/chat/CharacterChat': 'CharacterChat', '@/services/community/client': api, '@/shared/community/validation': validation, '@/store/storyLibrary': library }).default;
+  const Panel = load('components/community/CommunityPanel.tsx', {
+    'expo-router': { useRouter: () => ({ push: route => playbackRoutes.push(route) }) },
+    '@/store/eventStore': { setPendingEvent: (...args) => playbackScripts.push(args) },
+    react: React, 'react-native': rn, '@expo/vector-icons': { Ionicons: 'Ionicons' }, '@/components/chat/CharacterFilter': 'CharacterFilter', '@/components/chat/Pagination': { __esModule: true, default: 'Pagination', PAGE_SIZE: 20 }, '@/i18n': i18n, '@/constants/characters': chars, '@/constants/eventAssets': { bgMap: { BG_AbydosCouncilRoom: 'background' } }, '@/components/CharacterAvatar': 'CharacterAvatar', '@/components/chat/CharacterChat': 'CharacterChat', '@/services/community/client': api, '@/shared/community/validation': validation, '@/store/storyLibrary': library }).default;
   await React.act(async () => { tree = Renderer.create(React.createElement(Panel)); });
   assert.ok(has(tree, 'communitySetup')); assert.equal(queries.length, 0);
   await React.act(async () => tree.unmount()); configured = true;
@@ -150,10 +182,22 @@ const hasCount = (tree, count) => tree.root.findAllByType('Text').some(text => J
   assert.equal(stored[0], edited, 'repeat imports preserve local edits');
   await React.act(async () => button(tree, 'communityLike').props.onPress());
   assert.deepEqual(likes, [[post.id, true]]); assert.ok(button(tree, 'communityUnlike'));
+  assert.equal(button(tree, 'communityWatch').findAllByType('Text').length, 0, 'archive playback uses an icon without visible text');
+  assert.equal(button(tree, 'communityWatch').findByType('Ionicons').props.name, 'play');
   await React.act(async () => button(tree, 'communityWatch').props.onPress());
+  assert.equal(playbackRoutes.length, 0, 'posts with chat begin with chat playback');
   assert.equal(tree.root.findByType('CharacterChat').props.savedStory.script, detail.script);
   assert.equal(tree.root.findAllByType('TextInput').length, 0, 'archive player receives savedStory, not a writable chat');
   await React.act(async () => button(tree, 'previous').props.onPress());
+  const originalChat = detail.chat_messages;
+  detail.chat_messages = [];
+  await React.act(async () => button(tree, 'communityRefresh').props.onPress());
+  await React.act(async () => button(tree, 'communityWatch').props.onPress());
+  assert.deepEqual(playbackRoutes, ['/event'], 'story-only posts open the story directly');
+  assert.deepEqual(playbackScripts, [[detail.script]], 'archive playback uses the public script without resetting live conversations');
+  assert.equal(tree.root.findAllByType('CharacterChat').length, 0, 'story-only playback skips the empty chat screen');
+  detail.chat_messages = originalChat;
+  await React.act(async () => button(tree, 'communityRefresh').props.onPress());
   const commentInput = () => tree.root.findByProps({ accessibilityLabel: 'communityCommentPlaceholder' });
   await React.act(async () => commentInput().props.onChangeText('😀'.repeat(301)));
   assert.equal(Array.from(commentInput().props.value).length, 300);

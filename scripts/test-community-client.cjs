@@ -48,6 +48,12 @@ function compile(file, mocks, globals = {}) {
   assert.equal(body.action, 'publish');
   assert.deepEqual(Object.keys(body.data).sort(), ['title', 'character', 'script', 'chatMessages', 'clientId'].sort());
   assert.equal(JSON.stringify(body).includes('never-send'), false);
+  await connected.community.publish({ ...story, chatMessages: [] });
+  const storyOnlyBody = requests.at(-1).parsed;
+  assert.deepEqual(storyOnlyBody.data.chatMessages, [], 'story-only upload contains no saved chat');
+  assert.equal(storyOnlyBody.data.script, story.script);
+  assert.equal(storyOnlyBody.data.clientId, story.id, 'scope does not bypass duplicate-publication checks');
+  assert.deepEqual(story.chatMessages, [{ sender: 'user', text: 'hi' }], 'upload does not mutate local chat');
   assert.throws(() => connected.community.publish({ ...story, script: 'invalid' }));
   apiError = 'RATE_LIMIT';
   await assert.rejects(() => connected.community.like('id', true), error => connected.communityErrorKey(error) === 'communityRateLimit');

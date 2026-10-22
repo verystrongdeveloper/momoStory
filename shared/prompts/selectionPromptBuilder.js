@@ -19,7 +19,7 @@ function buildSelectionPrompt(dialogHistory, senseiMode = 'mild') {
 ${senseiModeGuide(senseiMode)}
 
 [등장 인물 선정]
-아래는 선생과 메인 캐릭터의 최근 3쌍 대화입니다.
+아래는 선생과 메인 캐릭터의 최근 ${dialogHistory.length}쌍 대화입니다.
 ${historyTXT}
 
 이벤트에 등장할 추가 인물은 최대 2명. 대화에 명확한 근거가 있는 인물만 고른다.

@@ -7,6 +7,7 @@ type TemporaryChat = {
   input: string;
   isWaiting: boolean;
   eventReady: boolean;
+  completedPairs: number;
   greetingStarted: boolean;
   needsReset: boolean;
   storyScript: string | null;
@@ -14,7 +15,7 @@ type TemporaryChat = {
   unreadCount: number;
 };
 
-const empty = (): TemporaryChat => ({ messages: [], input: '', isWaiting: false, eventReady: false, greetingStarted: false, needsReset: false, storyScript: null, generation: 0, unreadCount: 0 });
+const empty = (): TemporaryChat => ({ messages: [], input: '', isWaiting: false, eventReady: false, completedPairs: 0, greetingStarted: false, needsReset: false, storyScript: null, generation: 0, unreadCount: 0 });
 
 function createChat() {
   let snapshot = empty();

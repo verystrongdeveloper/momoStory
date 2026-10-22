@@ -1,6 +1,7 @@
 import { useEffect } from 'react';
 import { Stack } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
+import { useFonts } from 'expo-font';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 import 'react-native-reanimated';
 import { registerAppShell } from '@/platform/pwa';
@@ -10,6 +11,10 @@ import StartupUpdatePrompt from '@/components/layout/StartupUpdatePrompt';
 import VideoExportHost from '@/components/layout/VideoExportHost';
 
 export default function RootLayout() {
+  useFonts({
+    PretendardSemiBold: require('../assets/fonts/Pretendard-SemiBold.ttf'),
+  });
+
   useEffect(() => {
     void hydrateStorage();
     registerAppShell();

@@ -64,7 +64,7 @@ export const directClient = {
     const apiKey = readKey();
     if (!character) throw new Error('character 누락');
     const dialogHistory = chatLogs.get(dialogKey(character, apiKey)) ?? [];
-    if (dialogHistory.length !== 3) throw new Error('dialogHistory 부족(3쌍 필요)');
+    if (dialogHistory.length < 1) throw new Error('dialogHistory 부족(최소 1쌍 필요)');
 
     const rawSelText = await sendWithFallback(character, 'select', buildSelectionPrompt(dialogHistory, senseiMode), SELECTOR_SYSTEM, apiKey, language, 'bond', model);
     const selection = parseStorySelection(character, rawSelText);

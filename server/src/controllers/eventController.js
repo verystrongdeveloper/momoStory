@@ -19,10 +19,10 @@ exports.createEvent = async (req, res) => {
     return res.status(400).json({ error: 'character 누락' });
   }
 
-  // 최근 3쌍 대화 확보
+  // 완료된 최근 대화 1~3쌍으로 생성한다.
   const dialogHistory = getDialogHistory(character, apiKey);
-  if (dialogHistory.length !== 3) {
-    return res.status(400).json({ error: 'dialogHistory 부족(3쌍 필요)' });
+  if (dialogHistory.length < 1) {
+    return res.status(400).json({ error: 'dialogHistory 부족(최소 1쌍 필요)' });
   }
 
   try {

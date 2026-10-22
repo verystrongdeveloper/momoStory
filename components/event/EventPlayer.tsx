@@ -139,21 +139,6 @@ const EventPlayer: React.FC<Props> = ({ script, onComplete }) => {
   };
 
   useEffect(() => {
-    // Desktop builds use the web player too; native touch playback is unchanged.
-    if (typeof document === 'undefined') return;
-    const onKeyDown = (event: KeyboardEvent) => {
-      if (event.code !== 'Space' && event.key !== ' ') return;
-      if (event.defaultPrevented || event.isComposing || event.ctrlKey || event.altKey || event.metaKey || menuOpen) return;
-      const target = event.target as HTMLElement | null;
-      if (target?.isContentEditable || target?.closest?.('input, textarea, select, button, a, [role="button"], [role="link"], [role="textbox"], [contenteditable="true"]')) return;
-      event.preventDefault(); // Space should advance, not scroll the page.
-      if (!event.repeat) onAdvance();
-    };
-    document.addEventListener('keydown', onKeyDown);
-    return () => document.removeEventListener('keydown', onKeyDown);
-  }, [onAdvance, menuOpen]);
-
-  useEffect(() => {
     if (!auto || menuOpen || transitioning) return;
     // 선택지는 사용자가 고를 때까지 멈춘다. 타이틀·명령은 자체 타이머가 넘긴다.
     if (!line || line.type === 'selection' || line.type === '타이틀' || line.type === 'command') return;
@@ -197,6 +182,29 @@ const EventPlayer: React.FC<Props> = ({ script, onComplete }) => {
     if (sound !== 'none') playSFX(chatSoundKey(sound));
     nextLine();
   };
+
+  useEffect(() => {
+    // Desktop builds use the web player too; native touch playback is unchanged.
+    if (typeof document === 'undefined') return;
+    const onKeyDown = (event: KeyboardEvent) => {
+      if (event.defaultPrevented || event.isComposing || event.ctrlKey || event.altKey || event.metaKey || menuOpen || transitioning) return;
+      const target = event.target as HTMLElement | null;
+      if (target?.isContentEditable || target?.closest?.('input, textarea, select, [role="textbox"], [contenteditable="true"]')) return;
+      if (line?.type === 'selection' && /^[1-9]$/.test(event.key)) {
+        const option = line.options?.[Number(event.key) - 1];
+        if (option === undefined) return;
+        event.preventDefault();
+        if (!event.repeat) chooseOption(option);
+        return;
+      }
+      if (event.code !== 'Space' && event.key !== ' ') return;
+      if (target?.closest?.('button, a, [role="button"], [role="link"]')) return;
+      event.preventDefault(); // Space should advance, not scroll the page.
+      if (!event.repeat) onAdvance();
+    };
+    document.addEventListener('keydown', onKeyDown);
+    return () => document.removeEventListener('keydown', onKeyDown);
+  }, [onAdvance, chooseOption, menuOpen, transitioning, line]);
 
   /* 에셋 선로딩 */
   useEffect(() => {

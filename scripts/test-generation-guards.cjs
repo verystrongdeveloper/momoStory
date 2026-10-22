@@ -28,18 +28,24 @@ function check(script) {
 for (const language of ['ko', 'en', 'ja', 'zh']) check(keepAssetSpeakers(rawScript, cast, language));
 const history = Array.from({ length: 3 }, () => ({ user: 'hi', ai: 'hi' }));
 (async () => {
-  let eventPrompt;
+  let eventPrompt, selectionPrompt;
   const direct = load('services/geminiClient/directClient.ts', {
     '../senseiMode': { getSenseiMode: () => 'mild' }, '../geminiModel': { getGeminiModel: () => 'auto' },
     '@/services/geminiKey': { getGeminiKey: () => 'test-key' }, '@/services/appLanguage': { getAppLanguage: () => 'ko' },
     './rest': { dialogKey: c => c, userApiKey: k => k, sendWithFallback: async (_c, session, prompt) => {
-      if (session === 'select') return response;
+      if (session === 'select') { selectionPrompt = prompt; return response; }
       if (session === 'event') { eventPrompt = prompt; return rawScript; }
       return 'hi';
     } },
   }).directClient;
-  for (const pair of history) await direct.chat('후부키', pair.user);
-  check((await direct.createEvent('후부키')).eventScript);
+  await assert.rejects(direct.createEvent('후부키'), /최소 1쌍/);
+  for (let count = 1; count <= 3; count++) {
+    const reply = await direct.chat('후부키', `message ${count}`);
+    assert.equal(reply.eventReady, count === 3, 'three-pair chat limit stays unchanged');
+    check((await direct.createEvent('후부키')).eventScript);
+    assert.ok(selectionPrompt.includes(`최근 ${count}쌍`));
+    for (let turn = 1; turn <= count; turn++) assert.ok(eventPrompt.includes(`message ${turn}`), 'current completed conversation reaches story generation');
+  }
   assert.ok(eventPrompt.includes('등장 인물: 후부키, 호시노, 히나\n'));
   const controller = load('server/src/controllers/eventController.js', {
     '../services/geminiService': { GEMINI_MODEL: 'auto', getChat: async (_c, _m, session) => ({ sendMessage: async prompt => {
@@ -48,9 +54,19 @@ const history = Array.from({ length: 3 }, () => ({ user: 'hi', ai: 'hi' }));
     } }) },
     './chatController': { getDialogHistory: () => history, readKey: () => 'test-key' },
   });
-  let result;
-  await controller.createEvent({ body: { character: '후부키' } }, { json: value => { result = value; }, status: () => { throw Error('Unexpected error'); } });
-  check(result.eventScript);
-  assert.deepEqual(result.selection.characters.map(c => c.name), cast.slice(1));
+  let result, status;
+  const res = { json: value => { result = value; }, status: value => { status = value; return res; } };
+  for (let count = 0; count <= 3; count++) {
+    history.splice(0, history.length, ...Array.from({ length: count }, () => ({ user: 'hi', ai: 'hi' })));
+    status = 200;
+    await controller.createEvent({ body: { character: '후부키' } }, res);
+    if (count === 0) {
+      assert.equal(status, 400); assert.match(result.error, /최소 1쌍/);
+    } else {
+      assert.equal(status, 200);
+      check(result.eventScript);
+      assert.deepEqual(result.selection.characters.map(c => c.name), cast.slice(1));
+    }
+  }
   console.log('PASS malformed selection fallback, supported unique cast capped at 3, dialogue/choice/sprite filtering, direct + Express outputs accepted by public validation');
 })().catch(error => { console.error(error); process.exitCode = 1; });

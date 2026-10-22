@@ -184,6 +184,50 @@ for (const ratio of ['16:9', '9:16']) {
   await React.act(async () => tree.unmount());
   assert.ok(sounds.every(sound => sound.removed === 1 && sound.unsubscribed === 1), 'no leaked players/listeners or double release on exit');
   assert.equal(keys.size, 0, 'keyboard listener removed when leaving story');
+  lines.splice(0, lines.length,
+    { type: 'dialogue', text: 'before choices' },
+    { type: 'selection', options: ['first', 'second'] },
+    { type: 'selection', options: ['first'] },
+    { type: 'selection', options: Array.from({ length: 9 }, (_, i) => `choice ${i + 1}`) },
+    { type: 'dialogue', text: 'after choices' },
+  );
+  await React.act(async () => { tree = Renderer.create(React.createElement(Player, { script: '' })); });
+  const numberKey = (key, overrides = {}) => space({ key, code: `Digit${key}`, ...overrides });
+  await React.act(async () => numberKey('1'));
+  assert.equal(tree.root.findByType('TextBox').props.currentLine.text, 'before choices', 'numbers do not advance dialogue');
+  await React.act(async () => advance());
+  const currentChoice = tree.root.findByType('TextBox').props.currentLine;
+  for (const ignored of [
+    { repeat: true }, { isComposing: true }, { ctrlKey: true }, { altKey: true }, { metaKey: true },
+    { defaultPrevented: true }, { target: { isContentEditable: true } },
+    { target: { closest: selector => selector.includes('input') ? {} : null } },
+  ]) {
+    await React.act(async () => numberKey('1', ignored));
+    assert.equal(tree.root.findByType('TextBox').props.currentLine, currentChoice);
+  }
+  for (const key of ['0', '3', '9']) {
+    await React.act(async () => numberKey(key));
+    assert.equal(tree.root.findByType('TextBox').props.currentLine, currentChoice, 'unavailable numbers do not select');
+  }
+  await React.act(async () => tree.root.findByType('EventHud').props.onMenu());
+  await React.act(async () => numberKey('1'));
+  assert.equal(tree.root.findByType('TextBox').props.currentLine, currentChoice, 'numbers do not select behind a menu');
+  await React.act(async () => tree.root.findByType('EventVolumeModal').props.onClose());
+  await React.act(async () => {
+    assert.equal(numberKey('2', { target: { closest: selector => selector.includes('button') ? {} : null } }).defaultPrevented, true);
+    numberKey('1');
+  });
+  assert.deepEqual(tree.root.findByType('EventSelection').props.options, ['first'], 'a number selects once even with a button focused');
+  await React.act(async () => numberKey('2'));
+  assert.deepEqual(tree.root.findByType('EventSelection').props.options, ['first'], '2 cannot select the first option');
+  await React.act(async () => numberKey('1', { repeat: true }));
+  assert.deepEqual(tree.root.findByType('EventSelection').props.options, ['first'], 'holding a key cannot choose again');
+  await React.act(async () => numberKey('1'));
+  assert.equal(tree.root.findByType('EventSelection').props.options.length, 9, '1 selects the top option');
+  await React.act(async () => numberKey('9', { code: 'Numpad9' }));
+  assert.equal(tree.root.findByType('TextBox').props.currentLine.text, 'after choices', 'numpad digits also select');
+  await React.act(async () => tree.unmount());
+  assert.equal(keys.size, 0, 'number key listener removed on exit');
   let completions = 0;
   lines.splice(0, lines.length, { type: 'dialogue', text: 'not finished' }, { type: 'narration', text: 'ending' }, { type: 'command', commandType: 'endEvent' });
   await React.act(async () => { tree = Renderer.create(React.createElement(Player, { script: '', onComplete: () => completions++ })); });
@@ -257,6 +301,28 @@ for (const ratio of ['16:9', '9:16']) {
   assert.ok(tree.root.findAllByType('Text').some(text => text.props.children === spoken.text));
   await React.act(async () => tree.root.findByType('Pressable').props.onPress());
   assert.equal(presses, 1);
+  await React.act(async () => tree.unmount());
+  let fontLoaded = false, fontError = null;
+  const RealSelection = load('components/event/EventSelection.tsx', {
+    ...dialogueMocks,
+    'react-native': { View: 'View', Text: 'Text', TouchableOpacity: 'TouchableOpacity', StyleSheet: { create: s => s } },
+    'expo-font': { useFonts: () => [fontLoaded, fontError] },
+    '../../assets/fonts/Pretendard-SemiBold.ttf': 1,
+  }).default;
+  const selection = React.createElement(RealSelection, { options: ['first', 'second'], onSelect() {} });
+  await React.act(async () => { tree = Renderer.create(selection); });
+  assert.equal(tree.root.findAllByType('Text').length, 0, 'first choices never flash the fallback font while loading');
+  fontLoaded = true;
+  await React.act(async () => tree.update(React.cloneElement(selection)));
+  assert.equal(tree.root.findAllByType('Text').length, 2);
+  for (const text of tree.root.findAllByType('Text')) assert.ok(text.props.style.fontFamily.startsWith('PretendardSemiBold'));
+  await React.act(async () => tree.unmount());
+  await React.act(async () => { tree = Renderer.create(selection); });
+  assert.equal(tree.root.findAllByType('Text').length, 2, 'later choices use the cached font immediately');
+  await React.act(async () => tree.unmount());
+  fontLoaded = false; fontError = new Error('font unavailable');
+  await React.act(async () => { tree = Renderer.create(selection); });
+  assert.equal(tree.root.findAllByType('TouchableOpacity').length, 2, 'a font load failure must not block story choices');
   await React.act(async () => tree.unmount());
   console.log('PASS live background fade/load gating, hidden dialogue, tap guard, unchanged background, MP4 timing and opacity in both ratios');
 })().catch(error => { console.error(error); process.exitCode = 1; });

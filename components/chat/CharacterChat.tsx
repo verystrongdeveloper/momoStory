@@ -30,7 +30,7 @@ import { splitChatReply } from '@/utils/splitChatReply';
 import useChatPop from '@/hooks/useChatPop';
 import type { ChatRoom } from '@/shared/chatRoom';
 
-export type ChatRefreshAction = { onPress: () => void; disabled: boolean };
+export type ChatRefreshAction = { onPress: () => void; disabled: boolean; generate?: { onPress: () => void; disabled: boolean } };
 
 interface Props {
   characterName: string;
@@ -60,7 +60,9 @@ const CharacterChat: React.FC<Props> = ({ characterName, room = 'bond', displayN
   const hasKey = apiKey.trim().length > 0;
   const session = useMemo(() => getTemporaryChat(characterName, apiKey, room), [characterName, apiKey, room]);
   const draft = useSyncExternalStore(session.subscribe, session.getSnapshot, session.getSnapshot);
-  const { messages, input, isWaiting, eventReady, storyScript } = draft;
+  const { messages, input, isWaiting, eventReady, storyScript, completedPairs } = draft;
+  const showQuickGenerate = !savedStory && includeBondStory && !eventReady && completedPairs >= 1;
+  const eventStartRef = useRef<() => void>(() => {});
   const setMessages = (change: Chat[] | ((previous: Chat[]) => Chat[])) => session.update(previous => ({ messages: typeof change === 'function' ? change(previous.messages) : change }));
   const setInput = (value: string) => session.update({ input: value });
   const setEventReady = (value: boolean) => session.update({ eventReady: value });
@@ -100,9 +102,9 @@ const CharacterChat: React.FC<Props> = ({ characterName, room = 'bond', displayN
 
   useEffect(() => {
     if (!onRefreshActionChange || savedStory) return;
-    onRefreshActionChange({ onPress: requestReset, disabled: isWaiting || !hasKey });
+    onRefreshActionChange({ onPress: requestReset, disabled: isWaiting || !hasKey, generate: showQuickGenerate ? { onPress: () => eventStartRef.current(), disabled: isWaiting || !hasKey } : undefined });
     return () => onRefreshActionChange(null);
-  }, [onRefreshActionChange, savedStory, requestReset, isWaiting, hasKey]);
+  }, [onRefreshActionChange, savedStory, requestReset, isWaiting, hasKey, showQuickGenerate]);
 
   useEffect(() => {
     if (!replaying) return;
@@ -209,6 +211,7 @@ const CharacterChat: React.FC<Props> = ({ characterName, room = 'bond', displayN
       const { reply, eventReady: ready } = await geminiClient.chat(characterName, text, room);
       if (session.getSnapshot().generation !== generation) return;
       setEventReady(includeBondStory && ready);
+      if (reply.trim()) session.update(previous => ({ completedPairs: previous.completedPairs + 1 }));
       await playReply(reply, generation);
       if (session.getSnapshot().generation === generation) setWaiting(false);
     } catch (err) {
@@ -227,7 +230,8 @@ const CharacterChat: React.FC<Props> = ({ characterName, room = 'bond', displayN
       router.push('/event');
       return;
     }
-    if (!includeBondStory || session.getSnapshot().isWaiting || !session.getSnapshot().eventReady) return;
+    const current = session.getSnapshot();
+    if (!includeBondStory || !hasKey || current.isWaiting || (!current.eventReady && current.completedPairs < 1)) return;
     const openStory = (script: string) => {
       const generation = session.getSnapshot().generation;
       setPendingEvent(script, () => {
@@ -245,7 +249,7 @@ const CharacterChat: React.FC<Props> = ({ characterName, room = 'bond', displayN
       const { eventScript } = await geminiClient.createEvent(characterName);
       if (session.getSnapshot().generation !== generation) return;
       saveStory(characterName, eventScript, chatSnapshot);
-      session.update({ storyScript: eventScript });
+      session.update({ storyScript: eventScript, eventReady: true });
       openStory(eventScript);
     } catch (e) {
       if (session.getSnapshot().generation !== generation) return;
@@ -256,6 +260,8 @@ const CharacterChat: React.FC<Props> = ({ characterName, room = 'bond', displayN
       setGlobalLoading?.(false);
     }
   };
+
+  eventStartRef.current = handleEventStart;
 
   const renderItem = ({ item }: { item: Chat }) => {
     const isUser = item.sender === 'user';
@@ -281,6 +287,9 @@ const CharacterChat: React.FC<Props> = ({ characterName, room = 'bond', displayN
   return (
     <View style={styles.container}>
       {!savedStory && !onRefreshActionChange && <View style={styles.refreshBar}>
+        {showQuickGenerate && <TouchableOpacity accessibilityRole="button" disabled={isWaiting || !hasKey} onPress={handleEventStart} style={[styles.quickGenerate, (isWaiting || !hasKey) && styles.refreshDisabled]}>
+          <Text style={styles.quickGenerateText}>{t('generateStoryNow')}</Text>
+        </TouchableOpacity>}
         <TouchableOpacity accessibilityRole="button" accessibilityLabel={t('refreshChat')} accessibilityState={{ disabled: isWaiting || !hasKey }} disabled={isWaiting || !hasKey} style={[styles.refreshButton, (isWaiting || !hasKey) && styles.refreshDisabled]} onPress={requestReset}>
           <Ionicons name="refresh-outline" size={22} color="#87616e" />
         </TouchableOpacity>
@@ -298,10 +307,10 @@ const CharacterChat: React.FC<Props> = ({ characterName, room = 'bond', displayN
         }}
       />
 
-      {(savedStory ? !replaying : includeBondStory && eventReady && !isWaiting) && (
+      {(savedStory ? !replaying : includeBondStory && !isWaiting && eventReady) && (
         <View style={styles.eventContainer}>
           <Text style={[styles.eventLabel, sizeStyles.eventLabel]}>| {t('bondEvent')} |</Text>
-          <TouchableOpacity style={styles.eventButton} onPress={handleEventStart}>
+          <TouchableOpacity accessibilityRole="button" disabled={!savedStory && !hasKey} style={[styles.eventButton, !savedStory && !hasKey && styles.refreshDisabled]} onPress={handleEventStart}>
             <Text style={[styles.eventButtonText, sizeStyles.eventButtonText]}>{t('bondStory', { name: visibleName })}</Text>
           </TouchableOpacity>
         </View>
@@ -347,7 +356,9 @@ const CharacterChat: React.FC<Props> = ({ characterName, room = 'bond', displayN
 export default CharacterChat;
 
 const styles = StyleSheet.create({
-  refreshBar: { alignItems: 'flex-end', paddingHorizontal: 12, paddingTop: 6 },
+  refreshBar: { flexDirection: 'row', alignItems: 'center', justifyContent: 'flex-end', paddingHorizontal: 12, paddingTop: 6 },
+  quickGenerate: { minHeight: 44, justifyContent: 'center', paddingHorizontal: 12 },
+  quickGenerateText: { color: '#87616e', fontSize: 14, fontWeight: '600' },
   refreshButton: { width: 44, height: 44, alignItems: 'center', justifyContent: 'center' },
   refreshDisabled: { opacity: 0.4 },
   resetOverlay: { flex: 1, justifyContent: 'center', alignItems: 'center', padding: 20, backgroundColor: 'rgba(36,32,40,0.45)' },

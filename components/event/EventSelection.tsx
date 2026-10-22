@@ -13,13 +13,17 @@ const labelOf = (opt: string) => opt.trim().replace(/^["“”]+|["“”]+$/g, 
 
 const EventSelection: React.FC<Props> = ({ options, onSelect }) => {
   const { eventWidth, eventHeight, isCompact } = useLayout();
-  const [fontLoaded] = useFonts({
+  const [fontLoaded, fontError] = useFonts({
     PretendardSemiBold: require('../../assets/fonts/Pretendard-SemiBold.ttf'),
   });
   const styles = useMemo(
     () => makeStyles(eventWidth, eventHeight, fontLoaded, isCompact),
     [eventWidth, eventHeight, fontLoaded, isCompact]
   );
+
+  // 첫 선택지에서도 기본 폰트가 보였다가 전용 폰트로 바뀌지 않게 한다.
+  // 로딩 실패 시에는 기본 폰트로 선택지를 표시해 진행을 막지 않는다.
+  if (!fontLoaded && !fontError) return null;
 
   return (
     <View style={styles.container}>

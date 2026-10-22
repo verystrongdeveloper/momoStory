@@ -88,6 +88,7 @@ process.once('beforeExit', () => { if (!completed) { console.error('FAIL unfinis
   await React.act(async () => { sending = send().props.onPress(); }); locked(true);
   await React.act(async () => chatCalls[1].resolve({ reply: '', eventReady: false }));
   await React.act(async () => sending); locked(false);
+  assert.equal(temporaryChats.getTemporaryChat('호시노', apiKey).getSnapshot().completedPairs, 1, 'an empty reply does not add a completed pair');
 
   await type('Retry');
   await React.act(async () => { sending = send().props.onPress(); }); locked(true);
@@ -98,6 +99,7 @@ process.once('beforeExit', () => { if (!completed) { console.error('FAIL unfinis
     await React.act(async () => sending);
   } finally { console.error = originalError; }
   locked(false);
+  assert.equal(temporaryChats.getTemporaryChat('호시노', apiKey).getSnapshot().completedPairs, 1, 'an error response does not add a completed pair');
   const messagesBeforeReset = tree.root.findByType('FlatList').props.data;
   await type('keep draft');
   await React.act(async () => refresh().props.onPress());
@@ -126,6 +128,7 @@ process.once('beforeExit', () => { if (!completed) { console.error('FAIL unfinis
   await React.act(async () => triggerCalls[0].resolve({ triggerLine: 'Welcome|Back' }));
   await delay(); locked(true);
   await delay(); locked(false);
+  assert.equal(temporaryChats.getTemporaryChat('호시노', apiKey).getSnapshot().completedPairs, 0, 'the initial greeting alone is not a completed exchange');
   await React.act(async () => refresh().props.onPress());
   await React.act(async () => confirmReset().props.onPress());
   await React.act(async () => resetCalls[2].resolve());
@@ -342,6 +345,63 @@ process.once('beforeExit', () => { if (!completed) { console.error('FAIL unfinis
   assert.equal(tree.root.findAllByType('Text').some(node => ['storyChatAwaitingEnd', 'storyChatLocked'].includes(node.props.children)), false, 'no three-pair completion notice');
   locked(true);
   await unmount();
+  const instantButton = () => tree.root.findAllByType('TouchableOpacity').find(node => node.findAllByType('Text').some(text => text.props.children === 'generateStoryNow'));
+  await mount({ characterName: 'instant-story-test' });
+  assert.equal(instantButton(), undefined, 'hide generation until a pair is complete');
+  assert.equal(tree.root.findAllByType('Text').some(node => ['bondEvent', 'generateStoryNowHint'].includes(node.props.children)), false, 'hide the entire event notice before chatting');
+  const callsBeforeInstant = eventCalls.length;
+  await type('A story about this conversation');
+  await React.act(async () => { sending = send().props.onPress(); });
+  await React.act(async () => chatCalls.at(-1).resolve({ reply: 'reply one|reply two', eventReady: false }));
+  assert.equal(instantButton().props.disabled, true, 'wait until all reply sentences finish');
+  await delay(); await React.act(async () => sending);
+  assert.equal(instantButton().props.disabled, false);
+  assert.equal(instantButton().parent, refresh().parent, 'instant generation sits beside refresh');
+  assert.equal(tree.root.findAllByType('Text').some(node => ['bondEvent', 'generateStoryNowHint'].includes(node.props.children)), false, 'instant generation has no footer title or explanation');
+  locked(false);
+  await unmount();
+  await mount({ characterName: 'instant-story-test' });
+  assert.equal(instantButton().props.disabled, false, 'eligibility survives leaving the room');
+  await React.act(async () => { void instantButton().props.onPress(); void instantButton().props.onPress(); });
+  assert.equal(eventCalls.length, callsBeforeInstant + 1, 'rapid generate clicks make one request');
+  locked(true);
+  const errorLog = console.error;
+  console.error = () => {};
+  try { await React.act(async () => eventCalls.at(-1).reject(new Error('offline'))); }
+  finally { console.error = errorLog; }
+  locked(false);
+  assert.equal(instantButton().props.disabled, false, 'failed generation can be retried');
+  await React.act(async () => { void instantButton().props.onPress(); });
+  await React.act(async () => eventCalls.at(-1).resolve({ eventScript: 'title : Instant\nendEvent' }));
+  locked(true);
+  assert.equal(temporaryChats.getTemporaryChat('instant-story-test', apiKey).getSnapshot().eventReady, true, 'successful early generation locks further chat');
+  assert.deepEqual(savedStories.at(-1)[2].slice(0, 3).map(message => message.text), ['A story about this conversation', 'reply one', 'reply two']);
+  const earlyStory = eventStore.consumePendingEvent();
+  await React.act(async () => earlyStory.onComplete());
+  locked(false);
+  assert.equal(instantButton(), undefined, 'completion hides generation until another pair is complete');
+  await unmount();
+  await mount({ characterName: 'instant-story-test', room: 'chat' });
+  assert.equal(instantButton(), undefined, 'general chat has no instant generation');
+  await unmount();
+  let quickHeader;
+  const updateQuickHeader = action => { quickHeader = action; };
+  const headerSession = temporaryChats.getTemporaryChat('instant-header-test', apiKey);
+  await mount({ characterName: 'instant-header-test', onRefreshActionChange: updateQuickHeader });
+  assert.equal(quickHeader.generate, undefined, 'mobile header hides generation before the first pair');
+  await React.act(async () => headerSession.update({ completedPairs: 1 }));
+  assert.equal(quickHeader.generate.disabled, false);
+  assert.equal(instantButton(), undefined, 'mobile delegates the text button to its header');
+  await React.act(async () => headerSession.update({ isWaiting: true }));
+  assert.equal(quickHeader.generate.disabled, true, 'mobile header disables generation during requests');
+  await React.act(async () => headerSession.update({ isWaiting: false }));
+  const previousEvents = eventCalls.length;
+  await React.act(async () => { quickHeader.generate.onPress(); });
+  assert.equal(eventCalls.length, previousEvents + 1, 'mobile header invokes story generation');
+  await React.act(async () => eventCalls.at(-1).resolve({ eventScript: 'title : Header\nendEvent' }));
+  assert.equal(quickHeader.generate, undefined, 'mobile header hides early generation once the story is ready');
+  await unmount();
+  assert.equal(quickHeader, null);
   completed = true;
   console.log('PASS input/send/Enter lock during requests and multi-sentence replies, rapid duplicate prevention, greeting lock, empty/error recovery, missing key and saved chat');
 })().catch(error => { console.error(error); process.exitCode = 1; });

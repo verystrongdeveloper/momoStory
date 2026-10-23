@@ -2,7 +2,7 @@
   "expo": {
     "name": "MomoStory",
     "slug": "momostory",
-    "version": "1.3.2",
+    "version": "1.3.3",
     "orientation": "portrait",
     "scheme": "momostory",
     "userInterfaceStyle": "automatic",
@@ -11,7 +11,7 @@
     },
     "icon": "./public/icon-512.png",
     "android": {
-      "versionCode": 15,
+      "versionCode": 16,
       "package": "com.momostory.app",
       "adaptiveIcon": {
         "foregroundImage": "./public/icon-512.png",

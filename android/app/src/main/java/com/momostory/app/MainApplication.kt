@@ -25,6 +25,7 @@ class MainApplication : Application(), ReactApplication {
           // add(MyReactNativePackage())
           add(VideoDownloadsPackage())
           add(AppUpdatePackage())
+          add(BackgroundGenerationPackage())
         }
     )
   }

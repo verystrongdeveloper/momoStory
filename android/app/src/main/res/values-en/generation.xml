@@ -1,0 +1,5 @@
+<resources>
+  <string name="generation_channel">Chat and story generation</string>
+  <string name="generation_title">Generating a response</string>
+  <string name="generation_message">Generation continues while you use other apps. Tap to return.</string>
+</resources>

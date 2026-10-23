@@ -2,6 +2,7 @@ import { Platform } from 'react-native';
 import { directClient } from './directClient';
 import { expressTransport } from './expressTransport';
 import type { ChatRoom } from '@/shared/chatRoom';
+import { withBackgroundGeneration } from '../../platform/backgroundGeneration';
 
 export { geminiFailureText } from './errors';
 
@@ -41,7 +42,7 @@ export const geminiClient = {
     // Drain old replies before resetting AI memory so they cannot restore an old session.
     return track(slot, async () => { await Promise.allSettled(previous); return transport.reset(character, room); });
   },
-  trigger: (character: string, room: ChatRoom = 'bond') => track(`${character}:${room}`, () => current().trigger(character, room)),
-  chat: (character: string, message: string, room: ChatRoom = 'bond') => track(`${character}:${room}`, () => current().chat(character, message, room)),
-  createEvent: (character: string) => track(`${character}:bond`, () => current().createEvent(character)),
+  trigger: (character: string, room: ChatRoom = 'bond') => track(`${character}:${room}`, () => withBackgroundGeneration(() => current().trigger(character, room))),
+  chat: (character: string, message: string, room: ChatRoom = 'bond') => track(`${character}:${room}`, () => withBackgroundGeneration(() => current().chat(character, message, room))),
+  createEvent: (character: string) => track(`${character}:bond`, () => withBackgroundGeneration(() => current().createEvent(character))),
 };

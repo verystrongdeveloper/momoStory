@@ -1,0 +1,5 @@
+<resources>
+  <string name="generation_channel">会話・ストーリー生成</string>
+  <string name="generation_title">応答を生成しています</string>
+  <string name="generation_message">ほかのアプリの使用中も生成を続けます。タップして戻る</string>
+</resources>

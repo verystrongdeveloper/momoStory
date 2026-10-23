@@ -1,0 +1,5 @@
+<resources>
+  <string name="generation_channel">对话与故事生成</string>
+  <string name="generation_title">正在生成回复</string>
+  <string name="generation_message">使用其他应用时仍会继续生成。点击返回。</string>
+</resources>

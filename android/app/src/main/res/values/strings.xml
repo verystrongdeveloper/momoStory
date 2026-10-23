@@ -1,5 +1,8 @@
 <resources>
   <string name="app_name">MomoStory</string>
+  <string name="generation_channel">대화·스토리 생성</string>
+  <string name="generation_title">응답을 생성하고 있어요</string>
+  <string name="generation_message">다른 앱을 사용해도 생성을 이어갑니다. 눌러서 돌아가기</string>
   <string name="expo_system_ui_user_interface_style" translatable="false">automatic</string>
   <string name="expo_splash_screen_resize_mode" translatable="false">contain</string>
 </resources>

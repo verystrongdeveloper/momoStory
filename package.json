@@ -13,6 +13,7 @@
     "test:file-save": "node scripts/test-file-save.cjs && node scripts/test-local-file-save.cjs",
     "test:language": "node scripts/test-generation-language.cjs",
     "test:gemini-models": "node scripts/test-gemini-models.cjs",
+    "test:background-generation": "node scripts/test-background-generation.cjs",
     "test:update": "node scripts/test-app-update.cjs && node scripts/test-external-url.cjs && node scripts/test-settings-version.cjs && node scripts/test-startup-update.cjs && node scripts/test-in-app-update.cjs",
     "test:prompt": "node scripts/test-event-prompt.cjs && node scripts/test-generation-guards.cjs",
     "test:sensei-mode": "node scripts/test-sensei-mode.cjs && node scripts/test-chat-mode.cjs",

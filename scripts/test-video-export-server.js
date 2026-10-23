@@ -10,7 +10,7 @@ const assets = {
   '/font.ttf': ['assets/fonts/Pretendard-SemiBold.ttf', 'font/ttf'],
   '/chat-pop.wav': ['assets/audio/chat-pop.wav', 'audio/wav'],
   '/bg.jpg': ['assets/images/background/BG_AbydosCouncilRoom.jpg', 'image/jpeg'],
-  '/sprite.webp': ['assets/images/hoshino/hoshino_smallsmile.webp', 'image/webp'],
+  '/sprite.webp': ['assets/images/hoshino/hoshino_relaxed_smile.webp', 'image/webp'],
   '/avatar.jpg': ['assets/images/hoshino.jpg', 'image/jpeg'],
   '/music.mp3': ['assets/music/Aira.mp3', 'audio/mpeg'],
   '/effect.png': ['assets/images/expression/sweat.png', 'image/png'],

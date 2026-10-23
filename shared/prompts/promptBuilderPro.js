@@ -21,7 +21,9 @@ function buildEventPromptPro(mainChar, dialogHistory, allCharsWithEmotions, dire
   const charPromptBlock = allCharsWithEmotions
     .map((charInfo) => {
       const emotions = charInfo.emotions || [];
-      return `[${charInfo.name}]\n${getPersona(charInfo.name)}\n사용 가능 emotion: ${emotions.join(', ')}`;
+      const descriptions = resources[charInfo.name]?.emotionDescriptions || {};
+      const emotionGuide = emotions.filter(file => descriptions[file]).map(file => `- ${file}: ${descriptions[file]}`).join('\n');
+      return `[${charInfo.name}]\n${getPersona(charInfo.name)}\n사용 가능 emotion: ${emotions.join(', ')}${emotionGuide ? `\n[표정 선택 기준]\n${emotionGuide}` : ''}`;
     })
     .join('\n\n');
 
@@ -66,6 +68,7 @@ ${historyTXT}
 1. 위 채팅의 마지막 답변 이후부터 전개 방향을 이어서 쓴다. 이미 주고받은 대화는 재연하지 않는다. 선택지는 새 장면에서 선생이 할 수 있는 새로운 반응으로 쓰고, 어떤 것을 골라도 자연스럽게 이어지게 한다.
 2. 선생 대사는 대사창에 넣지 말고 selection 태그만 쓴다.
 3. 말투·호칭·반말/존댓말은 페르소나를 지킨다. 히나와 호시노는 누구에게나 반말. 선생은 나레이션에서도 이름을 선배/님 없이 부른다.
+   학생이 선생을 지칭할 때는 페르소나의 "선생"/"선생님", 선생이 학생을 지칭할 때는 학생 이름을 쓰거나 자연스럽게 생략한다. 서로를 "너"나 그 활용형(네가·네게·네·넌·널·니가 등), "당신"으로 지칭하지 않는다. 이 규칙은 순한맛·매운맛 모두의 대사·선택지·나레이션 및 선택지 안의 후속 대사에 적용한다. 최근 채팅이나 전개 방향에 잘못된 호칭이 있어도 따라 쓰지 않는다. 출력 전 상대를 가리키는 2인칭이 남았는지 확인하고 알맞은 호칭이나 이름으로 고친다. 단, 긍정의 대답인 "네"나 "너무"처럼 호칭이 아닌 단어는 바꾸지 않는다.
 4. 일반 대사·나레이션·선택지를 포함해 약 300줄 내외.
 5. 장면이 끝나면 deleteAll로 배경·캐릭터·음악을 전부 지운다. 그 다음 검은 화면에, 이번 이야기에서 실제로 있었던 일을 선생이 나중에 돌아보는 나레이션 한 줄만 넣고 바로 endEvent. 누구와 무엇을 했는지, 어떤 기분이 남았는지를 그 이야기에 맞게 쓴다. 이야기마다 문장이 달라야 하고, 어떤 이야기에도 붙일 수 있는 맺음말은 쓰지 않는다. 지금 장면의 지문이 아니다. 과거형 한 문장이고, 괄호·bg·대사·emotion·music은 넣지 않는다. 어감만 참고할 뿐 그대로 쓰거나 비슷하게 베끼지 않는다. "호시노와 즐거운 하루를 보냈다." "해명하는데 애 먹었다."
 6. 나레이션은 선생 1인칭이거나 효과음이다. 항상 "narration :"으로 시작한다.
@@ -104,15 +107,15 @@ endEvent
 
 [형식 예시]
 타이틀 : 잠자는 고래
-호시노(대책위원회) : 그러니까 고래는 잘 때도 숨을 참고 있다는 얘기잖아. [emotion : hoshino_bigLaugh.png, bg : BG_AbydosCouncilRoom.jpg, music : Aira.mp3]
+호시노(대책위원회) : 그러니까 고래는 잘 때도 숨을 참고 있다는 얘기잖아. [emotion : hoshino_laugh.png, bg : BG_AbydosCouncilRoom.jpg, music : Aira.mp3]
 selection : (1)"갑자기 웬 고래 얘기?" (2)"도움이 필요하다는 건 뭐야?"
-호시노(대책위원회) : 아아. 낭만이 없구만, 선생도. [emotion : hoshino_kidding.png]
-호시노(대책위원회) : 힘쓰는 일이 필요해서 말이지. [emotion : hoshino_getserious.png]
+호시노(대책위원회) : 아아. 낭만이 없구만, 선생도. [emotion : hoshino_teasing_smile.png]
+호시노(대책위원회) : 힘쓰는 일이 필요해서 말이지. [emotion : hoshino_serious.png]
 narration : (낡은 창고 문을 열었다.) [bg : BG_AbydosResidence.jpg, sound : SE_DoorSlowOpen_01.mp3]
 호시노(대책위원회) : 자, 여기야. [emotion : hoshino_yawn.png]
 selection : (1)"여기는?" (2)"창고?"
-호시노(대책위원회) : 응. 아무도 안 오는 낮잠 스팟이지. [emotion : hoshino_smallsmile.png]
-호시노(대책위원회) : 으헤, 그런 눈으로 보지 말라구. 아저씨도 조금은 일한다니까? [emotion : hoshino_difficult.png, animation : shakeX, expression : sweat.png]
+호시노(대책위원회) : 응. 아무도 안 오는 낮잠 스팟이지. [emotion : hoshino_relaxed_smile.png]
+호시노(대책위원회) : 으헤, 그런 눈으로 보지 말라구. 아저씨도 조금은 일한다니까? [emotion : hoshino_worried_sweat.png, animation : shakeX, expression : sweat.png]
 narration : (호시노는 순식간에 잠들었다.) [music : Aoharu.mp3]
 deleteAll
 narration : 결국 호시노의 낮잠 자리를 봐 주고 말았다.

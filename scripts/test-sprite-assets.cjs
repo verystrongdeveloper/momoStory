@@ -43,12 +43,34 @@ function load(file) {
   const validate = load('shared/community/validation.ts').validatePublicStory;
   const assets = require('../shared/community/assets.json');
   for (const character of characters) {
-    for (const legacyName of resources[character.name].emotions) {
+    for (const legacyName of [...resources[character.name].emotions, ...(resources[character.name].legacyEmotions || [])]) {
       assert.match(legacyName, /\.(png|jpg)$/);
       const script = `title : Legacy\n${character.name} : Hi [emotion : ${legacyName}]\nendEvent`;
       const key = parse(script).find(line => line.emotion).emotion;
       assert.ok(emotionMap[key]?.endsWith('.webp'), `Legacy sprite does not resolve: ${legacyName}`);
       validate({ title: 'Legacy', character: character.name, script, chatMessages: [], clientId: 'legacy' }, assets);
+    }
+  }
+  // Renaming a sprite must preserve the exact image used by saved stories.
+  const { keepAssetSpeakers } = require('../shared/prompts/characterList');
+  const { buildEventPromptPro } = require('../shared/prompts/promptBuilderPro');
+  for (const [name, folder] of [['히나', 'hina'], ['호시노', 'hoshino']]) {
+    const resource = resources[name];
+    const prompt = buildEventPromptPro(name, [], [{ name, emotions: resource.emotions }], '함께 쉰다.');
+    for (const oldFile of resource.legacyEmotions) {
+      const key = oldFile.replace(/\.(png|jpg)$/, '');
+      // The historical feelGood script key used a lowercase feelgood physical file.
+      const original = manifest.find(entry => entry.original.toLowerCase() === `assets/images/${folder}/${oldFile}`.toLowerCase());
+      assert.ok(original, `Missing original sprite provenance: ${oldFile}`);
+      assert.equal(emotionMap[key], `../${original.file}`, `Legacy name changed image: ${oldFile}`);
+      assert.ok(!Object.keys(emotionMap).includes(key), 'Legacy aliases must not appear in editor/prompt lists');
+      assert.ok(!prompt.includes(oldFile), 'New generation must use descriptive canonical names');
+      const script = `title : Legacy\n${name} : 선생. [emotion : ${oldFile}]\nselection : (1)"응" [speaker : ${name}, dialogue : 쉬어., emotion : ${oldFile}]\nendEvent`;
+      assert.equal(keepAssetSpeakers(script, [name]), script, 'Saved legacy emotions survive filtering');
+    }
+    for (const file of resource.emotions) {
+      assert.ok(resource.emotionDescriptions[file], `Missing ${name} expression description: ${file}`);
+      assert.ok(prompt.includes(resource.emotionDescriptions[file]));
     }
   }
   const original = manifest.reduce((sum, entry) => sum + entry.originalBytes, 0);

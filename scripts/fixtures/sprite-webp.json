@@ -187,7 +187,7 @@
     "rgbaSha256": "9af1e2485abf53357b59a1a5044b70af262b9e38124456cda89b83b89b66bc33"
   },
   {
-    "file": "assets/images/hina/hina_embarrased.webp",
+    "file": "assets/images/hina/hina_blushing_flustered.webp",
     "original": "assets/images/hina/hina_embarrased.jpg",
     "originalBytes": 896542,
     "bytes": 359964,
@@ -198,7 +198,7 @@
     "rgbaSha256": "27f73dc148e848420f8a78abf914d31874e31d30da3b56f8fb9f1ac4f1ccb216"
   },
   {
-    "file": "assets/images/hina/hina_embarrased2.webp",
+    "file": "assets/images/hina/hina_blushing_shout.webp",
     "original": "assets/images/hina/hina_embarrased2.jpg",
     "originalBytes": 912161,
     "bytes": 379744,
@@ -209,7 +209,7 @@
     "rgbaSha256": "026d36aa0eabc761ad14bdf0fbffaa2f3d06aede2694a0428b229c398281882c"
   },
   {
-    "file": "assets/images/hina/hina_embarrased3.webp",
+    "file": "assets/images/hina/hina_blushing_overwhelmed.webp",
     "original": "assets/images/hina/hina_embarrased3.jpg",
     "originalBytes": 894367,
     "bytes": 385172,
@@ -220,7 +220,7 @@
     "rgbaSha256": "437614a1641dff3c64b5ede159d7b43a232368b72fe64c153f2d7ef4f123f4f6"
   },
   {
-    "file": "assets/images/hina/hina_littlebitembarrased.webp",
+    "file": "assets/images/hina/hina_shy.webp",
     "original": "assets/images/hina/hina_littlebitembarrased.jpg",
     "originalBytes": 871258,
     "bytes": 363564,
@@ -231,7 +231,7 @@
     "rgbaSha256": "9264d9951be747f861bc3f2e4e699f7d14940db856a8560fe2bd3db83fa0cb72"
   },
   {
-    "file": "assets/images/hina/hina_shout.webp",
+    "file": "assets/images/hina/hina_angry_shout.webp",
     "original": "assets/images/hina/hina_shout.jpg",
     "originalBytes": 922471,
     "bytes": 405778,
@@ -264,7 +264,7 @@
     "rgbaSha256": "c9237b89be83794a6ba2a53136a2c2e9ea0762ecb10948f916bd9b2b43e9c309"
   },
   {
-    "file": "assets/images/hina/hina_sweating.webp",
+    "file": "assets/images/hina/hina_worried_sweat.webp",
     "original": "assets/images/hina/hina_sweating.jpg",
     "originalBytes": 910300,
     "bytes": 400528,
@@ -275,7 +275,7 @@
     "rgbaSha256": "ad87b82434a7478caa4a59793e094d7bb21558707875bbaf9c9d3071ac15ec5c"
   },
   {
-    "file": "assets/images/hina/hina_unamused.webp",
+    "file": "assets/images/hina/hina_distressed_sweat.webp",
     "original": "assets/images/hina/hina_unamused.jpg",
     "originalBytes": 899099,
     "bytes": 377544,
@@ -286,7 +286,7 @@
     "rgbaSha256": "e5bc0641d7088f37c3e27afc881d9fd98ccd1cd71d4b396e226367d3b9ceda7d"
   },
   {
-    "file": "assets/images/hina/hina_upset.webp",
+    "file": "assets/images/hina/hina_tired.webp",
     "original": "assets/images/hina/hina_upset.jpg",
     "originalBytes": 881986,
     "bytes": 375066,
@@ -297,7 +297,7 @@
     "rgbaSha256": "d56ba2989a9a86b1c7f51e41b2857f374c1c0cc02de3bf6b6872b28b84479582"
   },
   {
-    "file": "assets/images/hina/hina_wink.webp",
+    "file": "assets/images/hina/hina_one_eye_closed.webp",
     "original": "assets/images/hina/hina_wink.jpg",
     "originalBytes": 876480,
     "bytes": 379908,
@@ -308,7 +308,7 @@
     "rgbaSha256": "ef0c5938ad57383cd6a91ac82594145c3baaac8ad5a5c6a2a367f391e10cf3cf"
   },
   {
-    "file": "assets/images/hoshino/hoshino_bigLaugh.webp",
+    "file": "assets/images/hoshino/hoshino_laugh.webp",
     "original": "assets/images/hoshino/hoshino_bigLaugh.png",
     "originalBytes": 257772,
     "bytes": 141954,
@@ -319,7 +319,7 @@
     "rgbaSha256": "9ebc2ac59fbc3d4eaaa9c1d786b9ac24521705f16de86562acbf933974eb0ec6"
   },
   {
-    "file": "assets/images/hoshino/hoshino_confidence.webp",
+    "file": "assets/images/hoshino/hoshino_smug_talking.webp",
     "original": "assets/images/hoshino/hoshino_confidence.png",
     "originalBytes": 253961,
     "bytes": 135462,
@@ -330,7 +330,7 @@
     "rgbaSha256": "bab34eedc82c6842a64195fd581828df0df46506692bebbf24910097f33a640b"
   },
   {
-    "file": "assets/images/hoshino/hoshino_difficult.webp",
+    "file": "assets/images/hoshino/hoshino_worried_sweat.webp",
     "original": "assets/images/hoshino/hoshino_difficult.png",
     "originalBytes": 255757,
     "bytes": 138536,
@@ -341,7 +341,7 @@
     "rgbaSha256": "f06c5bda0b3aac073e3b1a4bff123e23e2d0b38dc9603dbd93ae9ac8ffc519a4"
   },
   {
-    "file": "assets/images/hoshino/hoshino_feelgood.webp",
+    "file": "assets/images/hoshino/hoshino_closed_eye_smile.webp",
     "original": "assets/images/hoshino/hoshino_feelgood.png",
     "originalBytes": 256155,
     "bytes": 137872,
@@ -352,7 +352,7 @@
     "rgbaSha256": "30367c62629e5648f829c55cb88f65ace7a1fb119761a4301fcd3ac3f2c4607a"
   },
   {
-    "file": "assets/images/hoshino/hoshino_getserious.webp",
+    "file": "assets/images/hoshino/hoshino_serious.webp",
     "original": "assets/images/hoshino/hoshino_getserious.png",
     "originalBytes": 257469,
     "bytes": 142110,
@@ -363,7 +363,7 @@
     "rgbaSha256": "cff89fae3461daf6c2f753fb694fabd3c4d0b39511d7e3ce0b5c1f95e7336f52"
   },
   {
-    "file": "assets/images/hoshino/hoshino_kawaiiface.webp",
+    "file": "assets/images/hoshino/hoshino_cat_mouth_smile.webp",
     "original": "assets/images/hoshino/hoshino_kawaiiface.png",
     "originalBytes": 258199,
     "bytes": 142256,
@@ -374,7 +374,7 @@
     "rgbaSha256": "06f5edecc93ad044ea1db09f4a3f95d0bed7219b4be619856b6659c42b63fab6"
   },
   {
-    "file": "assets/images/hoshino/hoshino_kidding.webp",
+    "file": "assets/images/hoshino/hoshino_teasing_smile.webp",
     "original": "assets/images/hoshino/hoshino_kidding.png",
     "originalBytes": 258546,
     "bytes": 140754,
@@ -385,7 +385,7 @@
     "rgbaSha256": "923f685874f84de6a3726e2aaf4ad2515a11e5343f273bb79420c512f0822551"
   },
   {
-    "file": "assets/images/hoshino/hoshino_reluctant.webp",
+    "file": "assets/images/hoshino/hoshino_uneasy.webp",
     "original": "assets/images/hoshino/hoshino_reluctant.png",
     "originalBytes": 257589,
     "bytes": 141976,
@@ -396,7 +396,7 @@
     "rgbaSha256": "7a4fec4ee6b2805493fedf96c48b33edbadef26b16cfb453609b6b3b83de509e"
   },
   {
-    "file": "assets/images/hoshino/hoshino_smallsmile.webp",
+    "file": "assets/images/hoshino/hoshino_relaxed_smile.webp",
     "original": "assets/images/hoshino/hoshino_smallsmile.png",
     "originalBytes": 258456,
     "bytes": 140812,

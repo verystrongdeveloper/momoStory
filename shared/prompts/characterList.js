@@ -41,7 +41,7 @@ function speakerName(line) {
 /** 표정 에셋이 없는 화자의 대사 줄만 뺀다. */
 function keepAssetSpeakers(script, allowedNames = getAvailableCharacters(), language) {
   const allowed = new Set(allowedNames.map(canonicalCharacterName));
-  const emotions = new Set([...allowed].flatMap(name => resources[name]?.emotions || []).map(file => file.replace(/\.(png|jpg)$/, '')));
+  const emotions = new Set([...allowed].flatMap(name => [...(resources[name]?.emotions || []), ...(resources[name]?.legacyEmotions || [])]).map(file => file.replace(/\.(png|jpg)$/, '')));
   const filtered = script
     .split(/\r?\n/)
     .filter((line) => {

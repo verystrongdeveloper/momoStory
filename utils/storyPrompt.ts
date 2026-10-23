@@ -47,9 +47,9 @@ export function buildStoryPrompt() {
 
 [형식 예시]
 타이틀 : 잠자는 고래
-호시노(대책위원회) : 그러니까 고래는 잘 때도 숨을 참고 있다는 얘기잖아. [emotion : hoshino_bigLaugh.png, bg : BG_AbydosCouncilRoom.jpg, music : Aira.mp3]
+호시노(대책위원회) : 그러니까 고래는 잘 때도 숨을 참고 있다는 얘기잖아. [emotion : hoshino_laugh.png, bg : BG_AbydosCouncilRoom.jpg, music : Aira.mp3]
 selection : (1)"갑자기 웬 고래 얘기?" (2)"도움이 필요하다는 건 뭐야?"
-호시노(대책위원회) : 아아. 낭만이 없구만, 선생도. [emotion : hoshino_kidding.png]
+호시노(대책위원회) : 아아. 낭만이 없구만, 선생도. [emotion : hoshino_teasing_smile.png]
 deleteAll
 narration : 결국 호시노의 낮잠 자리를 봐 주고 말았다.
 endEvent

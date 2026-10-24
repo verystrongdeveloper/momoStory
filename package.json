@@ -1,7 +1,7 @@
 {
   "name": "momostory",
   "main": "expo-router/entry",
-  "version": "1.3.3",
+  "version": "1.4.0",
   "scripts": {
     "community:assets": "node scripts/build-community-assets.cjs",
     "test:community": "node scripts/build-community-assets.cjs --check && node scripts/test-community.cjs && node scripts/test-community-client.cjs && node scripts/test-community-ui.cjs",
@@ -18,7 +18,7 @@
     "test:prompt": "node scripts/test-event-prompt.cjs && node scripts/test-generation-guards.cjs",
     "test:sensei-mode": "node scripts/test-sensei-mode.cjs && node scripts/test-chat-mode.cjs",
     "test:chat-audio": "node scripts/test-chat-audio.cjs && node scripts/test-chat-sound-picker.cjs",
-    "test:chat-input": "node scripts/test-chat-input.cjs && node scripts/test-chat-mode.cjs && node scripts/test-chat-room-picker.cjs",
+    "test:chat-input": "node scripts/test-conversation-rooms.cjs && node scripts/test-chat-input.cjs && node scripts/test-chat-mode.cjs && node scripts/test-chat-room-picker.cjs",
     "postinstall": "node scripts/build-video-renderer.js",
     "start": "expo start",
     "server": "npm --prefix server start",

@@ -31,7 +31,7 @@ MomoStory offers one-on-one conversations shaped by each character's personality
 | 💬 Character chat | Persona-based conversations with supported characters such as Hoshino, Hina, and Mari. |
 | 🎬 Relationship stories | Generate and play scenes with dialogue choices based on your conversations. |
 | 🎵 Multimedia effects | Character expressions, backgrounds, music, and sound effects. |
-| 📚 Library | Save chats and stories, search by title or content, edit scripts, and create new ones. Saved chats play back message by message in read-only mode. |
+| 📚 Library | Save chats and stories, search by title or content, edit scripts, and create new ones. Each card is a chat room with story buttons between conversations. Keep chatting below each button and generate more stories. Edit the room title, chat messages and scripts. |
 | 📹 Video export | Export saved chats followed by their stories as 16:9 or 9:16 MP4 videos. Choices advance automatically in exported videos. |
 | 🌐 Languages | Korean (default), English, Japanese, and Simplified Chinese UI and new chat/story generation. Existing saved content is not automatically translated. |
 | ⚙️ Settings | Adjust chat size, sound, language, and your API key. |

@@ -60,6 +60,13 @@ const hasCount = (tree, count) => tree.root.findAllByType('Text').some(text => J
   assert.equal(JSON.stringify(publishStory), originalStory, 'publishing scope never changes the local story');
   await React.act(async () => resolvePublish({ id: post.id }));
   await React.act(async () => tree.unmount());
+  await React.act(async () => { tree = Renderer.create(React.createElement(Publish, { story: publishStory, onClose() {} })); });
+  assert.ok(has(tree, 'communityRepublishNotice'), 'publication explains existing-post replacement before consent');
+  await React.act(async () => tree.root.findByProps({ accessibilityRole: 'checkbox' }).props.onPress());
+  await React.act(async () => button(tree, 'communityPublish').props.onPress());
+  await React.act(async () => resolvePublish({ id: post.id, updated: true }));
+  assert.ok(has(tree, 'communityUpdated'), 'updated posts get a distinct success message');
+  await React.act(async () => tree.unmount());
   for (const chatMessages of [undefined, []]) {
     await React.act(async () => { tree = Renderer.create(React.createElement(Publish, { story: { ...publishStory, chatMessages }, onClose() {} })); });
     const radios = tree.root.findAllByProps({ accessibilityRole: 'radio' });
@@ -222,10 +229,10 @@ const hasCount = (tree, count) => tree.root.findAllByType('Text').some(text => J
   const Library = load('components/chat/StoryLibraryList.tsx', {
     './CharacterFilter': 'CharacterFilter', './Pagination': { __esModule: true, default: 'Pagination', PAGE_SIZE: 20 },
     '@/constants/eventAssets': { bgMap: {} }, '@/utils/parseEventScript': load('utils/parseEventScript.ts', {}),
-    './StoryScriptEditor': 'StoryScriptEditor', './ChatMessageEditor': 'ChatMessageEditor',
+    './StoryScriptEditor': 'StoryScriptEditor', './ChatMessageEditor': 'ChatMessageEditor', '@/store/temporaryChats': { getTemporaryChat: () => ({ getSnapshot: () => ({ isWaiting: false }), clear() {} }), forgetTemporaryRoom() {} }, '@/services/geminiKey': { getGeminiKey: () => '' }, '../../shared/conversation': require('../shared/conversation'),
     react: React, 'react-native': { ...rn, Platform: { OS: 'web' } }, '@expo/vector-icons': { Ionicons: 'Ionicons' }, '@/constants/characters': chars,
     '@/hooks/useLayout': { useLayout: () => ({ isCompact: true }) }, '@/components/CharacterAvatar': 'CharacterAvatar', '@/components/chat/StoryAssetPanel': 'StoryAssetPanel', './VideoExportModal': 'VideoExportModal', '@/components/community/PublishStoryModal': 'PublishStoryModal',
-    '@/store/storyLibrary': { listStories: () => libraryRows, subscribeStories: listener => { notifyLibrary = listener; return () => {}; } }, '@/utils/insertStoryAsset': {}, '@/platform/clipboard': {}, '@/utils/storyFile': {}, '@/utils/storyPrompt': {}, '@/i18n': i18n,
+    '@/store/storyLibrary': { ...library, listStories: () => libraryRows, subscribeStories: listener => { notifyLibrary = listener; return () => {}; } }, '@/utils/insertStoryAsset': {}, '@/platform/clipboard': {}, '@/utils/storyFile': {}, '@/utils/storyPrompt': {}, '@/i18n': i18n,
   }).default;
   await React.act(async () => { tree = Renderer.create(React.createElement(Library, { onOpenStory() {} })); });
   assert.equal(tree.root.findAllByType('Image').length, 0, 'stories without BG keep the original library thumbnail');

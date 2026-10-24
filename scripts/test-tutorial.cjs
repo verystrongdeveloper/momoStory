@@ -34,7 +34,7 @@ for (const language of ['ko', 'en', 'ja', 'zh']) {
   assert.ok(pages.find(page => page.id === 'video').paragraphs.join(' ').includes('Expo Go'));
 }
 const ko = Object.fromEntries(content.getTutorialContent('ko').map(page => [page.id, page.paragraphs.join('\n')]));
-for (const [language, label] of [['ko', '즉시 생성'], ['en', 'Generate now'], ['ja', 'すぐに生成'], ['zh', '立即生成']]) {
+for (const [language, label] of [['ko', '스토리 생성'], ['en', 'Create story'], ['ja', 'ストーリー生成'], ['zh', '生成故事']]) {
   assert.ok(content.getTutorialContent(language).find(page => page.id === 'chat').paragraphs.join(' ').includes(label), `${language}: instant generation is documented`);
 }
 for (const word of ['좋아요한', '일간', '주간', '월간', '연간', '월요일', '신고', '조회수']) assert.ok(ko.community.includes(word));

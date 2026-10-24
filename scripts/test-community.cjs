@@ -138,6 +138,7 @@ const invalid = (changes, code) => assert.throws(() => validatePublicStory({ ...
     await db.exec(fs.readFileSync(path.join(root, 'supabase/migrations/202610210002_community_pagination.sql'), 'utf8'));
     await db.exec(fs.readFileSync(path.join(root, 'supabase/migrations/202610210003_add_fubuki.sql'), 'utf8'));
     await db.exec(fs.readFileSync(path.join(root, 'supabase/migrations/202610220001_add_kei.sql'), 'utf8'));
+    await db.exec(fs.readFileSync(path.join(root, 'supabase/migrations/202610240001_community_republish.sql'), 'utf8'));
     const actor = '11111111-1111-4111-8111-111111111111', other = '22222222-2222-4222-8222-222222222222';
     await db.query('insert into auth.users values($1),($2)', [actor, other]);
     await db.query("insert into public.community_posts(author, client_id, title, character, script) values($1, 'mari-migration-check', 'Mari', '마리', 'test')", [actor]);
@@ -231,6 +232,38 @@ const invalid = (changes, code) => assert.throws(() => validatePublicStory({ ...
     assert.equal((await rpc('list')).find(post => post.id === first.id).comment_count, 9, 'account cleanup must not leave inflated comment counts');
     await rpc('deletePost', { id: first.id });
     await assert.rejects(() => rpc('publish', { ...sample, clientId: 'after-deletion' }), /RATE_LIMIT/);
+    // Re-publish an existing source without replacing its public identity or reactions.
+    const editor = '55555555-5555-4555-8555-555555555555';
+    await db.query('insert into auth.users values($1)', [editor]);
+    const original = await rpc('publish', { ...sample, clientId: 'editable' }, editor);
+    await cooldown('like');
+    await rpc('like', { id: original.id, liked: true });
+    await rpc('view', { id: original.id });
+    await cooldown('comment');
+    await db.query("insert into public.community_comments(post_id, author, body) values($1, $2, 'Keep this comment')", [original.id, actor]);
+    const beforeUpdate = await rpc('detail', { id: original.id }, editor);
+    await assert.rejects(() => rpc('publish', { ...sample, clientId: 'editable', title: 'Changed' }, editor), /RATE_LIMIT/);
+    await cooldown('publish', editor);
+    const changed = { ...sample, clientId: 'editable', title: 'Edited title', script: sample.script.replace('Hello', 'Edited dialogue'), chatMessages: [] };
+    const updated = await rpc('publish', changed, editor);
+    assert.equal(updated.id, original.id); assert.equal(updated.updated, true);
+    const afterUpdate = await rpc('detail', { id: original.id }, editor);
+    assert.equal(afterUpdate.title, changed.title); assert.equal(afterUpdate.script, changed.script);
+    assert.deepEqual(afterUpdate.chat_messages, [], 'story-only republication removes previously shared chat');
+    for (const key of ['id', 'created_at', 'likes', 'views', 'comments']) assert.deepEqual(afterUpdate[key], beforeUpdate[key], key + ' survives republication');
+    assert.equal((await rpc('publish', changed, editor)).alreadyPublished, true, 'identical retry is a no-op even during cooldown');
+    const usage = await db.query("select used from public.community_limits where actor = $1 and action = 'publish'", [editor]);
+    assert.equal(usage.rows[0].used, 2, 'only real changes consume publication quota');
+    const stranger = '66666666-6666-4666-8666-666666666666';
+    await db.query('insert into auth.users values($1)', [stranger]);
+    const otherSource = await rpc('publish', { ...changed, title: 'Other owner' }, stranger);
+    assert.notEqual(otherSource.id, original.id, 'same client ID owned by a different actor never overwrites the original');
+    assert.equal((await rpc('detail', { id: original.id }, editor)).title, 'Edited title');
+    await cooldown('publish', editor);
+    const simultaneousSameSource = await Promise.all([rpc('publish', { ...sample, clientId: 'same-source' }, editor), rpc('publish', { ...sample, clientId: 'same-source' }, editor)]);
+    assert.equal(simultaneousSameSource[0].id, simultaneousSameSource[1].id, 'concurrent first publications keep one post');
+    assert.equal(simultaneousSameSource.filter(item => item.alreadyPublished).length, 1);
+    await db.query('delete from public.community_posts where author = $1 or id = $2', [editor, otherSource.id]);
     // A new Korea date restores quota, while yesterday's usage remains recorded until cleanup.
     await db.query("update public.community_limits set day = day - 1, last_at = now() - interval '2 minutes' where actor = $1", [actor]);
     const next = await rpc('publish', { ...sample, clientId: 'tomorrow' }); assert.ok(next.id);

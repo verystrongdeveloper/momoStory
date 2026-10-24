@@ -4,6 +4,7 @@ import { getGeminiKey } from '@/services/geminiKey';
 import { getAppLanguage } from '@/services/appLanguage';
 import { GEMINI_OFFLINE_MESSAGE, throwIfOffline } from './errors';
 import type { ChatRoom } from '@/shared/chatRoom';
+import type { ConversationContext } from '../../shared/conversation';
 
 const API_URL = process.env.EXPO_PUBLIC_API_URL ?? 'http://localhost:3000';
 
@@ -34,9 +35,9 @@ export const expressTransport = {
   trigger: (character: string, room: ChatRoom = 'bond') =>
     post<{ triggerLine: string }>('/api/trigger', { character, room }),
 
-  chat: (character: string, message: string, room: ChatRoom = 'bond') =>
-    post<{ reply: string; eventReady: boolean }>('/api/chat', { character, message, room }),
+  chat: (character: string, message: string, room: ChatRoom = 'bond', context?: ConversationContext) =>
+    post<{ reply: string; eventReady: boolean }>('/api/chat', { character, message, room, context }),
 
-  createEvent: (character: string) =>
-    post<{ eventScript: string }>('/api/event', { character, senseiMode: getSenseiMode() }),
+  createEvent: (character: string, context?: ConversationContext) =>
+    post<{ eventScript: string }>('/api/event', { character, context, senseiMode: getSenseiMode() }),
 };

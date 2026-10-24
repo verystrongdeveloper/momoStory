@@ -2,6 +2,7 @@ import { Platform } from 'react-native';
 import { directClient } from './directClient';
 import { expressTransport } from './expressTransport';
 import type { ChatRoom } from '@/shared/chatRoom';
+import type { ConversationContext } from '../../shared/conversation';
 import { withBackgroundGeneration } from '../../platform/backgroundGeneration';
 
 export { geminiFailureText } from './errors';
@@ -43,6 +44,6 @@ export const geminiClient = {
     return track(slot, async () => { await Promise.allSettled(previous); return transport.reset(character, room); });
   },
   trigger: (character: string, room: ChatRoom = 'bond') => track(`${character}:${room}`, () => withBackgroundGeneration(() => current().trigger(character, room))),
-  chat: (character: string, message: string, room: ChatRoom = 'bond') => track(`${character}:${room}`, () => withBackgroundGeneration(() => current().chat(character, message, room))),
-  createEvent: (character: string) => track(`${character}:bond`, () => withBackgroundGeneration(() => current().createEvent(character))),
+  chat: (character: string, message: string, room: ChatRoom = 'bond', context?: ConversationContext) => track(`${character}:${context?.id ?? room}`, () => withBackgroundGeneration(() => current().chat(character, message, room, context))),
+  createEvent: (character: string, context?: ConversationContext) => track(`${character}:${context?.id ?? 'bond'}`, () => withBackgroundGeneration(() => current().createEvent(character, context))),
 };

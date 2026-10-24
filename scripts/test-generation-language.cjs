@@ -106,7 +106,7 @@ function output(instruction) {
   await rest.sendWithFallback('호시노', '', 'keep other key', undefined, 'other-key', 'en');
   await direct.reset('호시노');
   await assert.rejects(direct.createEvent('호시노'), /dialogHistory/);
-  assert.equal((await direct.chat('호시노', 'fresh start')).eventReady, false);
+  assert.equal((await direct.chat('호시노', 'fresh start')).eventReady, true);
   assert.equal(requests.at(-1).contents.length, 1, 'direct reset clears model history');
   await direct.chat('히나', 'continue other character');
   assert.equal(requests.at(-1).contents.length, 3, 'other characters keep their model history');
@@ -128,7 +128,7 @@ function output(instruction) {
   for (let i = 0; i < 5; i++) assert.equal((await direct.chat('room-test', `general ${i}`, 'chat')).eventReady, false);
   await direct.trigger('room-test', 'bond');
   assert.equal(requests.at(-1).contents.length, 1, 'direct rooms have separate AI histories');
-  for (let i = 0; i < 3; i++) assert.equal((await direct.chat('room-test', `bond ${i}`, 'bond')).eventReady, i === 2, 'greeting does not replace a user dialogue pair');
+  for (let i = 0; i < 3; i++) assert.equal((await direct.chat('room-test', `bond ${i}`, 'bond')).eventReady, true, 'one completed user dialogue pair enables generation');
   await direct.reset('room-test', 'bond');
   await direct.chat('room-test', 'continue general', 'chat');
   assert.equal(requests.at(-1).contents.length, 13, 'bond reset preserves general chat history');
@@ -163,7 +163,7 @@ function output(instruction) {
   assert.equal(transportCalls.at(-1).character, '호시노');
   assert.equal(transportCalls.at(-1).apiKey, 'test-only-key');
 
-  const models = [], sdkRequests = [];
+  const models = [], sdkRequests = [], sdkMessages = [];
   class FakeSDK {
     getGenerativeModel(options) {
       assert.equal(options.model, 'gemini-test-pro', 'Express greeting, chat, selection and script honor the selected model');
@@ -173,7 +173,7 @@ function output(instruction) {
         return {
           getHistory: async () => log,
           sendMessage: async message => {
-            sdkRequests.push(options.systemInstruction);
+            sdkRequests.push(options.systemInstruction); sdkMessages.push(message);
             const text = output(options.systemInstruction);
             log.push({ role: 'user', parts: [{ text: message }] }, { role: 'model', parts: [{ text }] });
             return { response: { text: () => text } };
@@ -211,17 +211,38 @@ function output(instruction) {
   assert.deepEqual(chat.getDialogHistory('호시노', 'test-only-key'), []);
   assert.equal(chat.getDialogHistory('히나', 'test-only-key').length, 1);
   assert.equal(chat.getDialogHistory('호시노', 'other-key').length, 1);
-  assert.equal((await invoke(chat.sendChat, 'en', { message: 'fresh start' })).eventReady, false);
+  assert.equal((await invoke(chat.sendChat, 'en', { message: 'fresh start' })).eventReady, true);
   assert.equal(models.at(-1).history.length, 0, 'Express reset clears cached SDK sessions');
   await invoke(trigger.sendTrigger, 'en', { character: 'room-test', room: 'chat' });
   for (let i = 0; i < 5; i++) assert.equal((await invoke(chat.sendChat, 'en', { character: 'room-test', room: 'chat', message: `general ${i}` })).eventReady, false);
   await invoke(trigger.sendTrigger, 'en', { character: 'room-test', room: 'bond' });
   assert.equal(models.at(-1).history.length, 0, 'Express rooms have separate AI histories');
-  for (let i = 0; i < 3; i++) assert.equal((await invoke(chat.sendChat, 'en', { character: 'room-test', room: 'bond', message: `bond ${i}` })).eventReady, i === 2);
+  for (let i = 0; i < 3; i++) assert.equal((await invoke(chat.sendChat, 'en', { character: 'room-test', room: 'bond', message: `bond ${i}` })).eventReady, true);
   await invoke(chat.resetChat, 'en', { character: 'room-test', room: 'bond' });
   const modelCount = models.length;
   await invoke(chat.sendChat, 'en', { character: 'room-test', room: 'chat', message: 'continue general' });
   assert.equal(models.length, modelCount, 'bond reset preserves the general SDK session');
   assert.deepEqual(chat.getDialogHistory('room-test', 'test-only-key'), []);
+  const roomContext = { id: 'saved-room-1', messages: Array.from({ length: 10 }, (_, i) => [
+    { sender: 'user', text: 'saved question ' + i }, { sender: 'character', text: 'saved reply ' + i },
+  ]).flat(), scripts: ['title : Prior episode\n호시노 : remembered event\nendEvent'] };
+  selected = 'en';
+  await direct.chat('호시노', 'resume persisted room', 'bond', roomContext);
+  const restoredDirect = JSON.stringify(requests.at(-1).contents);
+  assert.ok(restoredDirect.includes('remembered event') && restoredDirect.includes('saved question 0') && restoredDirect.includes('saved reply 9'));
+  await direct.createEvent('호시노', roomContext);
+  assert.ok(requests.at(-1).contents.at(-1).parts[0].text.includes('remembered event'), 'direct story continuation includes previous episodes');
+  await transport.chat('호시노', 'resume', 'bond', roomContext);
+  assert.deepEqual(transportCalls.at(-1).context, roomContext);
+  await transport.createEvent('호시노', roomContext);
+  assert.deepEqual(transportCalls.at(-1).context, roomContext);
+  await invoke(chat.sendChat, 'en', { context: roomContext, message: 'resume room after server restart' });
+  const restoredSDK = JSON.stringify(models.at(-1).history);
+  assert.ok(restoredSDK.includes('remembered event') && restoredSDK.includes('saved question 0') && restoredSDK.includes('saved reply 9'));
+  await invoke(event.createEvent, 'en', { context: roomContext });
+  assert.ok(sdkMessages.at(-1).includes('remembered event') && sdkMessages.at(-1).includes('saved question 0'), 'Express story uses persisted conversation and prior episodes');
+  const anotherRoom = { id: 'saved-room-2', messages: [{ sender: 'user', text: 'other room' }, { sender: 'character', text: 'other answer' }], scripts: [] };
+  await invoke(chat.sendChat, 'en', { context: anotherRoom, message: 'independent room' });
+  assert.equal(JSON.stringify(models.at(-1).history).includes('remembered event'), false, 'rooms for the same character never share restored history');
   console.log('PASS ko/en/ja/zh: direct + Express greeting/chat/selection/story, mid-generation snapshot, language switching with history, invalid default, canonical script/asset preservation (mocked Gemini, no paid API calls)');
 })().catch(error => { console.error(error); process.exitCode = 1; });

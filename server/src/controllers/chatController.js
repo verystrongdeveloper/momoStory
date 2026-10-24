@@ -1,6 +1,7 @@
 // src/controllers/chatController.js
-const chatLogs = new Map(); // 키+캐릭터별 최근 3쌍
-const { getChat, apiKeyFrom, keyId, resetChatSessions } = require('../services/geminiService');
+const chatLogs = new Map(); // 키+캐릭터+채팅방별 누적 대화
+const { getChat, apiKeyFrom, keyId, resetChatSessions, restoreConversation } = require('../services/geminiService');
+const { conversationContext } = require('../../../shared/conversation');
 
 function historyKey(character, apiKey, room = 'bond') {
   return `${keyId(apiKey)}:${character}:${room}`;
@@ -32,18 +33,20 @@ exports.sendChat = async (req, res) => {
   }
 
   try {
-    const chat   = await getChat(character, undefined, '', undefined, apiKey, req.body.language, room, req.body.model);
+    const context = conversationContext(req.body.context);
+    const sessionRoom = context ? `room-${context.id}` : room;
+    if (context) restoreConversation(character, apiKey, sessionRoom, context);
+    const chat   = await getChat(character, undefined, '', undefined, apiKey, req.body.language, sessionRoom, req.body.model);
     const result = await chat.sendMessage(message);
     const reply  = result.response.text();
 
-    // 최근 대화 3쌍 관리 ------------------------------
+    // 스토리 생성 후에도 다음 생성에 전체 대화를 전달한다.
     const slot = historyKey(character, apiKey, room);
     const log = chatLogs.get(slot) || [];
-    if (room === 'bond') log.push({ user: message, ai: reply });
-    if (log.length > 3) log.shift();
+    if (room === 'bond' && !context) log.push({ user: message, ai: reply });
     chatLogs.set(slot, log);
 
-    const eventReady = room === 'bond' && log.length >= 3;
+    const eventReady = room === 'bond' && (context !== null || log.length >= 1);
     res.json({ reply, eventReady });
   } catch (err) {
     console.error('[Gemini 오류]', err);
@@ -52,10 +55,10 @@ exports.sendChat = async (req, res) => {
 };
 
 /**
- * 대화 로그 3쌍을 조회하는 헬퍼
+ * 누적 대화 로그를 조회하는 헬퍼
  * controllers/eventController에서 사용
  */
-exports.getDialogHistory = (character, apiKey) => chatLogs.get(historyKey(character, apiKey)) || [];
+exports.getDialogHistory = (character, apiKey) => [...(chatLogs.get(historyKey(character, apiKey)) || [])];
 exports.chatLogs = chatLogs;
 exports.historyKey = historyKey;
 exports.readKey = readKey;

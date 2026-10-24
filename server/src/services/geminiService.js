@@ -10,6 +10,11 @@ const GEMINI_MODEL = 'auto';
 
 const clients = new Map();
 const sessions = new Map();
+const { conversationHistory } = require('../../../shared/conversation');
+
+function restoreConversation(character, apiKey, room, context) {
+  sessions.set([keyId(apiKey), character, room, ''].join(':'), { history: conversationHistory(context), failed: true });
+}
 
 
 function keyId(apiKey) {
@@ -101,4 +106,4 @@ function resetChatSessions(character, apiKey, room = 'bond') {
   for (const key of sessions.keys()) if (key.startsWith(prefix)) sessions.delete(key);
 }
 
-module.exports = { getChat, GEMINI_MODEL, apiKeyFrom, keyId, resetChatSessions };
+module.exports = { getChat, GEMINI_MODEL, apiKeyFrom, keyId, resetChatSessions, restoreConversation };

@@ -6,9 +6,12 @@ import { useI18n } from '@/i18n';
 interface Props {
   value: SavedChatMessage[];
   onChange: (messages: SavedChatMessage[]) => void;
+  onDeleteMessage?: (index: number) => void;
+  storyBreaks?: { id: string; label: string; afterMessageCount: number }[];
+  onStoryPress?: (id: string) => void;
 }
 
-export default function ChatMessageEditor({ value, onChange }: Props) {
+export default function ChatMessageEditor({ value, onChange, onDeleteMessage, storyBreaks = [], onStoryPress }: Props) {
   const { t } = useI18n();
   const scroll = useRef<ScrollView>(null);
   // Stable row IDs keep focus and IME input on the same message after reordering.
@@ -28,11 +31,15 @@ export default function ChatMessageEditor({ value, onChange }: Props) {
     onChange([...value, { sender, text: '', ...(sender === 'character' ? { showImage: true } : {}) }]);
     scroll.current?.scrollToEnd({ animated: true });
   };
+  const renderStories = (after: number) => storyBreaks.filter(story => Math.min(value.length, story.afterMessageCount) === after).map(story => (
+    <TouchableOpacity key={story.id} accessibilityRole="button" style={styles.storyBreak} onPress={() => onStoryPress?.(story.id)}><Text style={styles.buttonText}>{story.label}</Text></TouchableOpacity>
+  ));
   return <View style={styles.root}>
     <Text style={styles.hint}>{t('chatEditorHint')}</Text>
     <ScrollView ref={scroll} style={styles.scroll} contentContainerStyle={styles.messages} keyboardShouldPersistTaps="handled">
       {!value.length && <Text style={styles.hint}>{t('chatEditorEmpty')}</Text>}
-      {value.map((message, index) => <View key={ids.current[index]} style={styles.card}>
+      {renderStories(0)}
+      {value.map((message, index) => <View key={ids.current[index]}><View style={styles.card}>
         <View style={styles.toolbar}>
           <Text style={styles.order}>{index + 1}</Text>
           {(['user', 'character'] as const).map(sender => <TouchableOpacity key={sender} accessibilityRole="button" accessibilityState={{ selected: message.sender === sender }} style={[styles.button, message.sender === sender && styles.active]} onPress={() => change(index, { sender })}>
@@ -42,6 +49,7 @@ export default function ChatMessageEditor({ value, onChange }: Props) {
           <TouchableOpacity accessibilityRole="button" accessibilityLabel={t('chatEditorMoveDown', { index: index + 1 })} disabled={index === value.length - 1} style={[styles.button, index === value.length - 1 && styles.disabled]} onPress={() => move(index, 1)}><Text style={styles.buttonText}>↓</Text></TouchableOpacity>
           <TouchableOpacity accessibilityRole="button" accessibilityLabel={t('chatEditorDelete', { index: index + 1 })} style={styles.button} onPress={() => {
             ids.current.splice(index, 1);
+            onDeleteMessage?.(index);
             onChange(value.filter((_, i) => i !== index));
           }}><Text style={styles.deleteText}>{t('delete')}</Text></TouchableOpacity>
         </View>
@@ -49,7 +57,7 @@ export default function ChatMessageEditor({ value, onChange }: Props) {
         {message.sender === 'character' && <TouchableOpacity accessibilityRole="checkbox" accessibilityState={{ checked: !!message.showImage }} style={styles.avatarToggle} onPress={() => change(index, { showImage: !message.showImage })}>
           <Text style={styles.buttonText}>{message.showImage ? '☑' : '☐'} {t('chatEditorShowAvatar')}</Text>
         </TouchableOpacity>}
-      </View>)}
+      </View>{renderStories(index + 1)}</View>)}
     </ScrollView>
     <View style={styles.addActions}>
       <TouchableOpacity accessibilityRole="button" style={styles.button} onPress={() => add('user')}><Text style={styles.buttonText}>{t('chatEditorAddUser')}</Text></TouchableOpacity>
@@ -63,6 +71,7 @@ const styles = StyleSheet.create({
   hint: { color: '#748094', fontSize: 13, lineHeight: 20, paddingBottom: 12 },
   scroll: { flex: 1 }, messages: { gap: 12, paddingBottom: 24 },
   card: { padding: 12, gap: 10, backgroundColor: '#fff', borderWidth: 1, borderColor: '#e2e6ea', borderRadius: 12 },
+  storyBreak: { alignSelf: 'center', padding: 14, marginVertical: 12, borderRadius: 8, backgroundColor: '#f8d6e3' },
   toolbar: { flexDirection: 'row', flexWrap: 'wrap', alignItems: 'center', gap: 6 },
   order: { color: '#748094', fontWeight: '600', paddingHorizontal: 6 },
   button: { minHeight: 40, paddingHorizontal: 12, justifyContent: 'center', borderRadius: 8, backgroundColor: '#eceff3' },

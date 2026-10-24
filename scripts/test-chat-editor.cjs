@@ -40,7 +40,7 @@ const List = load('components/chat/StoryLibraryList.tsx', {
   ...common, '@expo/vector-icons': { Ionicons: 'Ionicons' }, '@/constants/characters': { avatarOf: () => 1, displayCharacterName: name => name },
   '@/hooks/useLayout': { useLayout: () => ({ isCompact: compact }) }, '@/components/chat/StoryAssetPanel': 'StoryAssetPanel',
   './VideoExportModal': 'VideoExportModal', '@/components/community/PublishStoryModal': 'PublishStoryModal', './StoryScriptEditor': 'StoryScriptEditor',
-  './ChatMessageEditor': ChatEditor, '@/store/storyLibrary': library, '@/utils/insertStoryAsset': {}, '@/platform/clipboard': {}, '@/utils/storyFile': {}, '@/utils/storyPrompt': {},
+  './ChatMessageEditor': ChatEditor, '@/store/temporaryChats': { getTemporaryChat: () => ({ clear() {}, getSnapshot: () => ({ isWaiting: false }) }) }, '@/services/geminiKey': { getGeminiKey: () => '' }, '../../shared/conversation': require('../shared/conversation'), '@/store/storyLibrary': library, '@/utils/insertStoryAsset': {}, '@/platform/clipboard': {}, '@/utils/storyFile': {}, '@/utils/storyPrompt': {},
   '@/components/CharacterAvatar': 'CharacterAvatar', '@/constants/eventAssets': { bgMap: {} }, '@/utils/parseEventScript': { __esModule: true, default: () => [] },
   './CharacterFilter': 'CharacterFilter', './Pagination': { __esModule: true, default: 'Pagination', PAGE_SIZE: 20 },
 }).default;
@@ -56,7 +56,7 @@ const List = load('components/chat/StoryLibraryList.tsx', {
     await React.act(async () => tree.root.findByType('StoryScriptEditor').props.onChangeText(script.replace('Test', 'Updated')));
     await React.act(async () => button(tree, 'editChat').props.onPress());
     assert.equal(tree.root.findAllByType('StoryAssetPanel').length, 0);
-    const inputs = () => tree.root.findAllByType('TextInput');
+    const inputs = () => tree.root.findAllByType('TextInput').filter(node => node.props.accessibilityLabel !== 'roomTitle');
     await React.act(async () => inputs()[0].props.onChangeText('edited\nmessage'));
     await React.act(async () => button(tree, 'chatEditorMoveUp:2').props.onPress());
     assert.deepEqual(inputs().map(node => node.props.value), ['reply', 'edited\nmessage']);
@@ -103,6 +103,41 @@ const List = load('components/chat/StoryLibraryList.tsx', {
   await React.act(async () => button(tree, 'save').props.onPress());
   assert.equal(rows.length, 2);
   assert.deepEqual(rows[0].chatMessages, [{ sender: 'user', text: 'new story chat' }], 'new stories save chat with the script');
+  await React.act(async () => tree.unmount());
+  const room = library.appendRoomStory(initial.id, 'title : Episode two\n호시노 : Second\nendEvent', [{ sender: 'user', text: 'later chat' }, { sender: 'character', text: 'later reply' }]);
+  const originalEpisodes = JSON.parse(JSON.stringify(library.episodesOf(room)));
+  await React.act(async () => { tree = Renderer.create(React.createElement(List, { initialEdit: room, onOpenStory() {} })); });
+  await React.act(async () => tree.root.findByProps({ accessibilityLabel: 'roomTitle' }).props.onChangeText('Renamed room'));
+  await React.act(async () => tree.root.findByType('StoryScriptEditor').props.onChangeText('title : Edited second\nendEvent'));
+  const episodeTabs = () => tree.root.findAllByProps({ accessibilityRole: 'tab' }).filter(node => node.findAllByType('Ionicons').some(icon => icon.props.name === 'book-outline'));
+  await React.act(async () => episodeTabs()[0].props.onPress());
+  await React.act(async () => tree.root.findByType('StoryScriptEditor').props.onChangeText('title : Edited first\nendEvent'));
+  await React.act(async () => episodeTabs()[1].props.onPress());
+  assert.match(tree.root.findByType('StoryScriptEditor').props.value, /Edited second/, 'switching episodes preserves each draft');
+  await React.act(async () => button(tree, 'save').props.onPress());
+  const editedRoom = library.listStories().find(item => item.id === initial.id);
+  assert.equal(editedRoom.title, 'Renamed room', 'room title is independent of episode titles');
+  assert.match(editedRoom.episodes[0].script, /Edited first/);
+  assert.match(editedRoom.episodes[1].script, /Edited second/);
+  assert.deepEqual(editedRoom.episodes.map(item => item.chatMessages), originalEpisodes.map(item => item.chatMessages), 'editing scripts preserves historical chat snapshots');
+  await React.act(async () => tree.unmount());
+  const positionMessages = Array.from({ length: 6 }, (_, index) => ({ sender: index % 2 ? 'character' : 'user', text: 'message ' + index }));
+  let positionRoom = library.saveStory('호시노', '', positionMessages.slice(0, 2));
+  positionRoom = library.appendRoomStory(positionRoom.id, script, positionMessages.slice(0, 2));
+  positionRoom = library.appendRoomStory(positionRoom.id, script.replace('Test', 'Next'), positionMessages.slice(0, 4));
+  positionRoom = library.updateRoom(positionRoom.id, { chatMessages: positionMessages });
+  await React.act(async () => { tree = Renderer.create(React.createElement(List, { initialEdit: positionRoom, initialStoryId: positionRoom.episodes[0].id, onOpenStory() {} })); });
+  assert.match(tree.root.findByType('StoryScriptEditor').props.value, /title : Test/, 'inline menu opens the selected script');
+  await React.act(async () => button(tree, 'editChat').props.onPress());
+  assert.deepEqual(tree.root.findByType(ChatEditor).props.storyBreaks.map(item => item.afterMessageCount), [2, 4]);
+  await React.act(async () => button(tree, 'chatEditorDelete:1').props.onPress());
+  assert.deepEqual(tree.root.findByType(ChatEditor).props.storyBreaks.map(item => item.afterMessageCount), [1, 3], 'removing earlier chat keeps both story buttons with their surrounding conversations');
+  await React.act(async () => tree.root.findByType(ChatEditor).props.onStoryPress(positionRoom.episodes[1].id));
+  assert.match(tree.root.findByType('StoryScriptEditor').props.value, /title : Next/, 'chat editor story marker selects its own script');
+  await React.act(async () => button(tree, 'save').props.onPress());
+  const savedPositions = library.listStories().find(item => item.id === positionRoom.id);
+  assert.deepEqual(savedPositions.episodes.map(item => item.afterMessageCount), [1, 3]);
+  assert.deepEqual(savedPositions.episodes.map(item => item.chatMessages.length), [2, 4], 'historical snapshots are unchanged by timeline edits');
   await React.act(async () => tree.unmount());
   console.log('PASS desktop/mobile chat editor tabs, text/order/sender/avatar edits, add/delete, draft retention, atomic save, blank validation, cancel, new stories and script-only compatibility');
 })().catch(error => { console.error(error); process.exitCode = 1; });

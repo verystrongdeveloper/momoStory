@@ -9,7 +9,10 @@ import PublishStoryModal from '@/components/community/PublishStoryModal';
 import StoryScriptEditor from './StoryScriptEditor';
 import ChatMessageEditor from './ChatMessageEditor';
 import type { SavedChatMessage } from '@/storage/types';
-import { deleteStory, importStory, listStories, SavedStory, subscribeStories, updateStory } from '@/store/storyLibrary';
+import { deleteStory, importStory, listStories, SavedStory, subscribeStories, updateRoom, episodesOf, publicationStory } from '@/store/storyLibrary';
+import { getTemporaryChat, forgetTemporaryRoom } from '@/store/temporaryChats';
+import { getGeminiKey } from '@/services/geminiKey';
+import { dialogPairs } from '../../shared/conversation';
 import { insertAssetIntoScript, AssetKind } from '@/utils/insertStoryAsset';
 import { copyText } from '@/platform/clipboard';
 import { downloadStory, pickStoryFile } from '@/utils/storyFile';
@@ -27,7 +30,7 @@ const formatWhen = (createdAt: number, language: keyof typeof localeOf) =>
 
 const normalizeSearch = (text: string) => text.normalize('NFC').toLowerCase().replace(/\s+/g, ' ').trim();
 
-export default function StoryLibraryList({ onOpenStory }: { onOpenStory: (story: SavedStory) => void }) {
+export default function StoryLibraryList({ onOpenStory, initialEdit, initialStoryId, onFinishEdit }: { onOpenStory: (story: SavedStory) => void; initialEdit?: SavedStory; initialStoryId?: string; onFinishEdit?: () => void }) {
   const { language, t } = useI18n();
   const { isCompact } = useLayout();
   const [shelfWidth, setShelfWidth] = useState(0);
@@ -49,7 +52,7 @@ export default function StoryLibraryList({ onOpenStory }: { onOpenStory: (story:
   const searchEntries = useMemo(() => stories.map((story) => ({
     story,
     title: normalizeSearch(story.title),
-    content: normalizeSearch([story.script, ...(story.chatMessages ?? []).map((message) => message.text)].join('\n')),
+    content: normalizeSearch([...episodesOf(story).map(episode => episode.script), ...(story.chatMessages ?? []).map((message) => message.text)].join('\n')),
   })), [stories]);
   const query = normalizeSearch(search);
   const filteredStories = useMemo(() => searchEntries
@@ -63,10 +66,15 @@ export default function StoryLibraryList({ onOpenStory }: { onOpenStory: (story:
     setPage(value); setMenuId(null); setConfirmId(null);
     scrollRef.current?.scrollTo({ y: 0, animated: true });
   };
-  const [editing, setEditing] = useState<SavedStory | 'new' | null>(null);
-  const [draft, setDraft] = useState('');
-  const [editorTab, setEditorTab] = useState<'story' | 'chat' | 'assets'>('story');
-  const [chatDraft, setChatDraft] = useState<SavedChatMessage[]>([]);
+  const [editing, setEditing] = useState<SavedStory | 'new' | null>(initialEdit ?? null);
+  const initialIndex = initialEdit ? Math.max(0, initialStoryId ? episodesOf(initialEdit).findIndex(story => story.id === initialStoryId) : episodesOf(initialEdit).length - 1) : 0;
+  const [draft, setDraft] = useState(initialEdit ? episodesOf(initialEdit)[initialIndex]?.script ?? '' : '');
+  const [roomTitle, setRoomTitle] = useState(initialEdit?.title ?? '');
+  const [episodeIndex, setEpisodeIndex] = useState(initialIndex);
+  const [episodeDrafts, setEpisodeDrafts] = useState<Record<number, string>>({});
+  const [storyPositions, setStoryPositions] = useState<Record<string, number>>(() => Object.fromEntries(initialEdit ? episodesOf(initialEdit).map(story => [story.id, story.afterMessageCount ?? story.chatMessages.length]) : []));
+  const [editorTab, setEditorTab] = useState<'story' | 'chat' | 'assets'>(initialEdit && !initialEdit.script.trim() ? 'chat' : 'story');
+  const [chatDraft, setChatDraft] = useState<SavedChatMessage[]>(initialEdit?.chatMessages?.map(message => ({ ...message })) ?? []);
   const [notice, setNotice] = useState('');
   const [confirmId, setConfirmId] = useState<string | null>(null);
   const [menuId, setMenuId] = useState<string | null>(null);
@@ -118,17 +126,27 @@ export default function StoryLibraryList({ onOpenStory }: { onOpenStory: (story:
   };
 
   const startEdit = (story: SavedStory | 'new') => {
+    if (story !== 'new' && getTemporaryChat(story.character, getGeminiKey(), 'bond', story.id).getSnapshot().isWaiting) {
+      setListNotice(t('roomBusy')); setMenuId(null); return;
+    }
     setMenuId(null);
     setEditing(story);
+    setRoomTitle(story === 'new' ? '' : story.title);
+    setEpisodeIndex(story === 'new' ? 0 : Math.max(0, episodesOf(story).length - 1));
+    setEpisodeDrafts({});
+    setStoryPositions(Object.fromEntries(story === 'new' ? [] : episodesOf(story).map(item => [item.id, item.afterMessageCount ?? item.chatMessages.length])));
     setDraft(story === 'new' ? '' : story.script.replace(/\r\n?/g, '\n'));
     setChatDraft(story === 'new' ? [] : (story.chatMessages ?? []).map(message => ({ ...message })));
-    setEditorTab('story');
+    setEditorTab(story !== 'new' && !story.script.trim() ? 'chat' : 'story');
     setNotice('');
     selectionRef.current = { start: 0, end: 0 };
   };
 
   const saveEdit = () => {
     if (!editing) return;
+    if (editing !== 'new' && getTemporaryChat(editing.character, getGeminiKey(), 'bond', editing.id).getSnapshot().isWaiting) {
+      setNotice(t('roomBusy')); return;
+    }
     if (chatDraft.some(message => !message.text.trim())) {
       setEditorTab('chat');
       setNotice(t('chatEditorEmptyMessage'));
@@ -142,13 +160,29 @@ export default function StoryLibraryList({ onOpenStory }: { onOpenStory: (story:
       }
       importStory(script, chatDraft);
     } else {
-      updateStory(editing.id, draft, chatDraft);
+      if (!roomTitle.trim()) { setNotice(t('roomTitleRequired')); return; }
+      const scripts = { ...episodeDrafts, [episodeIndex]: draft };
+      const episodes = episodesOf(editing).map((episode, index) => {
+        const script = scripts[index] ?? episode.script;
+        const title = script.split('\n').find(line => /^(?:title|타이틀)\s*[:：]/i.test(line.trim()))?.trim().replace(/^(?:title|타이틀)\s*[:：]\s*/i, '').trim() || episode.title;
+        return { ...episode, script, title, afterMessageCount: Math.min(chatDraft.length, storyPositions[episode.id] ?? episode.chatMessages.length) };
+      });
+      if (!episodes.length && draft.trim()) episodes.push({
+        id: `${Date.now()}-${Math.random().toString(36).slice(2, 8)}`,
+        title: draft.split('\n').map(line => line.trim()).find(line => /^(?:title|타이틀)\s*[:：]/i.test(line))?.replace(/^(?:title|타이틀)\s*[:：]\s*/i, '') || roomTitle.trim(),
+        script: draft, createdAt: Date.now(), chatMessages: chatDraft.map(message => ({ ...message })), afterMessageCount: chatDraft.length,
+      });
+      updateRoom(editing.id, { title: roomTitle.trim(), chatMessages: chatDraft, episodes });
+      const session = getTemporaryChat(editing.character, getGeminiKey(), 'bond', editing.id);
+      session.clear({ roomId: editing.id, messages: chatDraft, completedPairs: dialogPairs(chatDraft).length, greetingStarted: true });
     }
     setStories(listStories());
     setEditing(null);
+    onFinishEdit?.();
   };
 
   const remove = (id: string) => {
+    forgetTemporaryRoom(id);
     deleteStory(id);
     setConfirmId(null);
     setStories(listStories());
@@ -206,11 +240,11 @@ export default function StoryLibraryList({ onOpenStory }: { onOpenStory: (story:
 
   if (editing) {
     return (
-      <View style={styles.container}>
-        <View style={styles.editorHeader}>
-          <Text style={styles.title}>{t(editing === 'new' ? 'createStory' : 'editStory')}</Text>
+      <View style={[styles.container, styles.editorContainer]}>
+        <View style={[styles.editorHeader, isCompact && styles.editorHeaderCompact]}>
+          <Text numberOfLines={1} style={[styles.title, styles.editorTitle]}>{t(editing === 'new' ? 'createStory' : 'editRoom')}</Text>
           <View style={styles.editorActions}>
-            <TouchableOpacity onPress={() => setEditing(null)} style={styles.cancelBtn}>
+            <TouchableOpacity onPress={() => { setEditing(null); onFinishEdit?.(); }} style={styles.cancelBtn}>
               <Text style={styles.cancelText}>{t('cancel')}</Text>
             </TouchableOpacity>
             <TouchableOpacity onPress={saveEdit} style={styles.saveBtn}>
@@ -218,8 +252,19 @@ export default function StoryLibraryList({ onOpenStory }: { onOpenStory: (story:
             </TouchableOpacity>
           </View>
         </View>
+        {editing !== 'new' && <View style={[styles.editorDetails, isCompact && styles.editorDetailsCompact]}>
+          <Text style={styles.roomTitleLabel}>{t('roomTitle')}</Text>
+          <TextInput accessibilityLabel={t('roomTitle')} placeholder={t('roomTitle')} value={roomTitle} onChangeText={setRoomTitle} style={styles.roomTitleInput} />
+          <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.storySelector} contentContainerStyle={styles.storySelectorContent}>
+            {episodesOf(editing).map((episode, index) => <TouchableOpacity key={episode.id} accessibilityRole="tab" accessibilityState={{ selected: episodeIndex === index }} style={[styles.storySelectorButton, isCompact && styles.storySelectorButtonCompact, episodeIndex === index && styles.storySelectorButtonActive]} onPress={() => {
+              setEpisodeDrafts(previous => ({ ...previous, [episodeIndex]: draft }));
+              setEpisodeIndex(index); setDraft(episodeDrafts[index] ?? episode.script); setEditorTab('story');
+            }}><Ionicons name="book-outline" size={16} color={episodeIndex === index ? '#A94F70' : '#748094'} /><Text numberOfLines={1} style={[styles.storySelectorText, episodeIndex === index && styles.storySelectorTextActive]}>{episode.title}</Text></TouchableOpacity>)}
+          </ScrollView>
+          <Text numberOfLines={2} style={styles.editorHint}>{t('roomEditHint')}</Text>
+        </View>}
         {!!notice && <Text style={styles.notice}>{notice}</Text>}
-            <View style={styles.editorTabs} accessibilityRole="tablist">
+            <View style={[styles.editorTabs, isCompact && styles.editorTabsCompact]} accessibilityRole="tablist">
               <TouchableOpacity
                 accessibilityRole="tab"
                 accessibilityState={{ selected: editorTab === 'story' }}
@@ -248,7 +293,16 @@ export default function StoryLibraryList({ onOpenStory }: { onOpenStory: (story:
               )}
             </View>
         <View style={[styles.editorBody, isCompact && styles.editorBodyCompact]}>
-          {editorTab === 'chat' && <ChatMessageEditor value={chatDraft} onChange={setChatDraft} />}
+          {editorTab === 'chat' && <ChatMessageEditor value={chatDraft} onChange={setChatDraft}
+            storyBreaks={editing === 'new' ? [] : episodesOf(editing).map(story => ({ id: story.id, label: t('bondStory', { name: displayCharacterName(editing.character, language) }), afterMessageCount: storyPositions[story.id] ?? story.chatMessages.length }))}
+            onDeleteMessage={index => setStoryPositions(previous => Object.fromEntries(Object.entries(previous).map(([id, position]) => [id, position > index ? position - 1 : position])))}
+            onStoryPress={id => {
+              if (editing === 'new') return;
+              const index = episodesOf(editing).findIndex(story => story.id === id);
+              if (index < 0) return;
+              setEpisodeDrafts(previous => ({ ...previous, [episodeIndex]: draft }));
+              setEpisodeIndex(index); setDraft(episodeDrafts[index] ?? episodesOf(editing)[index].script); setEditorTab('story');
+            }} />}
           {editorTab === 'story' && (
             <StoryScriptEditor
               style={[styles.editor, isCompact && styles.editorCompact]}
@@ -387,13 +441,13 @@ export default function StoryLibraryList({ onOpenStory }: { onOpenStory: (story:
                     <Text style={styles.character} numberOfLines={1}>
                       {displayCharacterName(story.character, language)}
                     </Text>
-                    <Text style={styles.meta}>{formatWhen(story.createdAt, language)}</Text>
+                    <Text style={styles.meta}>{t('roomStoryCount', { count: episodesOf(story).length })} · {formatWhen(story.updatedAt ?? story.createdAt, language)}</Text>
                   </TouchableOpacity>
                   {menuOpen && (
                     <View dataSet={{ storyMenu: 'true' }} style={styles.menu}>
                       {confirmId === story.id ? (
                         <>
-                          <Text style={styles.confirmText}>{t('deleteQuestion')}</Text>
+                          <Text style={styles.confirmText}>{t('deleteRoomQuestion')}</Text>
                           <TouchableOpacity onPress={() => remove(story.id)} style={styles.menuItem}>
                             <Text style={styles.menuDelete}>{t('delete')}</Text>
                           </TouchableOpacity>
@@ -406,7 +460,7 @@ export default function StoryLibraryList({ onOpenStory }: { onOpenStory: (story:
                           <TouchableOpacity onPress={() => startEdit(story)} style={styles.menuItem}>
                             <Text style={styles.menuText}>{t('edit')}</Text>
                           </TouchableOpacity>
-                          <TouchableOpacity
+                          {!!story.script.trim() && <><TouchableOpacity
                             onPress={() => void exportStory(story)}
                             style={styles.menuItem}
                           >
@@ -415,9 +469,10 @@ export default function StoryLibraryList({ onOpenStory }: { onOpenStory: (story:
                           <TouchableOpacity onPress={() => { setMenuId(null); setVideoStory(story); }} style={styles.menuItem}>
                             <Text style={styles.menuText}>{t('exportVideo')}</Text>
                           </TouchableOpacity>
-                          <TouchableOpacity onPress={() => { setMenuId(null); setPublishStory(story); }} style={styles.menuItem}>
+                          <TouchableOpacity onPress={() => { setMenuId(null); setPublishStory(publicationStory(story)); }} style={styles.menuItem}>
                             <Text style={styles.menuText}>{t('communityPublish')}</Text>
                           </TouchableOpacity>
+                          </>}
                           <TouchableOpacity onPress={() => setConfirmId(story.id)} style={[styles.menuItem, styles.menuItemLast]}>
                             <Text style={styles.menuDelete}>{t('delete')}</Text>
                           </TouchableOpacity>
@@ -718,13 +773,38 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'space-between',
     paddingHorizontal: 28,
-    paddingTop: 28,
+    flexShrink: 0,
+    gap: 12,
+    paddingTop: 20,
     paddingBottom: 12,
   },
+  editorContainer: { minHeight: 0, overflow: 'hidden' },
+  editorTitle: { flex: 1, minWidth: 0 },
+  editorHeaderCompact: { paddingHorizontal: 16, paddingTop: 16 },
+  editorDetails: { flexShrink: 0, paddingHorizontal: 28, paddingBottom: 12, gap: 8 },
+  editorDetailsCompact: { paddingHorizontal: 16 },
+  roomTitleLabel: { fontSize: 12, fontWeight: '600', color: '#748094' },
+  roomTitleInput: {
+    height: 44, minHeight: 44, maxHeight: 44, flexGrow: 0, flexShrink: 0, minWidth: 0,
+    paddingHorizontal: 14, paddingVertical: 10, borderWidth: 1, borderColor: '#dce3e9',
+    borderRadius: 10, backgroundColor: '#fff', fontSize: 15, color: '#243044',
+  },
+  storySelector: { height: 44, minHeight: 44, maxHeight: 44, flexGrow: 0, flexShrink: 0 },
+  storySelectorContent: { alignItems: 'center', gap: 8 },
+  storySelectorButton: {
+    height: 38, maxWidth: 320, flexShrink: 0, flexDirection: 'row', alignItems: 'center', gap: 8,
+    paddingHorizontal: 12, borderRadius: 10, borderWidth: 1, borderColor: '#e2e6ea', backgroundColor: '#fff',
+  },
+  storySelectorButtonCompact: { maxWidth: 240 },
+  storySelectorButtonActive: { borderColor: '#F3CAD8', backgroundColor: '#FFF0F5' },
+  storySelectorText: { flexShrink: 1, minWidth: 0, fontSize: 13, color: '#67717d' },
+  storySelectorTextActive: { color: '#A94F70', fontWeight: '700' },
+  editorHint: { color: '#748094', fontSize: 12, lineHeight: 18 },
   editorActions: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: 8,
+    flexShrink: 0,
   },
   cancelBtn: {
     paddingVertical: 8,
@@ -756,6 +836,7 @@ const styles = StyleSheet.create({
   editorBody: {
     flex: 1,
     minHeight: 0,
+    minWidth: 0,
     flexDirection: 'row',
     gap: 16,
     paddingHorizontal: 28,
@@ -769,7 +850,8 @@ const styles = StyleSheet.create({
     paddingBottom: 16,
   },
   editorTabs: {
-    marginHorizontal: 16,
+    flexShrink: 0,
+    marginHorizontal: 28,
     marginBottom: 12,
     flexDirection: 'row',
     padding: 4,
@@ -777,6 +859,7 @@ const styles = StyleSheet.create({
     backgroundColor: '#eceff3',
     gap: 4,
   },
+  editorTabsCompact: { marginHorizontal: 16 },
   editorTab: {
     flex: 1,
     minHeight: 38,

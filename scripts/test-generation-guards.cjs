@@ -39,9 +39,9 @@ const history = Array.from({ length: 3 }, () => ({ user: 'hi', ai: 'hi' }));
     } },
   }).directClient;
   await assert.rejects(direct.createEvent('후부키'), /최소 1쌍/);
-  for (let count = 1; count <= 3; count++) {
+  for (let count = 1; count <= 10; count++) {
     const reply = await direct.chat('후부키', `message ${count}`);
-    assert.equal(reply.eventReady, count === 3, 'three-pair chat limit stays unchanged');
+    assert.equal(reply.eventReady, true, 'generation is available after any completed pair');
     check((await direct.createEvent('후부키')).eventScript);
     assert.ok(selectionPrompt.includes(`최근 ${count}쌍`));
     for (let turn = 1; turn <= count; turn++) assert.ok(eventPrompt.includes(`message ${turn}`), 'current completed conversation reaches story generation');
@@ -56,7 +56,7 @@ const history = Array.from({ length: 3 }, () => ({ user: 'hi', ai: 'hi' }));
   });
   let result, status;
   const res = { json: value => { result = value; }, status: value => { status = value; return res; } };
-  for (let count = 0; count <= 3; count++) {
+  for (let count = 0; count <= 10; count++) {
     history.splice(0, history.length, ...Array.from({ length: count }, () => ({ user: 'hi', ai: 'hi' })));
     status = 200;
     await controller.createEvent({ body: { character: '후부키' } }, res);

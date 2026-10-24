@@ -1,5 +1,5 @@
 import { loadStories, saveStories, subscribeStorage } from '@/storage';
-import type { SavedChatMessage, StoryRecord } from '@/storage/types';
+import type { SavedChatMessage, StoryRecord, StoryEpisode } from '@/storage/types';
 import { canonicalCharacterName } from '../shared/prompts/speakerNames';
 
 export type SavedStory = StoryRecord;
@@ -38,7 +38,56 @@ function titleOf(script: string, character: string) {
 }
 
 export function listStories(): SavedStory[] {
-  return readStored().slice().sort((a, b) => b.createdAt - a.createdAt);
+  return readStored().slice().sort((a, b) => (b.updatedAt ?? b.createdAt) - (a.updatedAt ?? a.createdAt));
+}
+
+/** Legacy cards become rooms with one episode without rewriting their IDs. */
+export function episodesOf(story: SavedStory): StoryEpisode[] {
+  return story.episodes ?? (story.script.trim() ? [{
+    id: story.id, title: titleOf(story.script, story.character), script: story.script,
+    createdAt: story.createdAt, chatMessages: story.chatMessages ?? [],
+  }] : []);
+}
+
+/** Select episode content for playback and exports. */
+export function episodeStory(story: SavedStory, episodeId?: string): SavedStory | null {
+  const episodes = episodesOf(story);
+  const episode = episodeId ? episodes.find(item => item.id === episodeId) : episodes.at(-1);
+  if (!episode) return null;
+  return {
+    ...story, ...episode, episodes: undefined,
+    // The latest episode can be republished with the room's edited current chat.
+    chatMessages: episode.id === episodes.at(-1)?.id ? story.chatMessages ?? episode.chatMessages : episode.chatMessages,
+  };
+}
+
+/** A library card keeps one public identity, even when another episode is selected. */
+export function publicationStory(story: SavedStory, episodeId?: string): SavedStory | null {
+  const selected = episodeStory(story, episodeId);
+  return selected ? { ...selected, id: story.id, title: story.title } : null;
+}
+
+export function updateRoom(id: string, change: Partial<Pick<SavedStory, 'title' | 'chatMessages' | 'episodes'>>): SavedStory | null {
+  const stories = readStored();
+  const index = stories.findIndex(story => story.id === id);
+  if (index < 0) return null;
+  const current = stories[index];
+  const episodes = change.episodes ?? episodesOf(current);
+  const next = { ...current, ...change, episodes, script: episodes.at(-1)?.script ?? '', updatedAt: Date.now() };
+  stories[index] = next;
+  writeStored(stories);
+  return next;
+}
+
+export function appendRoomStory(id: string, script: string, chatMessages: SavedChatMessage[]): SavedStory | null {
+  const story = readStored().find(story => story.id === id);
+  if (!story) return null;
+  const messages = chatMessages.map(message => ({ ...message }));
+  return updateRoom(id, { chatMessages: messages, episodes: [...episodesOf(story), {
+    id: `${Date.now()}-${Math.random().toString(36).slice(2, 8)}`, title: titleOf(script, story.character),
+    script, createdAt: Date.now(), chatMessages: messages,
+    afterMessageCount: messages.length,
+  }] });
 }
 
 /** 저장본의 대본을 바꾼다. 카드 제목은 대본의 타이틀 줄을 따른다. */
@@ -47,6 +96,7 @@ export function updateStory(id: string, script: string, chatMessages?: SavedChat
   const index = stories.findIndex((story) => story.id === id);
   if (index < 0) return null;
   const next = { ...stories[index], script, title: titleOf(script, stories[index].character),
+    ...(stories[index].episodes?.length ? { episodes: stories[index].episodes!.map((episode, episodeIndex, episodes) => episodeIndex === episodes.length - 1 ? { ...episode, script, title: titleOf(script, stories[index].character) } : episode) } : {}),
     ...(chatMessages !== undefined ? { chatMessages: chatMessages.map(message => ({ ...message })) } : {}),
   };
   stories[index] = next;

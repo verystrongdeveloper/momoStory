@@ -30,7 +30,29 @@ export type StoryRecord = {
   script: string;
   createdAt: number;
   chatMessages?: SavedChatMessage[];
+  episodes?: StoryEpisode[];
+  updatedAt?: number;
 };
+
+export type StoryEpisode = {
+  id: string;
+  title: string;
+  script: string;
+  createdAt: number;
+  chatMessages: SavedChatMessage[];
+  afterMessageCount?: number;
+};
+
+function sanitizeEpisode(value: unknown): StoryEpisode | null {
+  if (!value || typeof value !== 'object' || !('id' in value) || typeof value.id !== 'string' || !('script' in value) || typeof value.script !== 'string') return null;
+  const record = sanitizeStories([{ ...value, episodes: undefined }])[0];
+  return {
+    id: record.id, title: record.title, script: record.script, createdAt: record.createdAt,
+    chatMessages: record.chatMessages ?? [],
+    ...('afterMessageCount' in value && typeof value.afterMessageCount === 'number' && Number.isFinite(value.afterMessageCount)
+      ? { afterMessageCount: Math.max(0, Math.floor(value.afterMessageCount)) } : {}),
+  };
+}
 
 export type StorageSnapshot = Preferences & {
   apiKey: string;
@@ -92,6 +114,8 @@ export function sanitizeStories(input: unknown): StoryRecord[] {
       title: typeof item.title === 'string' ? item.title : '스토리',
       character: typeof item.character === 'string' ? item.character : '스토리',
       createdAt: typeof item.createdAt === 'number' ? item.createdAt : 0,
+      ...(typeof item.updatedAt === 'number' ? { updatedAt: item.updatedAt } : {}),
+      ...(Array.isArray(item.episodes) ? { episodes: item.episodes.map(sanitizeEpisode).filter((episode: StoryEpisode | null): episode is StoryEpisode => episode !== null) } : {}),
       ...(Array.isArray(item.chatMessages) ? {
         chatMessages: item.chatMessages
           .filter((message: unknown): message is SavedChatMessage =>

@@ -18,7 +18,7 @@ export default function PublishStoryModal({ story, onClose }: { story: StoryReco
     pending.current = true; setBusy(true); setNotice('');
     try {
       const result = await community.publish({ ...story, chatMessages: includeChat ? story.chatMessages : [] });
-      setDone(true); setNotice(t(result.alreadyPublished ? 'communityAlreadyPublished' : 'communityPublished'));
+      setDone(true); setNotice(t(result.updated ? 'communityUpdated' : result.alreadyPublished ? 'communityAlreadyPublished' : 'communityPublished'));
     } catch (error) {
       let message = t(communityErrorKey(error));
       if (error && typeof error === 'object' && 'line' in error && typeof error.line === 'number') message += ` (${t('communityLine', { line: error.line })})`;
@@ -40,6 +40,7 @@ export default function PublishStoryModal({ story, onClose }: { story: StoryReco
         {!hasChat && <Text style={styles.text}>{t('communityPublishNoChat')}</Text>}
       </View>}
       <Text style={styles.text}>{t(includeChat ? 'communityPublishNotice' : 'communityPublishStoryOnlyNotice')}</Text>
+      <Text style={styles.text}>{t('communityRepublishNotice')}</Text>
       <Text style={styles.text}>{t('communityLimits')}</Text>
       <Text style={styles.text}>{t('communityPrivacy')}</Text>
       {!communityConfigured() && <Text style={styles.notice}>{t('communitySetup')}</Text>}

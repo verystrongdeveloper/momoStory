@@ -54,7 +54,9 @@ const styles = StyleSheet.create({
   },
   title: {
     flex: 1,
+    minWidth: 0,
     marginLeft: 8,
+    marginRight: 6,
     color: 'white',
     fontSize: 18,
     fontWeight: 'bold',

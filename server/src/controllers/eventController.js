@@ -1,11 +1,12 @@
 // src/controllers/eventController.js
-const { getChat, GEMINI_MODEL } = require('../services/geminiService');
+const { getChat, GEMINI_MODEL, resetChatSessions } = require('../services/geminiService');
 const { buildSelectionPrompt } = require('../utils/selectionPromptBuilder');
 const { buildEventPromptPro } = require('../utils/promptBuilderPro');
 const { getDialogHistory, readKey } = require('./chatController');
 const { resources } = require('../config/prompts');
 const { hasStoryAssets, keepAssetSpeakers, parseStorySelection } = require('../utils/characterList');
 const { normalizeSenseiMode } = require('../../../shared/senseiMode');
+const { conversationContext, dialogPairs, continuationText } = require('../../../shared/conversation');
 
 const SELECTOR_SYSTEM = `너는 스토리 기획자다. 캐릭터처럼 말하지 않는다. 요청한 JSON만 출력한다. 대사·거절·설명 금지.`;
 const EVENT_WRITER_SYSTEM = `너는 블루 아카이브 인연 스토리 스크립트 작성기다. 캐릭터처럼 대답하지 말고, 요청한 출력 형식 그대로 스크립트만 작성한다.`;
@@ -19,16 +20,20 @@ exports.createEvent = async (req, res) => {
     return res.status(400).json({ error: 'character 누락' });
   }
 
-  // 완료된 최근 대화 1~3쌍으로 생성한다.
-  const dialogHistory = getDialogHistory(character, apiKey);
+  // 완료된 누적 대화로 생성한다. 최소 한 쌍이 필요하다.
+  const context = conversationContext(req.body.context);
+  const dialogHistory = context ? dialogPairs(context.messages) : getDialogHistory(character, apiKey);
+  const continuation = continuationText(context?.scripts ?? []);
+  const sessionRoom = context ? `room-${context.id}` : 'bond';
   if (dialogHistory.length < 1) {
     return res.status(400).json({ error: 'dialogHistory 부족(최소 1쌍 필요)' });
   }
 
   try {
+    if (context) resetChatSessions(character, apiKey, sessionRoom);
     /* 1) 등장 인물 선정 — 캐릭터 채팅 세션과 분리한다 */
-    const selector = await getChat(character, GEMINI_MODEL, 'select', SELECTOR_SYSTEM, apiKey, req.body.language, 'bond', req.body.model);
-    const selPrompt = buildSelectionPrompt(dialogHistory, senseiMode);
+    const selector = await getChat(character, GEMINI_MODEL, 'select', SELECTOR_SYSTEM, apiKey, req.body.language, sessionRoom, req.body.model);
+    const selPrompt = buildSelectionPrompt(dialogHistory, senseiMode) + continuation;
     console.log('🧠 [등장 인물 선정 프롬프트]');
     console.log(selPrompt);
     const selRes = await selector.sendMessage(selPrompt);
@@ -69,13 +74,13 @@ exports.createEvent = async (req, res) => {
     console.log(JSON.stringify(allCharsWithEmotions, null, 2));
 
     /* 2) 이벤트 스크립트 생성. 채팅 세션과 섞이지 않도록 세션을 분리한다. */
-    const proChat = await getChat(character, GEMINI_MODEL, 'event', EVENT_WRITER_SYSTEM, apiKey, req.body.language, 'bond', req.body.model);
+    const proChat = await getChat(character, GEMINI_MODEL, 'event', EVENT_WRITER_SYSTEM, apiKey, req.body.language, sessionRoom, req.body.model);
     // ★ 변경: Pro 모델에게는 이제 '모든' 캐릭터(메인 + 추가)와 그들의 감정 리스트를 함께 넘겨줍니다.
     const eventPrompt = buildEventPromptPro(
       character,
       dialogHistory,
       allCharsWithEmotions, // ⬅️ 변경된 인자
-      selection.direction,
+      (selection.direction ?? '') + continuation,
       senseiMode,
     );
     const eventRes = await proChat.sendMessage(eventPrompt);

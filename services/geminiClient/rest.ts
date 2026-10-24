@@ -5,6 +5,7 @@ import { GEMINI_OFFLINE_MESSAGE, throwIfOffline } from './errors';
 import { withGenerationLanguage } from '../../shared/prompts/generationLanguage';
 import type { AppLanguage } from '@/storage/types';
 import type { ChatRoom } from '@/shared/chatRoom';
+import { conversationHistory, type ConversationContext } from '../../shared/conversation';
 
 type Part = { text: string };
 type Content = { role: 'user' | 'model'; parts: Part[] };
@@ -14,7 +15,7 @@ type Session = {
 };
 
 const sessions = new Map<string, Session>();
-export function resetChatSessions(character: string, apiKey: string, room: ChatRoom = 'bond') {
+export function resetChatSessions(character: string, apiKey: string, room: string = 'bond') {
   const prefix = `${keyId(apiKey)}:${character}:${room}:`;
   for (const key of sessions.keys()) if (key.startsWith(prefix)) sessions.delete(key);
 }
@@ -28,13 +29,17 @@ function keyId(apiKey: string): string {
   return (hash >>> 0).toString(16).padStart(8, '0');
 }
 
-function sessionFor(character: string, sessionKey: string, apiKey: string, room: ChatRoom): Session {
+function sessionFor(character: string, sessionKey: string, apiKey: string, room: string): Session {
   const cacheKey = [keyId(apiKey), character, room, sessionKey].join(':');
   const existing = sessions.get(cacheKey);
   if (existing) return existing;
   const created: Session = { history: [] };
   sessions.set(cacheKey, created);
   return created;
+}
+
+export function restoreConversation(character: string, apiKey: string, room: string, context: ConversationContext) {
+  sessions.set([keyId(apiKey), character, room, ''].join(':'), { history: conversationHistory(context) });
 }
 
 function systemText(character: string, systemInstruction?: string): string {
@@ -104,7 +109,7 @@ export async function sendWithFallback(
   systemInstruction: string | undefined,
   apiKey: string,
   language: AppLanguage = 'ko',
-  room: ChatRoom = 'bond',
+  room: string = 'bond',
   modelSelection: string = getGeminiModel(),
 ): Promise<string> {
   const selection = normalizeModel(modelSelection);

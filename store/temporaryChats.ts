@@ -11,11 +11,12 @@ type TemporaryChat = {
   greetingStarted: boolean;
   needsReset: boolean;
   storyScript: string | null;
+  roomId?: string;
   generation: number;
   unreadCount: number;
 };
 
-const empty = (): TemporaryChat => ({ messages: [], input: '', isWaiting: false, eventReady: false, completedPairs: 0, greetingStarted: false, needsReset: false, storyScript: null, generation: 0, unreadCount: 0 });
+const empty = (): TemporaryChat => ({ messages: [], input: '', isWaiting: false, eventReady: false, completedPairs: 0, greetingStarted: false, needsReset: false, storyScript: null, roomId: undefined, generation: 0, unreadCount: 0 });
 
 function createChat() {
   let snapshot = empty();
@@ -46,11 +47,34 @@ function createChat() {
 // Keep ongoing conversations alive when a chat screen unmounts. API keys are
 // kept only in memory, and conversations belonging to different keys never mix.
 const chats = new Map<string, Map<string, ReturnType<typeof createChat>>>();
-export function getTemporaryChat(character: string, apiKey: string, room: ChatRoom = 'bond') {
+export function getTemporaryChat(character: string, apiKey: string, room: ChatRoom = 'bond', roomId?: string) {
   let characters = chats.get(apiKey);
   if (!characters) { characters = new Map(); chats.set(apiKey, characters); }
-  const slot = `${character}:${room}`;
+  const slot = `${character}:${roomId ? `room-${roomId}` : room}`;
   let chat = characters.get(slot);
   if (!chat) { chat = createChat(); characters.set(slot, chat); }
   return chat;
+}
+
+export function linkTemporaryRoom(character: string, apiKey: string, roomId: string, chat = getTemporaryChat(character, apiKey, 'bond')) {
+  chats.get(apiKey)!.set(`${character}:room-${roomId}`, chat);
+  chat.update({ roomId });
+}
+
+export function activateTemporaryRoom(character: string, apiKey: string, roomId: string) {
+  const chat = getTemporaryChat(character, apiKey, 'bond', roomId);
+  chats.get(apiKey)!.set(`${character}:bond`, chat);
+}
+
+export function unlinkTemporaryRoom(character: string, apiKey: string, roomId: string) {
+  chats.get(apiKey)?.delete(`${character}:room-${roomId}`);
+}
+
+export function forgetTemporaryRoom(roomId: string) {
+  for (const characters of chats.values()) {
+    for (const [slot, chat] of characters) {
+      if (chat.getSnapshot().roomId === roomId) chat.clear({ needsReset: true });
+      if (slot.endsWith(`:room-${roomId}`)) characters.delete(slot);
+    }
+  }
 }

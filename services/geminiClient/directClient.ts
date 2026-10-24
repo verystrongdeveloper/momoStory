@@ -6,7 +6,8 @@ import { getGeminiKey } from '@/services/geminiKey';
 import { getAppLanguage } from '@/services/appLanguage';
 import { getGeminiModel } from '../geminiModel';
 import { getSenseiMode } from '../senseiMode';
-import { dialogKey, resetChatSessions, sendWithFallback, userApiKey } from './rest';
+import { dialogKey, resetChatSessions, restoreConversation, sendWithFallback, userApiKey } from './rest';
+import { dialogPairs, continuationText, type ConversationContext } from '../../shared/conversation';
 import type { ChatRoom } from '@/shared/chatRoom';
 
 type DialogPair = { user: string; ai: string };
@@ -28,9 +29,8 @@ function pushLog(character: string, apiKey: string, pair: DialogPair): boolean {
   const slot = dialogKey(character, apiKey);
   const log = chatLogs.get(slot) ?? [];
   log.push(pair);
-  if (log.length > 3) log.shift();
   chatLogs.set(slot, log);
-  return log.length >= 3;
+  return log.length >= 1;
 }
 
 export const directClient = {
@@ -48,25 +48,30 @@ export const directClient = {
     return { triggerLine };
   },
 
-  async chat(character: string, message: string, room: ChatRoom = 'bond') {
+  async chat(character: string, message: string, room: ChatRoom = 'bond', context?: ConversationContext) {
     const language = getAppLanguage();
     const apiKey = readKey();
     if (!character || !message) throw new Error('character 또는 message 누락');
-    const reply = await sendWithFallback(character, '', message, undefined, apiKey, language, room);
-    const eventReady = room === 'bond' && pushLog(character, apiKey, { user: message, ai: reply });
+    const sessionRoom = context ? `room-${context.id}` : room;
+    if (context) restoreConversation(character, apiKey, sessionRoom, context);
+    const reply = await sendWithFallback(character, '', message, undefined, apiKey, language, sessionRoom);
+    const eventReady = room === 'bond' && (context ? true : pushLog(character, apiKey, { user: message, ai: reply }));
     return { reply, eventReady };
   },
 
-  async createEvent(character: string) {
+  async createEvent(character: string, context?: ConversationContext) {
     const language = getAppLanguage();
     const model = getGeminiModel();
     const senseiMode = getSenseiMode();
     const apiKey = readKey();
     if (!character) throw new Error('character 누락');
-    const dialogHistory = chatLogs.get(dialogKey(character, apiKey)) ?? [];
+    const dialogHistory = context ? dialogPairs(context.messages) : [...(chatLogs.get(dialogKey(character, apiKey)) ?? [])];
+    const continuation = continuationText(context?.scripts ?? []);
+    const sessionRoom = context ? `room-${context.id}` : 'bond';
     if (dialogHistory.length < 1) throw new Error('dialogHistory 부족(최소 1쌍 필요)');
+    if (context) resetChatSessions(character, apiKey, sessionRoom);
 
-    const rawSelText = await sendWithFallback(character, 'select', buildSelectionPrompt(dialogHistory, senseiMode), SELECTOR_SYSTEM, apiKey, language, 'bond', model);
+    const rawSelText = await sendWithFallback(character, 'select', buildSelectionPrompt(dialogHistory, senseiMode) + continuation, SELECTOR_SYSTEM, apiKey, language, sessionRoom, model);
     const selection = parseStorySelection(character, rawSelText);
 
     const allCharsWithEmotions: { name: string; emotions: string[] }[] = [
@@ -81,9 +86,9 @@ export const directClient = {
       }
     }
 
-    const eventPrompt = buildEventPromptPro(character, dialogHistory, allCharsWithEmotions, selection.direction ?? '', senseiMode);
+    const eventPrompt = buildEventPromptPro(character, dialogHistory, allCharsWithEmotions, (selection.direction ?? '') + continuation, senseiMode);
     const script = keepAssetSpeakers(
-      (await sendWithFallback(character, 'event', eventPrompt, EVENT_WRITER_SYSTEM, apiKey, language, 'bond', model)).trim(),
+      (await sendWithFallback(character, 'event', eventPrompt, EVENT_WRITER_SYSTEM, apiKey, language, sessionRoom, model)).trim(),
       allCharsWithEmotions.map(info => info.name),
       language,
     );

@@ -73,7 +73,7 @@ export const community = {
   detail: (id: string, offset = 0) => call<CommunityDetail>('detail', { id, offset }),
   publish: (story: StoryRecord) => {
     const clean = validatePublicStory({ title: story.title, character: story.character, script: story.script, chatMessages: story.chatMessages ?? [], clientId: story.id }, assets);
-    return call<{ id: string; alreadyPublished?: boolean }>('publish', { ...clean });
+    return call<{ id: string; alreadyPublished?: boolean; updated?: boolean }>('publish', { ...clean });
   },
   comment: (id: string, text: string) => call('comment', { id, body: validateComment(text) }),
   like: (id: string, liked: boolean) => call('like', { id, liked }),

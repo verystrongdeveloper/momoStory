@@ -13,7 +13,7 @@ rn.StyleSheet = { create: value => value };
 const mocks = {
   react: React, 'react-native': rn, '@expo/vector-icons': { Ionicons: 'Ionicons' },
   './GreetModeToggle': 'GreetModeToggle', './StoryHeader': 'StoryHeader', './StorySidebar': 'StorySidebar', './SettingsPanel': 'SettingsPanel',
-  '@/components/chat/ChatEntry': 'ChatEntry', '@/components/chat/CharacterChat': 'CharacterChat', '@/components/chat/StoryLibraryList': 'StoryLibraryList',
+  '@/components/chat/ChatEntry': 'ChatEntry', '@/components/chat/CharacterChat': 'CharacterChat', '@/components/chat/StoryLibraryList': 'StoryLibraryList', '@/components/chat/ConversationRoom': 'ConversationRoom',
   '@/components/community/CommunityPanel': 'CommunityPanel', '@/components/guide/AppGuide': 'AppGuide',
   '@/constants/characters': { CHARACTERS: characters, avatarOf: () => 1, displayCharacterName: name => name },
   '@/hooks/useLayout': { useLayout: () => ({ isCompact: compact }) },

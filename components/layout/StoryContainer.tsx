@@ -7,10 +7,11 @@ import StorySidebar from './StorySidebar';
 import ChatEntry from '@/components/chat/ChatEntry';
 import CharacterChat, { type ChatRefreshAction } from '@/components/chat/CharacterChat';
 import StoryLibraryList from '@/components/chat/StoryLibraryList';
+import ConversationRoom from '@/components/chat/ConversationRoom';
 import SettingsPanel from './SettingsPanel';
 import CommunityPanel from '@/components/community/CommunityPanel';
 import AppGuide, { GuideMode } from '@/components/guide/AppGuide';
-import { avatarOf, CHARACTERS, Character, displayCharacterName } from '@/constants/characters';
+import { CHARACTERS, Character, displayCharacterName } from '@/constants/characters';
 import type { SavedStory } from '@/store/storyLibrary';
 import { useLayout } from '@/hooks/useLayout';
 import { useI18n } from '@/i18n';
@@ -76,13 +77,7 @@ const StoryContainer: React.FC = () => {
   const fullPaneView = communityOpen ? <CommunityPanel /> : settingsOpen ? (
     <SettingsPanel onOpenTutorial={() => setGuide('tutorial')} onOpenTerms={() => setGuide('terms')} />
   ) : savedStory ? (
-    <CharacterChat
-      key={savedStory.id}
-      characterName={savedStory.character}
-      displayName={displayCharacterName(savedStory.character, language)}
-      characterImage={avatarOf(savedStory.character)}
-      savedStory={savedStory}
-    />
+    <ConversationRoom key={savedStory.id} story={savedStory} />
   ) : (
     <StoryLibraryList onOpenStory={setSavedStory} />
   );
@@ -137,9 +132,6 @@ const StoryContainer: React.FC = () => {
         onBack={libraryOpen && savedStory ? () => setSavedStory(null) : isCompact && hasDetail ? closeDetail : undefined}
         rightAction={isCompact && !fullPane && hasDetail && chatRefresh ? (
           <View style={styles.headerActions}>
-          {chatRefresh.generate && <TouchableOpacity accessibilityRole="button" disabled={chatRefresh.generate.disabled} onPress={chatRefresh.generate.onPress} style={[styles.headerGenerate, chatRefresh.generate.disabled && styles.headerRefreshDisabled]}>
-            <Text style={styles.headerGenerateText}>{t('generateStoryNow')}</Text>
-          </TouchableOpacity>}
           <TouchableOpacity accessibilityRole="button" accessibilityLabel={t('refreshChat')} accessibilityState={{ disabled: chatRefresh.disabled }} disabled={chatRefresh.disabled} onPress={chatRefresh.onPress} style={[styles.headerRefresh, chatRefresh.disabled && styles.headerRefreshDisabled]}>
             <Ionicons name="refresh-outline" size={22} color="#fff" />
           </TouchableOpacity>
@@ -209,9 +201,7 @@ const styles = StyleSheet.create({
   roomHint: { fontSize: 14, lineHeight: 21, color: '#758297' },
   roomCancel: { alignSelf: 'flex-end', padding: 10 },
   headerRefresh: { width: 44, height: 44, alignItems: 'center', justifyContent: 'center' },
-  headerActions: { flexDirection: 'row', alignItems: 'center' },
-  headerGenerate: { minHeight: 44, paddingHorizontal: 8, justifyContent: 'center' },
-  headerGenerateText: { color: '#fff', fontSize: 14, fontWeight: '600' },
+  headerActions: { flexDirection: 'row', alignItems: 'center', flexShrink: 0, gap: 2 },
   headerRefreshDisabled: { opacity: 0.4 },
   container: {
     flex: 1,

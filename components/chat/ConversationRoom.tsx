@@ -1,7 +1,7 @@
 import React, { useEffect, useState, useSyncExternalStore } from 'react';
 import { Modal, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { avatarOf, displayCharacterName } from '@/constants/characters';
-import { episodesOf, episodeStory, publicationStory, listStories, subscribeStories, type SavedStory } from '@/store/storyLibrary';
+import { episodesOf, episodeStory, videoEpisodeStory, publicationStory, listStories, subscribeStories, type SavedStory } from '@/store/storyLibrary';
 import { getTemporaryChat } from '@/store/temporaryChats';
 import { getGeminiKey, subscribeGeminiKey } from '@/services/geminiKey';
 import { useI18n } from '@/i18n';
@@ -43,7 +43,7 @@ export default function ConversationRoom({ story, setGlobalLoading }: { story: S
         <Text style={styles.title}>{selectedStory.title}</Text>
         <TouchableOpacity disabled={isWaiting} style={styles.action} onPress={() => { setEditingStoryId(selectedId ?? undefined); setSelectedId(null); setEditing(true); }}><Text>{t('editStory')}</Text></TouchableOpacity>
         <TouchableOpacity style={styles.action} onPress={() => { setSelectedId(null); void downloadStory(selectedStory).catch(() => setNotice(t('storyExportFailed'))); }}><Text>{t('export')}</Text></TouchableOpacity>
-        <TouchableOpacity style={styles.action} onPress={() => { setSelectedId(null); setVideo(selectedStory); }}><Text>{t('exportVideo')}</Text></TouchableOpacity>
+        <TouchableOpacity style={styles.action} onPress={() => { setSelectedId(null); setVideo(videoEpisodeStory(record, selectedStory.id)); }}><Text>{t('exportVideo')}</Text></TouchableOpacity>
         <TouchableOpacity style={styles.action} onPress={() => { setSelectedId(null); setPublish(publicationStory(record, selectedStory.id)); }}><Text>{t('communityPublish')}</Text></TouchableOpacity>
         <TouchableOpacity style={styles.action} onPress={() => setSelectedId(null)}><Text>{t('close')}</Text></TouchableOpacity>
       </View></View>

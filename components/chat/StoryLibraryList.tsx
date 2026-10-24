@@ -5,7 +5,6 @@ import { avatarOf, displayCharacterName } from '@/constants/characters';
 import { useLayout } from '@/hooks/useLayout';
 import { useKeyboardInset } from '@/hooks/useKeyboardInset';
 import StoryAssetPanel from '@/components/chat/StoryAssetPanel';
-import VideoExportModal from './VideoExportModal';
 import PublishStoryModal from '@/components/community/PublishStoryModal';
 import StoryScriptEditor from './StoryScriptEditor';
 import ChatMessageEditor from './ChatMessageEditor';
@@ -84,7 +83,6 @@ export default function StoryLibraryList({ onOpenStory, initialEdit, initialStor
   const [confirmId, setConfirmId] = useState<string | null>(null);
   const [menuId, setMenuId] = useState<string | null>(null);
   const [listNotice, setListNotice] = useState('');
-  const [videoStory, setVideoStory] = useState<SavedStory | null>(null);
   const [publishStory, setPublishStory] = useState<SavedStory | null>(null);
   const selectionRef = useRef({ start: 0, end: 0 });
   const exportingRef = useRef(false);
@@ -480,9 +478,6 @@ export default function StoryLibraryList({ onOpenStory, initialEdit, initialStor
                           >
                             <Text style={styles.menuText}>{t('export')}</Text>
                           </TouchableOpacity>
-                          <TouchableOpacity onPress={() => { setMenuId(null); setVideoStory(story); }} style={styles.menuItem}>
-                            <Text style={styles.menuText}>{t('exportVideo')}</Text>
-                          </TouchableOpacity>
                           <TouchableOpacity onPress={() => { setMenuId(null); setPublishStory(publicationStory(story)); }} style={styles.menuItem}>
                             <Text style={styles.menuText}>{t('communityPublish')}</Text>
                           </TouchableOpacity>
@@ -502,7 +497,6 @@ export default function StoryLibraryList({ onOpenStory, initialEdit, initialStor
         </View>
         <Pagination page={currentPage} totalPages={totalPages} onChange={changePage} />
       </ScrollView>
-      {videoStory && <VideoExportModal story={videoStory} onClose={() => setVideoStory(null)} />}
       {publishStory && <PublishStoryModal story={publishStory} onClose={() => setPublishStory(null)} />}
     </View>
   );

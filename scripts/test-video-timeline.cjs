@@ -40,6 +40,29 @@ const story = {
   script: '타이틀 : 테스트\n호시노 : 안녕! [bg : BG_AbydosCouncilRoom.jpg, emotion : hoshino_smallsmile.png, music : Aira.mp3]\nselection : (1)"첫 번째" (2)(두 번째)\nwaitSecond : 2\n호시노 : 계속해! [music : Aira.mp3]\n호시노 : 다른 음악! [music : Aoharu.mp3]\ndeleteEmotion\n호시노 : 다시 나타나! [emotion : hoshino_smile.png]\ndeleteAll\nnarration : 마지막 문장\nendEvent\n호시노 : 이 대사는 나오면 안 된다.',
 };
 const timeline = buildVideoTimeline(story, 0.4, 0.5);
+const { videoEpisodeStory } = load('store/storyLibrary.ts', {
+  '@/storage': {}, '../shared/prompts/speakerNames': {},
+});
+const roomMessages = Array.from({ length: 8 }, (_, index) => ({ sender: index % 2 ? 'character' : 'user', text: `message ${index}` }));
+const room = { ...story, chatMessages: roomMessages, episodes: [2, 4, 6].map((end, index) => ({
+  id: `episode-${index}`, title: `Story ${index}`, script: story.script, createdAt: index,
+  chatMessages: roomMessages.slice(0, end), afterMessageCount: end,
+})) };
+for (let index = 0; index < room.episodes.length; index++) {
+  const selected = videoEpisodeStory(room, `episode-${index}`);
+  const expected = roomMessages.slice(index * 2, index * 2 + 2);
+  assert.deepEqual(selected.chatMessages, expected, 'each episode includes only chat since the previous story');
+  assert.deepEqual(buildVideoTimeline(selected, 0, 0).messages, expected, 'video timeline receives the bounded chat');
+}
+assert.deepEqual(videoEpisodeStory(room, 'episode-2').chatMessages, roomMessages.slice(4, 6), 'chat after the selected story is excluded');
+const editedRoom = { ...room, chatMessages: roomMessages.slice(1), episodes: room.episodes.map(episode => ({ ...episode, afterMessageCount: episode.afterMessageCount - 1 })) };
+assert.deepEqual(videoEpisodeStory(editedRoom, 'episode-1').chatMessages, roomMessages.slice(2, 4), 'edited chat uses updated story button positions');
+const legacyPositions = { ...room, episodes: room.episodes.map(({ afterMessageCount, ...episode }) => episode) };
+assert.deepEqual(videoEpisodeStory(legacyPositions, 'episode-1').chatMessages, roomMessages.slice(2, 4), 'older rooms use saved snapshot lengths as boundaries');
+assert.deepEqual(videoEpisodeStory({ ...room, episodes: [room.episodes[0], { ...room.episodes[1], afterMessageCount: 2 }] }, 'episode-1').chatMessages, [], 'back-to-back stories have no chat');
+assert.deepEqual(videoEpisodeStory(story, story.id).chatMessages, story.chatMessages, 'legacy single-story cards keep their original chat');
+assert.equal(videoEpisodeStory(room, 'missing'), null);
+assert.deepEqual(room.chatMessages, roomMessages, 'video selection preserves room chat');
 for (const prefix of ['타이틀 :', 'title :', 'TITLE：']) {
   const localized = buildVideoTimeline({ ...story, script: `${prefix} A new day\nホシノ(対策委員会) : Hello [emotion : hoshino_smile.png]\nendEvent` }, 0.4, 0.5);
   const title = localized.scenes.find(scene => scene.line?.type === '타이틀');

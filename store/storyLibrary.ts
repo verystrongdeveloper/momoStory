@@ -61,6 +61,20 @@ export function episodeStory(story: SavedStory, episodeId?: string): SavedStory 
   };
 }
 
+/** Video chat covers only the interval leading up to the selected story button. */
+export function videoEpisodeStory(story: SavedStory, episodeId: string): SavedStory | null {
+  const episodes = episodesOf(story);
+  const index = episodes.findIndex(episode => episode.id === episodeId);
+  const selected = episodeStory(story, episodeId);
+  if (index < 0 || !selected) return null;
+  const messages = story.chatMessages ?? episodes[index].chatMessages;
+  const boundary = (episode: StoryEpisode) => Math.min(messages.length, Math.max(0,
+    episode.afterMessageCount ?? episode.chatMessages.length));
+  const end = boundary(episodes[index]);
+  const start = index > 0 ? boundary(episodes[index - 1]) : 0;
+  return { ...selected, chatMessages: messages.slice(Math.min(start, end), end) };
+}
+
 /** A library card keeps one public identity, even when another episode is selected. */
 export function publicationStory(story: SavedStory, episodeId?: string): SavedStory | null {
   const selected = episodeStory(story, episodeId);

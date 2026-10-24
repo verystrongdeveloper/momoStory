@@ -207,10 +207,28 @@ function load(file, mocks, clock = { setTimeout, clearTimeout }) {
   assert.equal(tree.root.findByType('CharacterAvatar').props.style.at(-1).backgroundColor, 'transparent', 'portrait does not hide the story background');
   await React.act(async () => tree.root.findByProps({ accessibilityLabel: 'storyMenu' }).props.onPress());
   assert.ok(button('export'));
+  assert.equal(button('exportVideo'), undefined, 'library cards require opening the room before exporting video');
+  assert.equal(tree.root.findAllByType('VideoExportModal').length, 0);
+  await React.act(async () => tree.unmount());
+
+  const secondEpisode = { ...story, id: 'second', title: 'Second story', script: '호시노 : 두 번째 이야기' };
+  const secondVideo = { ...secondEpisode, chatMessages: [{ sender: 'user', text: 'after first story' }] };
+  const sessionSnapshot = { isWaiting: false };
+  const Room = load('components/chat/ConversationRoom.tsx', {
+    react: React, 'react-native': rn, '@/i18n': i18n,
+    '@/constants/characters': { avatarOf: () => 'avatar', displayCharacterName: name => name },
+    '@/store/storyLibrary': { listStories: () => [story], subscribeStories: () => () => {}, episodesOf: () => [story, secondEpisode], episodeStory: (_, id) => id === secondEpisode.id ? secondEpisode : story, videoEpisodeStory: (room, id) => { assert.equal(room, story); assert.equal(id, secondEpisode.id); return secondVideo; } },
+    '@/store/temporaryChats': { getTemporaryChat: () => ({ subscribe: () => () => {}, getSnapshot: () => sessionSnapshot }) },
+    '@/services/geminiKey': { getGeminiKey: () => '', subscribeGeminiKey: () => () => {} },
+    './CharacterChat': 'CharacterChat', './StoryLibraryList': 'StoryLibraryList', './VideoExportModal': 'VideoExportModal',
+    '@/components/community/PublishStoryModal': 'PublishStoryModal', '@/utils/storyFile': {},
+  }).default;
+  await React.act(async () => { tree = Renderer.create(React.createElement(Room, { story })); });
+  await React.act(async () => tree.root.findByType('CharacterChat').props.onStoryActions(secondEpisode.id));
   await React.act(async () => button('exportVideo').props.onPress());
-  assert.equal(tree.root.findByType('VideoExportModal').props.story.id, story.id);
+  assert.equal(tree.root.findByType('VideoExportModal').props.story, secondVideo, 'room exports the selected episode with its own chat interval');
   await React.act(async () => tree.root.findByType('VideoExportModal').props.onClose());
   assert.equal(tree.root.findAllByType('VideoExportModal').length, 0);
   await React.act(async () => tree.unmount());
-  console.log('PASS global export survives closed options/navigation, ratios/chat modes, duplicate guard, cancellation, picker ordering, save protection, phase errors, completion notices and library entry');
+  console.log('PASS global export survives closed options/navigation, ratios/chat modes, duplicate guard, cancellation, picker ordering, save protection, phase errors, completion notices and room-only episode entry');
 })().catch(error => { console.error(error); process.exitCode = 1; });

@@ -1,8 +1,9 @@
 import React, { useEffect, useMemo, useRef, useState } from 'react';
-import { Alert, Image, Platform, ScrollView, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
+import { Alert, Image, Keyboard, Platform, ScrollView, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { avatarOf, displayCharacterName } from '@/constants/characters';
 import { useLayout } from '@/hooks/useLayout';
+import { useKeyboardInset } from '@/hooks/useKeyboardInset';
 import StoryAssetPanel from '@/components/chat/StoryAssetPanel';
 import VideoExportModal from './VideoExportModal';
 import PublishStoryModal from '@/components/community/PublishStoryModal';
@@ -33,6 +34,9 @@ const normalizeSearch = (text: string) => text.normalize('NFC').toLowerCase().re
 export default function StoryLibraryList({ onOpenStory, initialEdit, initialStoryId, onFinishEdit }: { onOpenStory: (story: SavedStory) => void; initialEdit?: SavedStory; initialStoryId?: string; onFinishEdit?: () => void }) {
   const { language, t } = useI18n();
   const { isCompact } = useLayout();
+  const keyboardOpen = useKeyboardInset() > 0;
+  const [detailsOpen, setDetailsOpen] = useState(false);
+  const [scriptFocused, setScriptFocused] = useState(false);
   const [shelfWidth, setShelfWidth] = useState(0);
   const cardGap = isCompact ? 12 : 20;
   const minCardWidth = isCompact ? 144 : 300;
@@ -74,6 +78,7 @@ export default function StoryLibraryList({ onOpenStory, initialEdit, initialStor
   const [episodeDrafts, setEpisodeDrafts] = useState<Record<number, string>>({});
   const [storyPositions, setStoryPositions] = useState<Record<string, number>>(() => Object.fromEntries(initialEdit ? episodesOf(initialEdit).map(story => [story.id, story.afterMessageCount ?? story.chatMessages.length]) : []));
   const [editorTab, setEditorTab] = useState<'story' | 'chat' | 'assets'>(initialEdit && !initialEdit.script.trim() ? 'chat' : 'story');
+  const focusedEditing = isCompact && keyboardOpen && scriptFocused && editorTab === 'story';
   const [chatDraft, setChatDraft] = useState<SavedChatMessage[]>(initialEdit?.chatMessages?.map(message => ({ ...message })) ?? []);
   const [notice, setNotice] = useState('');
   const [confirmId, setConfirmId] = useState<string | null>(null);
@@ -131,6 +136,8 @@ export default function StoryLibraryList({ onOpenStory, initialEdit, initialStor
     }
     setMenuId(null);
     setEditing(story);
+    setDetailsOpen(false);
+    setScriptFocused(false);
     setRoomTitle(story === 'new' ? '' : story.title);
     setEpisodeIndex(story === 'new' ? 0 : Math.max(0, episodesOf(story).length - 1));
     setEpisodeDrafts({});
@@ -242,7 +249,10 @@ export default function StoryLibraryList({ onOpenStory, initialEdit, initialStor
     return (
       <View style={[styles.container, styles.editorContainer]}>
         <View style={[styles.editorHeader, isCompact && styles.editorHeaderCompact]}>
-          <Text numberOfLines={1} style={[styles.title, styles.editorTitle]}>{t(editing === 'new' ? 'createStory' : 'editRoom')}</Text>
+          {isCompact && editing !== 'new' ? <TouchableOpacity accessibilityRole="button" accessibilityLabel={t('roomDetails')} accessibilityState={{ expanded: detailsOpen && !focusedEditing }} style={styles.detailsToggle} onPress={() => { Keyboard.dismiss(); setScriptFocused(false); setDetailsOpen(value => !value); }}>
+            <Text numberOfLines={1} style={[styles.title, styles.editorTitle]}>{t('editRoom')}</Text>
+            <Ionicons name={detailsOpen && !focusedEditing ? 'chevron-up' : 'chevron-down'} size={18} color="#748094" />
+          </TouchableOpacity> : <Text numberOfLines={1} style={[styles.title, styles.editorTitle]}>{t(editing === 'new' ? 'createStory' : 'editRoom')}</Text>}
           <View style={styles.editorActions}>
             <TouchableOpacity onPress={() => { setEditing(null); onFinishEdit?.(); }} style={styles.cancelBtn}>
               <Text style={styles.cancelText}>{t('cancel')}</Text>
@@ -252,7 +262,7 @@ export default function StoryLibraryList({ onOpenStory, initialEdit, initialStor
             </TouchableOpacity>
           </View>
         </View>
-        {editing !== 'new' && <View style={[styles.editorDetails, isCompact && styles.editorDetailsCompact]}>
+        {editing !== 'new' && (!isCompact || detailsOpen) && !focusedEditing && <View style={[styles.editorDetails, isCompact && styles.editorDetailsCompact]}>
           <Text style={styles.roomTitleLabel}>{t('roomTitle')}</Text>
           <TextInput accessibilityLabel={t('roomTitle')} placeholder={t('roomTitle')} value={roomTitle} onChangeText={setRoomTitle} style={styles.roomTitleInput} />
           <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.storySelector} contentContainerStyle={styles.storySelectorContent}>
@@ -264,7 +274,7 @@ export default function StoryLibraryList({ onOpenStory, initialEdit, initialStor
           <Text numberOfLines={2} style={styles.editorHint}>{t('roomEditHint')}</Text>
         </View>}
         {!!notice && <Text style={styles.notice}>{notice}</Text>}
-            <View style={[styles.editorTabs, isCompact && styles.editorTabsCompact]} accessibilityRole="tablist">
+            {!focusedEditing && <View style={[styles.editorTabs, isCompact && styles.editorTabsCompact]} accessibilityRole="tablist">
               <TouchableOpacity
                 accessibilityRole="tab"
                 accessibilityState={{ selected: editorTab === 'story' }}
@@ -291,7 +301,7 @@ export default function StoryLibraryList({ onOpenStory, initialEdit, initialStor
                 <Text style={[styles.editorTabText, editorTab === 'assets' && styles.editorTabTextActive]}>{t('assets')}</Text>
               </TouchableOpacity>
               )}
-            </View>
+            </View>}
         <View style={[styles.editorBody, isCompact && styles.editorBodyCompact]}>
           {editorTab === 'chat' && <ChatMessageEditor value={chatDraft} onChange={setChatDraft}
             storyBreaks={editing === 'new' ? [] : episodesOf(editing).map(story => ({ id: story.id, label: t('bondStory', { name: displayCharacterName(editing.character, language) }), afterMessageCount: storyPositions[story.id] ?? story.chatMessages.length }))}
@@ -307,6 +317,10 @@ export default function StoryLibraryList({ onOpenStory, initialEdit, initialStor
             <StoryScriptEditor
               style={[styles.editor, isCompact && styles.editorCompact]}
               value={draft}
+              compact={isCompact}
+              keyboardVisible={keyboardOpen}
+              onFocus={() => setScriptFocused(true)}
+              onBlur={() => setScriptFocused(false)}
               onChangeText={setDraft}
               onSelectionChange={(selection) => {
                 selectionRef.current = selection;
@@ -780,7 +794,8 @@ const styles = StyleSheet.create({
   },
   editorContainer: { minHeight: 0, overflow: 'hidden' },
   editorTitle: { flex: 1, minWidth: 0 },
-  editorHeaderCompact: { paddingHorizontal: 16, paddingTop: 16 },
+  editorHeaderCompact: { paddingHorizontal: 12, paddingTop: 8, paddingBottom: 8 },
+  detailsToggle: { flex: 1, minWidth: 0, flexDirection: 'row', alignItems: 'center', gap: 6, minHeight: 40 },
   editorDetails: { flexShrink: 0, paddingHorizontal: 28, paddingBottom: 12, gap: 8 },
   editorDetailsCompact: { paddingHorizontal: 16 },
   roomTitleLabel: { fontSize: 12, fontWeight: '600', color: '#748094' },
@@ -845,9 +860,9 @@ const styles = StyleSheet.create({
   },
   editorBodyCompact: {
     flexDirection: 'column',
-    gap: 12,
-    paddingHorizontal: 16,
-    paddingBottom: 16,
+    gap: 8,
+    paddingHorizontal: 8,
+    paddingBottom: 8,
   },
   editorTabs: {
     flexShrink: 0,
@@ -859,7 +874,7 @@ const styles = StyleSheet.create({
     backgroundColor: '#eceff3',
     gap: 4,
   },
-  editorTabsCompact: { marginHorizontal: 16 },
+  editorTabsCompact: { marginHorizontal: 8, marginBottom: 8 },
   editorTab: {
     flex: 1,
     minHeight: 38,

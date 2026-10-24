@@ -54,7 +54,7 @@ export default function parseEventScript(script: string): EventLine[] {
         if (l.startsWith('narration')) {
           const rawNar = l.replace(/^narration\s*:\s*/i, '');
           const txt = rawNar
-            .replace(/\[.*?]/g, '')
+            .replace(/\[\s*[A-Za-z]+\s*:[^\[\]\r\n]*\]/g, '')
             .replace(/,?\s*(bg|sound)\s*:\s*\S+/gi, '')
             .replace(/,?\s*music\s*:\s*(?:none|[^,\]\n]+?\.mp3)/gi, '')
             .replace(/[,\s]+$/, '')
@@ -105,7 +105,7 @@ export default function parseEventScript(script: string): EventLine[] {
             const exp = rest.match(/expression\s*:\s*([\w_.-]+\.png)/)?.[1];
             const anim = rest.match(/animation\s*:\s*(\w+)/)?.[1];
             const txt = rest
-              .replace(/\[.*?]/g, '')
+              .replace(/\[\s*[A-Za-z]+\s*:[^\[\]\r\n]*\]/g, '')
               .replace(/,?\s*(emotion|bg|sound|expression|animation)\s*:\s*\S+/gi, '')
               .replace(/,?\s*music\s*:\s*(?:none|[^,\]\n]+?\.mp3)/gi, '')
               .replace(/[,\s]+$/, '')

@@ -188,6 +188,10 @@ function load(file, mocks, clock = { setTimeout, clearTimeout }) {
 
   story.script = 'title : Thumbnail\n호시노 : first [bg : BG_AbydosCouncilRoom.jpg]\n호시노 : next [bg : BG_Second.jpg]\nendEvent';
   const List = load('components/chat/StoryLibraryList.tsx', {
+    '@/hooks/useKeyboardInset': { useKeyboardInset: () => 0 },
+    '@/store/temporaryChats': { getTemporaryChat: () => ({ getSnapshot: () => ({ isWaiting: false }) }), forgetTemporaryRoom() {} },
+    '@/services/geminiKey': { getGeminiKey: () => '' },
+    '../../shared/conversation': require('../shared/conversation'),
     './CharacterFilter': 'CharacterFilter', './Pagination': { __esModule: true, default: 'Pagination', PAGE_SIZE: 20 },
     '@/constants/eventAssets': { bgMap: { BG_AbydosCouncilRoom: 'first-background', BG_Second: 'second-background' } },
     '@/utils/parseEventScript': load('utils/parseEventScript.ts', {}),
@@ -195,7 +199,7 @@ function load(file, mocks, clock = { setTimeout, clearTimeout }) {
     '@/components/community/PublishStoryModal': 'PublishStoryModal',
     'react-native': rn, '@expo/vector-icons': { Ionicons: 'Ionicons' }, '@/constants/characters': { avatarOf: () => 'avatar', displayCharacterName: (name) => name },
     '@/hooks/useLayout': { useLayout: () => ({ isCompact: true }) }, '@/components/CharacterAvatar': 'CharacterAvatar', '@/components/chat/StoryAssetPanel': 'StoryAssetPanel', './VideoExportModal': 'VideoExportModal',
-    '@/store/storyLibrary': { listStories: () => [story], subscribeStories: () => () => {} }, '@/utils/insertStoryAsset': {}, '@/platform/clipboard': {}, '@/utils/storyFile': {}, '@/utils/storyPrompt': {}, '@/i18n': i18n,
+    '@/store/storyLibrary': { listStories: () => [story], subscribeStories: () => () => {}, episodesOf: item => [{ ...item, chatMessages: item.chatMessages ?? [] }], publicationStory: item => item }, '@/utils/insertStoryAsset': {}, '@/platform/clipboard': {}, '@/utils/storyFile': {}, '@/utils/storyPrompt': {}, '@/i18n': i18n,
   }).default;
   await React.act(async () => { tree = Renderer.create(React.createElement(List, { onOpenStory() {} })); });
   assert.equal(tree.root.findByType('Image').props.source, 'first-background', 'library thumbnail uses the first rendered BG, not later backgrounds');

@@ -85,7 +85,9 @@ export function diagnoseStoryScript(script: string, assets: AssetManifest, expec
       return;
     }
     const assetOnly = /^(?:bg|music|sound|emotion|expression)\s*:/.test(line);
-    const metaAt = line.indexOf('[');
+    // Plain bracketed prose is dialogue, e.g. [인증 성공]. Reserve key:value
+    // blocks and known effect keys (including malformed ones) for validation.
+    const metaAt = line.search(/\[\s*(?:[A-Za-z]+\s*:|(?:emotion|bg|music|sound|expression|animation|speaker|dialogue)\b)/);
     const plain = assetOnly ? '' : (metaAt < 0 ? line : line.slice(0, metaAt)).trim();
     const metadata = assetOnly ? `[${line}]` : metaAt < 0 ? '' : line.slice(metaAt);
     // Generators and the editor may split effects across adjacent metadata blocks.

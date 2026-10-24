@@ -1,7 +1,8 @@
 import { resources } from '../../shared/prompts';
 import { buildEventPromptPro } from '../../shared/prompts/promptBuilderPro';
 import { buildSelectionPrompt } from '../../shared/prompts/selectionPromptBuilder';
-import { hasStoryAssets, keepAssetSpeakers, parseStorySelection } from '../../shared/prompts/characterList';
+import { hasStoryAssets, parseStorySelection } from '../../shared/prompts/characterList';
+import { generateValidatedStory } from '../../shared/prompts/generatedStory';
 import { getGeminiKey } from '@/services/geminiKey';
 import { getAppLanguage } from '@/services/appLanguage';
 import { getGeminiModel } from '../geminiModel';
@@ -87,11 +88,11 @@ export const directClient = {
     }
 
     const eventPrompt = buildEventPromptPro(character, dialogHistory, allCharsWithEmotions, (selection.direction ?? '') + continuation, senseiMode);
-    const script = keepAssetSpeakers(
-      (await sendWithFallback(character, 'event', eventPrompt, EVENT_WRITER_SYSTEM, apiKey, language, sessionRoom, model)).trim(),
-      allCharsWithEmotions.map(info => info.name),
+    const script = await generateValidatedStory({
+      generate: repair => sendWithFallback(character, 'event', eventPrompt + (repair ?? ''), EVENT_WRITER_SYSTEM, apiKey, language, sessionRoom, model),
+      names: allCharsWithEmotions.map(info => info.name),
       language,
-    );
+    });
     return { eventScript: script };
   },
 };

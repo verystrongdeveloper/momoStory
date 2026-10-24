@@ -1,11 +1,11 @@
 import React, { useLayoutEffect, useRef, type CSSProperties } from 'react';
-import { StyleSheet, View } from 'react-native';
+import { StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { useI18n } from '@/i18n';
 import { ScriptIssues, useScriptDiagnostics, type ScriptEditorProps } from './scriptEditorShared';
 
 // One native textarea retains selection, undo, IME and accessibility. A non-interactive
 // transparent mirror paints only diagnostics, with identical wrapping and scroll metrics.
-export default function StoryScriptEditor({ value, onChangeText, onSelectionChange, style }: ScriptEditorProps) {
+export default function StoryScriptEditor({ value, onChangeText, onSelectionChange, style, compact, keyboardVisible, onFocus, onBlur }: ScriptEditorProps) {
   const { t } = useI18n();
   const input = useRef<HTMLTextAreaElement>(null);
   const mirror = useRef<HTMLDivElement>(null);
@@ -29,15 +29,16 @@ export default function StoryScriptEditor({ value, onChangeText, onSelectionChan
     if (input.current) onSelectionChange({ start: input.current.selectionStart, end: input.current.selectionEnd });
   };
   return <View style={[styles.root, style]}>
-    <div style={{ position: 'relative', flex: 1, minHeight: 120, overflow: 'hidden', border: `1px solid ${issues.length ? '#d44b60' : '#e2e6ea'}`, borderRadius: 12, background: 'white' }}>
+    {compact && keyboardVisible && <TouchableOpacity accessibilityRole="button" accessibilityLabel={t('scriptHideKeyboard')} style={styles.keyboardButton} onPress={() => input.current?.blur()}><Text>{t('scriptHideKeyboard')}</Text></TouchableOpacity>}
+    <div style={{ position: 'relative', flex: 1, minHeight: 0, overflow: 'hidden', border: `1px solid ${issues.length ? '#d44b60' : '#e2e6ea'}`, borderRadius: 12, background: 'white' }}>
       <div ref={mirror} aria-hidden="true" style={{ ...metrics, position: 'absolute', inset: 0, overflow: 'hidden', color: 'transparent', pointerEvents: 'none', userSelect: 'none' }}>
         {paint && lines.map((line, index) => <span key={index} data-script-line={index + 1} style={highlights.has(index + 1) ? squiggle : undefined}>{line || '\u200b'}{index < lines.length - 1 ? '\n' : ''}</span>)}
       </div>
       <textarea ref={input} aria-label={t('editStory')} aria-invalid={!!issues.length} value={value} spellCheck={false} autoCapitalize="off" autoCorrect="off" wrap="soft"
         style={{ ...metrics, position: 'absolute', inset: 0, width: '100%', height: '100%', resize: 'none', border: 0, outline: 'none', background: 'transparent', color: '#222', caretColor: '#222', overflow: 'auto' }}
-        onChange={event => { onChangeText(event.currentTarget.value); reportSelection(); }} onSelect={reportSelection} onScroll={syncScroll} />
+        onFocus={onFocus} onBlur={onBlur} onChange={event => { onChangeText(event.currentTarget.value); reportSelection(); }} onSelect={reportSelection} onScroll={syncScroll} />
     </div>
-    <ScriptIssues value={value} issues={issues} pending={pending} onSelect={issue => {
+    <ScriptIssues value={value} issues={issues} pending={pending} compact={compact} keyboardVisible={keyboardVisible} onSelect={issue => {
       const textarea = input.current;
       if (!textarea) return;
       textarea.focus(); textarea.setSelectionRange(issue.start, issue.end);
@@ -52,4 +53,4 @@ export default function StoryScriptEditor({ value, onChangeText, onSelectionChan
 }
 const metrics: CSSProperties = { boxSizing: 'border-box', margin: 0, padding: 16, fontSize: 15, lineHeight: '22px', fontFamily: 'Consolas, "Malgun Gothic", monospace', fontWeight: 400, fontVariantLigatures: 'none', letterSpacing: 0, whiteSpace: 'pre-wrap', overflowWrap: 'break-word', wordBreak: 'normal', tabSize: 4, textAlign: 'left' };
 const squiggle: CSSProperties = { textDecorationLine: 'underline', textDecorationStyle: 'wavy', textDecorationColor: '#d72f48', textUnderlineOffset: '3px', textDecorationSkipInk: 'none' };
-const styles = StyleSheet.create({ root: { flex: 1, minWidth: 0, minHeight: 0 } });
+const styles = StyleSheet.create({ root: { flex: 1, minWidth: 0, minHeight: 0 }, keyboardButton: { alignSelf: 'flex-end', minHeight: 36, justifyContent: 'center', paddingHorizontal: 12, marginBottom: 6, borderRadius: 8, backgroundColor: '#eceff3' } });

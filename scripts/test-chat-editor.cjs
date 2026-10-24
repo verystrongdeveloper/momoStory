@@ -18,6 +18,7 @@ function load(file, mocks) {
 }
 const rn = Object.fromEntries(['View', 'Text', 'TextInput', 'TouchableOpacity', 'ScrollView', 'Image'].map(name => [name, name]));
 rn.StyleSheet = { create: value => value }; rn.Platform = { OS: 'web' };
+rn.Keyboard = { dismiss() {} };
 const t = (key, values) => values?.index ? `${key}:${values.index}` : key;
 const common = { react: React, 'react-native': rn, '@/i18n': { useI18n: () => ({ t, language: 'ko' }) } };
 const ChatEditor = load('components/chat/ChatMessageEditor.tsx', common).default;
@@ -36,9 +37,11 @@ library.updateStory(initial.id, script, messages);
 messages[0].text = 'external mutation';
 assert.equal(rows[0].chatMessages[0].text, 'hello', 'saved chat is copied');
 let compact = false;
+let keyboardInset = 0;
 const List = load('components/chat/StoryLibraryList.tsx', {
   ...common, '@expo/vector-icons': { Ionicons: 'Ionicons' }, '@/constants/characters': { avatarOf: () => 1, displayCharacterName: name => name },
   '@/hooks/useLayout': { useLayout: () => ({ isCompact: compact }) }, '@/components/chat/StoryAssetPanel': 'StoryAssetPanel',
+  '@/hooks/useKeyboardInset': { useKeyboardInset: () => keyboardInset },
   './VideoExportModal': 'VideoExportModal', '@/components/community/PublishStoryModal': 'PublishStoryModal', './StoryScriptEditor': 'StoryScriptEditor',
   './ChatMessageEditor': ChatEditor, '@/store/temporaryChats': { getTemporaryChat: () => ({ clear() {}, getSnapshot: () => ({ isWaiting: false }) }) }, '@/services/geminiKey': { getGeminiKey: () => '' }, '../../shared/conversation': require('../shared/conversation'), '@/store/storyLibrary': library, '@/utils/insertStoryAsset': {}, '@/platform/clipboard': {}, '@/utils/storyFile': {}, '@/utils/storyPrompt': {},
   '@/components/CharacterAvatar': 'CharacterAvatar', '@/constants/eventAssets': { bgMap: {} }, '@/utils/parseEventScript': { __esModule: true, default: () => [] },
@@ -53,6 +56,20 @@ const List = load('components/chat/StoryLibraryList.tsx', {
       await React.act(async () => button(tree, 'edit').props.onPress());
     };
     await openEdit();
+    if (compact) {
+      assert.equal(tree.root.findAllByProps({ accessibilityLabel: 'roomTitle' }).length, 0, 'mobile opens with the room details collapsed');
+      const beforeFocus = tree.root.findByType('StoryScriptEditor').props.value;
+      await React.act(async () => { keyboardInset = 300; tree.root.findByType('StoryScriptEditor').props.onFocus(); });
+      assert.equal(tree.root.findAllByProps({ accessibilityRole: 'tablist' }).length, 0, 'typing gives the tab bar space to the script');
+      assert.equal(tree.root.findByType('StoryScriptEditor').props.keyboardVisible, true);
+      assert.equal(tree.root.findByType('StoryScriptEditor').props.value, beforeFocus, 'keyboard changes never replace the draft');
+      assert.ok(button(tree, 'save'), 'saving remains available above the keyboard');
+      await React.act(async () => { keyboardInset = 0; tree.root.findByType('StoryScriptEditor').props.onBlur(); });
+      assert.equal(tree.root.findAllByProps({ accessibilityRole: 'tablist' }).length, 1, 'tabs return after keyboard dismissal');
+      await React.act(async () => button(tree, 'roomDetails').props.onPress());
+      assert.equal(tree.root.findByProps({ accessibilityLabel: 'roomTitle' }).props.value, rows[0].title, 'room title remains editable on demand');
+      await React.act(async () => button(tree, 'roomDetails').props.onPress());
+    }
     await React.act(async () => tree.root.findByType('StoryScriptEditor').props.onChangeText(script.replace('Test', 'Updated')));
     await React.act(async () => button(tree, 'editChat').props.onPress());
     assert.equal(tree.root.findAllByType('StoryAssetPanel').length, 0);
@@ -107,6 +124,7 @@ const List = load('components/chat/StoryLibraryList.tsx', {
   const room = library.appendRoomStory(initial.id, 'title : Episode two\n호시노 : Second\nendEvent', [{ sender: 'user', text: 'later chat' }, { sender: 'character', text: 'later reply' }]);
   const originalEpisodes = JSON.parse(JSON.stringify(library.episodesOf(room)));
   await React.act(async () => { tree = Renderer.create(React.createElement(List, { initialEdit: room, onOpenStory() {} })); });
+  if (compact) await React.act(async () => button(tree, 'roomDetails').props.onPress());
   await React.act(async () => tree.root.findByProps({ accessibilityLabel: 'roomTitle' }).props.onChangeText('Renamed room'));
   await React.act(async () => tree.root.findByType('StoryScriptEditor').props.onChangeText('title : Edited second\nendEvent'));
   const episodeTabs = () => tree.root.findAllByProps({ accessibilityRole: 'tab' }).filter(node => node.findAllByType('Ionicons').some(icon => icon.props.name === 'book-outline'));

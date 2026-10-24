@@ -61,6 +61,16 @@ const invalid = (changes, code) => assert.throws(() => validatePublicStory({ ...
     '[animation : jump]',
   ]) invalid({ script: `title : Test\n${row}\nendEvent` }, 'INVALID_COMMAND');
   invalid({ script: 'title : Test\n호시노 : hi [music : Aira.mp3] [music : none]\nendEvent' }, 'INVALID_METADATA');
+  const bracketProse = 'title : Test\nnarration : 화면에 [시스템 완전 락다운]이라는 글자가 점멸했다. [sound : SE_Denied_01.mp3]\n코유키(세미나) : 표지에 [샬레 중앙 단말기 비상 복구 지침서]라고 적혀 있어요! [emotion : koyuki_happy.png, animation : shakeY]\nnarration : 콘솔 창에 [인증 성공]이라는 문구가 떠올랐다. [sound : SE_Confirm_02.mp3]\nselection : (1)"[인증 성공]이라고 뜨네." (2)"좋아."\nendEvent';
+  validatePublicStory({ ...koyuki, script: bracketProse }, assets);
+  const parsedProse = load('utils/parseEventScript.ts').default(bracketProse);
+  assert.ok(parsedProse.find(line => line.type === 'narration' && line.text.includes('[시스템 완전 락다운]') && line.soundFile === 'SE_Denied_01.mp3'));
+  assert.ok(parsedProse.find(line => line.type === 'dialogue' && line.text.includes('[샬레 중앙 단말기 비상 복구 지침서]') && line.emotion === 'koyuki_happy' && line.animationType === 'shakeY'));
+  assert.ok(parsedProse.find(line => line.type === 'narration' && line.text.includes('[인증 성공]') && line.soundFile === 'SE_Confirm_02.mp3'));
+  assert.equal(parsedProse.find(line => line.type === 'selection').options[0], '[인증 성공]이라고 뜨네.');
+  for (const bad of ['[unknownEffect : anything]', '[emotion koyuki_happy.png]', '[emotion : koyuki_missing.png]', '[emotion : koyuki_happy.png, emotion : koyuki_default.png]']) {
+    assert.throws(() => validatePublicStory({ ...koyuki, script: `title : Test\n코유키 : [안내 문구]를 확인해요. ${bad}\nendEvent` }, assets), 'literal brackets must not bypass effect validation');
+  }
   for (const separator of [':', '=']) validatePublicStory({ ...sample, script: `title : Test\n\n호시노 : hi\n\nwaitSecond ${separator} 2\n\nendEvent` }, assets);
   const broken = '\n\ntitle : Test\n\n호시노 : hi [emotion : missing.png]\n\nwaitSecond = 31\n\nendEvent';
   const diagnostics = validation.diagnoseStoryScript(broken, assets);

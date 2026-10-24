@@ -1,5 +1,6 @@
 export const scriptEditorTranslations = {
   ko: {
+    roomDetails: '채팅방 정보', scriptHideKeyboard: '키보드 닫기', scriptIssueSummary: '대본 오류 {count}개',
     editChat: '채팅 편집', chatEditorHint: '메시지 내용·발신자·순서를 수정합니다. 저장하면 스토리와 채팅이 함께 반영됩니다.', chatEditorEmpty: '저장된 채팅이 없습니다. 아래 버튼으로 메시지를 추가하세요.', chatEditorUser: '선생님', chatEditorCharacter: '캐릭터', chatEditorAddUser: '+ 선생님 메시지', chatEditorAddCharacter: '+ 캐릭터 메시지', chatEditorShowAvatar: '프로필·이름 표시', chatEditorMoveUp: '{index}번 메시지 위로', chatEditorMoveDown: '{index}번 메시지 아래로', chatEditorDelete: '{index}번 메시지 삭제', chatEditorMessage: '{index}번 메시지 내용', chatEditorEmptyMessage: '빈 메시지에 내용을 입력하거나 삭제해 주세요.',
     scriptScrollMode: '스크롤 모드', scriptResumeEditing: '편집 모드', scriptScrollTop: '맨 위', scriptScrollBottom: '맨 아래', scriptScrollHint: '키보드 없이 스크롤할 수 있습니다. 수정할 줄을 누르면 편집합니다.', scriptEditLine: '{line}번째 줄 편집',
     scriptChecking: '대본 검사 중…', scriptIssueCount: '대본 오류 {count}개 · 누르면 해당 줄로 이동', scriptValid: '대본 형식 검사: 오류 없음',
@@ -15,6 +16,7 @@ export const scriptEditorTranslations = {
     scriptError_INVALID_STORY: '대본에 사용할 수 없는 제어 문자가 있습니다.',
   },
   en: {
+    roomDetails: 'Room details', scriptHideKeyboard: 'Hide keyboard', scriptIssueSummary: '{count} script errors',
     editChat: 'Edit chat', chatEditorHint: 'Edit message text, senders and order. Save applies both the story and chat.', chatEditorEmpty: 'No saved chat. Add messages using the buttons below.', chatEditorUser: 'Sensei', chatEditorCharacter: 'Character', chatEditorAddUser: '+ Sensei message', chatEditorAddCharacter: '+ Character message', chatEditorShowAvatar: 'Show profile and name', chatEditorMoveUp: 'Move message {index} up', chatEditorMoveDown: 'Move message {index} down', chatEditorDelete: 'Delete message {index}', chatEditorMessage: 'Message {index} text', chatEditorEmptyMessage: 'Enter text for empty messages or delete them.',
     scriptScrollMode: 'Scroll mode', scriptResumeEditing: 'Edit mode', scriptScrollTop: 'Top', scriptScrollBottom: 'Bottom', scriptScrollHint: 'Scroll without opening the keyboard. Tap a line to edit it.', scriptEditLine: 'Edit line {line}',
     scriptChecking: 'Checking script…', scriptIssueCount: '{count} script errors · select to jump to a line', scriptValid: 'Script format: no errors',
@@ -30,6 +32,7 @@ export const scriptEditorTranslations = {
     scriptError_INVALID_STORY: 'The script contains unsupported control characters.',
   },
   ja: {
+    roomDetails: 'チャットルーム情報', scriptHideKeyboard: 'キーボードを閉じる', scriptIssueSummary: '台本エラー {count}件',
     editChat: 'チャット編集', chatEditorHint: '本文・送信者・順序を編集できます。保存すると台本とチャットが反映されます。', chatEditorEmpty: '保存済みの会話はありません。下のボタンで追加できます。', chatEditorUser: '先生', chatEditorCharacter: 'キャラクター', chatEditorAddUser: '+ 先生のメッセージ', chatEditorAddCharacter: '+ キャラクターのメッセージ', chatEditorShowAvatar: 'プロフィール・名前を表示', chatEditorMoveUp: 'メッセージ{index}を上へ', chatEditorMoveDown: 'メッセージ{index}を下へ', chatEditorDelete: 'メッセージ{index}を削除', chatEditorMessage: 'メッセージ{index}の本文', chatEditorEmptyMessage: '空のメッセージに本文を入力するか削除してください。',
     scriptScrollMode: 'スクロールモード', scriptResumeEditing: '編集モード', scriptScrollTop: '先頭', scriptScrollBottom: '末尾', scriptScrollHint: 'キーボードを開かずにスクロールできます。行をタップすると編集できます。', scriptEditLine: '{line}行目を編集',
     scriptChecking: '台本を確認中…', scriptIssueCount: '台本エラー {count}件・押すと該当行へ移動', scriptValid: '台本形式：エラーなし',
@@ -45,6 +48,7 @@ export const scriptEditorTranslations = {
     scriptError_INVALID_STORY: '台本に未対応の制御文字があります。',
   },
   zh: {
+    roomDetails: '聊天室信息', scriptHideKeyboard: '收起键盘', scriptIssueSummary: '剧本错误 {count}项',
     editChat: '编辑聊天', chatEditorHint: '修改消息内容、发送者和顺序。保存时同时更新故事与聊天。', chatEditorEmpty: '没有已保存的聊天。使用下方按钮添加消息。', chatEditorUser: '老师', chatEditorCharacter: '角色', chatEditorAddUser: '+ 老师消息', chatEditorAddCharacter: '+ 角色消息', chatEditorShowAvatar: '显示头像与名字', chatEditorMoveUp: '上移第{index}条消息', chatEditorMoveDown: '下移第{index}条消息', chatEditorDelete: '删除第{index}条消息', chatEditorMessage: '第{index}条消息内容', chatEditorEmptyMessage: '请填写空消息或将其删除。',
     scriptScrollMode: '滚动模式', scriptResumeEditing: '编辑模式', scriptScrollTop: '顶部', scriptScrollBottom: '底部', scriptScrollHint: '无需打开键盘即可滚动。点击某一行即可编辑。', scriptEditLine: '编辑第{line}行',
     scriptChecking: '正在检查剧本…', scriptIssueCount: '{count}处剧本错误 · 点击跳转', scriptValid: '剧本格式：无错误',

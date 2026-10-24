@@ -10,12 +10,14 @@ export default function Home() {
 
   return (
     <KeyboardAvoidingView
-      behavior={Platform.select({ ios: 'padding', android: 'height' })}
+      behavior={Platform.OS === 'ios' ? 'padding' : undefined}
       style={[
         styles.container,
         {
           paddingTop: insets.top,
-          paddingBottom: keyboardInset > 0 ? 0 : insets.bottom,
+          // Android adjustResize already removes keyboard height. Add only
+          // any overlap still remaining, rather than shrinking the view twice.
+          paddingBottom: keyboardInset > 0 ? (Platform.OS === 'ios' || keyboardInset === 1 ? 0 : keyboardInset) : insets.bottom,
           paddingLeft: insets.left,
           paddingRight: insets.right,
         },

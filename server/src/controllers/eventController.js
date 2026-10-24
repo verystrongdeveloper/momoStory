@@ -4,7 +4,8 @@ const { buildSelectionPrompt } = require('../utils/selectionPromptBuilder');
 const { buildEventPromptPro } = require('../utils/promptBuilderPro');
 const { getDialogHistory, readKey } = require('./chatController');
 const { resources } = require('../config/prompts');
-const { hasStoryAssets, keepAssetSpeakers, parseStorySelection } = require('../utils/characterList');
+const { hasStoryAssets, parseStorySelection } = require('../utils/characterList');
+const { generateValidatedStory } = require('../../../shared/prompts/generatedStory');
 const { normalizeSenseiMode } = require('../../../shared/senseiMode');
 const { conversationContext, dialogPairs, continuationText } = require('../../../shared/conversation');
 
@@ -83,20 +84,18 @@ exports.createEvent = async (req, res) => {
       (selection.direction ?? '') + continuation,
       senseiMode,
     );
-    const eventRes = await proChat.sendMessage(eventPrompt);
-
-    // pro 응답 본문
-    const rawScript = typeof eventRes.response.text === 'function'
-      ? await eventRes.response.text()
-      : eventRes.response.text;
-    const script = keepAssetSpeakers(rawScript.trim(), allCharsWithEmotions.map(info => info.name), req.body.language);
-
-    if (!script.includes('endEvent')) {
-      console.warn(`[${character}] 이벤트 스크립트 형식 경고`);
-    }
+    const script = await generateValidatedStory({
+      generate: async repair => {
+        const result = await proChat.sendMessage(eventPrompt + (repair ?? ''));
+        return typeof result.response.text === 'function' ? await result.response.text() : result.response.text;
+      },
+      names: allCharsWithEmotions.map(info => info.name),
+      language: req.body.language,
+    });
 
     return res.json({ eventScript: script, selection });
   } catch (err) {
+    if (err.code === 'STORY_FORMAT_INVALID') return res.status(502).json({ error: '스토리 형식을 바로잡지 못했습니다. 다시 생성해 주세요.', code: err.code });
     console.error(`[이벤트 생성 오류 - ${character}]`, err);
     return res.status(500).json({ error: '이벤트 생성 실패', detail: err.message });
   }

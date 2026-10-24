@@ -227,6 +227,7 @@ const hasCount = (tree, count) => tree.root.findAllByType('Text').some(text => J
   let libraryRows = [{ ...detail, createdAt: Date.now() }];
   let notifyLibrary;
   const Library = load('components/chat/StoryLibraryList.tsx', {
+    '@/hooks/useKeyboardInset': { useKeyboardInset: () => 0 },
     './CharacterFilter': 'CharacterFilter', './Pagination': { __esModule: true, default: 'Pagination', PAGE_SIZE: 20 },
     '@/constants/eventAssets': { bgMap: {} }, '@/utils/parseEventScript': load('utils/parseEventScript.ts', {}),
     './StoryScriptEditor': 'StoryScriptEditor', './ChatMessageEditor': 'ChatMessageEditor', '@/store/temporaryChats': { getTemporaryChat: () => ({ getSnapshot: () => ({ isWaiting: false }), clear() {} }), forgetTemporaryRoom() {} }, '@/services/geminiKey': { getGeminiKey: () => '' }, '../../shared/conversation': require('../shared/conversation'),

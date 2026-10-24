@@ -4,17 +4,20 @@ import { useI18n } from '@/i18n';
 import { ScriptIssues, useScriptDiagnostics, type ScriptEditorProps } from './scriptEditorShared';
 
 /** Native input keeps OS/IME editing intact; diagnostics select the offending range. */
-export default function StoryScriptEditor({ value, onChangeText, onSelectionChange, style }: ScriptEditorProps) {
+export default function StoryScriptEditor({ value, onChangeText, onSelectionChange, style, compact, keyboardVisible, onFocus, onBlur }: ScriptEditorProps) {
   const { t } = useI18n();
   const input = useRef<TextInput>(null);
   const scroll = useRef<ScrollView>(null);
   const [browsing, setBrowsing] = useState(false);
   const [target, setTarget] = useState<{ start: number; end: number } | null>(null);
   const scrollY = useRef(0);
+  const focused = useRef(false);
+  const selection = useRef({ start: 0, end: 0 });
   const { issues, pending } = useScriptDiagnostics(value);
   const editRange = (range: { start: number; end: number }) => {
     setBrowsing(false);
     setTarget(range);
+    selection.current = range;
     onSelectionChange(range);
   };
   useEffect(() => {
@@ -26,9 +29,10 @@ export default function StoryScriptEditor({ value, onChangeText, onSelectionChan
   let offset = 0;
   return <View style={[styles.root, style]}>
     <View style={styles.toolbar}>
-      <TouchableOpacity accessibilityRole="button" accessibilityState={{ selected: browsing }} style={[styles.button, browsing && styles.active]} onPress={() => { Keyboard.dismiss(); setBrowsing(!browsing); }}>
+      <TouchableOpacity accessibilityRole="button" accessibilityState={{ selected: browsing }} style={[styles.button, browsing && styles.active]} onPress={() => { Keyboard.dismiss(); onBlur?.(); setBrowsing(!browsing); }}>
         <Text style={styles.buttonText}>{t(browsing ? 'scriptResumeEditing' : 'scriptScrollMode')}</Text>
       </TouchableOpacity>
+      {keyboardVisible && !browsing && <TouchableOpacity accessibilityRole="button" accessibilityLabel={t('scriptHideKeyboard')} style={styles.button} onPress={() => Keyboard.dismiss()}><Text style={styles.buttonText}>{t('scriptHideKeyboard')}</Text></TouchableOpacity>}
       {browsing && <>
         <TouchableOpacity accessibilityRole="button" style={styles.button} onPress={() => scroll.current?.scrollTo({ y: 0, animated: true })}><Text style={styles.buttonText}>{t('scriptScrollTop')}</Text></TouchableOpacity>
         <TouchableOpacity accessibilityRole="button" style={styles.button} onPress={() => scroll.current?.scrollToEnd({ animated: true })}><Text style={styles.buttonText}>{t('scriptScrollBottom')}</Text></TouchableOpacity>
@@ -46,9 +50,11 @@ export default function StoryScriptEditor({ value, onChangeText, onSelectionChan
         })}
       </ScrollView>
     </> : <TextInput ref={input} accessibilityLabel={t('editStory')} style={[styles.input, !!issues.length && styles.invalid]} value={value} onChangeText={onChangeText}
+      onFocus={() => { focused.current = true; onFocus?.(); }} onBlur={() => { focused.current = false; onBlur?.(); }}
+      onLayout={() => { if (focused.current) input.current?.setNativeProps({ selection: selection.current }); }}
       onScroll={event => { scrollY.current = event.nativeEvent.contentOffset.y; }} scrollEnabled
-      onSelectionChange={event => onSelectionChange(event.nativeEvent.selection)} multiline textAlignVertical="top" autoCapitalize="none" autoCorrect={false} spellCheck={false} />}
-    <ScriptIssues value={value} issues={issues} pending={pending} onSelect={issue => editRange({ start: issue.start, end: issue.end })} />
+      onSelectionChange={event => { selection.current = event.nativeEvent.selection; onSelectionChange(selection.current); }} multiline textAlignVertical="top" autoCapitalize="none" autoCorrect={false} spellCheck={false} disableFullscreenUI />}
+    <ScriptIssues value={value} issues={issues} pending={pending} compact={compact} keyboardVisible={keyboardVisible} onSelect={issue => editRange({ start: issue.start, end: issue.end })} />
   </View>;
 }
 const styles = StyleSheet.create({
@@ -57,8 +63,8 @@ const styles = StyleSheet.create({
   button: { minHeight: 40, justifyContent: 'center', paddingHorizontal: 12, borderRadius: 8, backgroundColor: '#eceff3' },
   active: { backgroundColor: '#f8d6e3' }, buttonText: { fontSize: 13, fontWeight: '600', color: '#6a5361' },
   hint: { fontSize: 12, color: '#748094', paddingBottom: 8 },
-  reader: { flex: 1, minHeight: 120, borderWidth: 1, borderColor: '#e2e6ea', borderRadius: 12, backgroundColor: 'white' },
+  reader: { flex: 1, minHeight: 0, borderWidth: 1, borderColor: '#e2e6ea', borderRadius: 12, backgroundColor: 'white' },
   readerContent: { padding: 16, paddingBottom: 80 }, readerLine: { fontSize: 15, lineHeight: 22, color: '#222', minHeight: 22 },
-  input: { flex: 1, minHeight: 120, padding: 16, paddingBottom: 48, borderWidth: 1, borderColor: '#e2e6ea', borderRadius: 12, backgroundColor: 'white', fontSize: 15, lineHeight: 22, color: '#222' },
+  input: { flex: 1, minHeight: 0, padding: 12, paddingBottom: 32, borderWidth: 1, borderColor: '#e2e6ea', borderRadius: 12, backgroundColor: 'white', fontSize: 15, lineHeight: 22, color: '#222' },
   invalid: { borderColor: '#d44b60' },
 });

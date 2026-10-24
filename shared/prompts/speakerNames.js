@@ -1,4 +1,5 @@
 const NAMES = {
+  코유키: { ko: '코유키', en: 'Koyuki', ja: 'コユキ', zh: '小雪' },
   케이: { ko: '케이', en: 'Kei', ja: 'ケイ', zh: '凯伊' },
   후부키: { ko: '후부키', en: 'Fubuki', ja: 'フブキ', zh: '吹雪' },
   호시노: { ko: '호시노', en: 'Hoshino', ja: 'ホシノ', zh: '星野' },
@@ -6,6 +7,7 @@ const NAMES = {
   마리: { ko: '마리', en: 'Mari', ja: 'マリー', zh: '玛丽' },
 };
 const AFFILIATIONS = {
+  세미나: { en: 'Seminar', ja: 'セミナー', zh: '研讨会' },
   '밀레니엄 사이언스 스쿨': { en: 'Millennium Science School', ja: 'ミレニアムサイエンススクール', zh: '千年科学学园' },
   초현상특무부: { en: 'Super Phenomenon Task Force', ja: '特異現象捜査部', zh: '超现象特务部' },
   밀레니엄: { en: 'Millennium', ja: 'ミレニアム', zh: '千年' },

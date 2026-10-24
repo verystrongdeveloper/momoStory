@@ -12,6 +12,7 @@ const ASPECT_RULES: Array<[RegExp, number]> = [
   [/^hoshino_/, 373 / 668],
   [/^hina_/, 572 / 1024],
   [/^mari_/, 572 / 1024],
+  [/^koyuki_/, 371 / 673],
   [/^fubuki_/, 371 / 673],
   [/^aris_/, 800 / 904],
   [/^ako_/, 320 / 957],

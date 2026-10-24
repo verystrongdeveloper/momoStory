@@ -21,6 +21,20 @@ export interface Character {
 
 export const CHARACTERS: Character[] = [
   {
+    name: '코유키',
+    status: '아니 이게 제 잘못임;;?',
+    displayName: { ko: '코유키', en: 'Koyuki', ja: 'コユキ', zh: '小雪' },
+    displayStatus: { ko: '아니 이게 제 잘못임;;?', en: "It's my fault?!", ja: 'いや、これって私のせいですか……？', zh: '不對，這是我的錯嗎……？' },
+    image: require('../assets/images/koyuki/koyuki_default.png'),
+    avatar: {
+      image: require('../assets/images/koyuki/koyuki_smile.png'),
+      fit: 'contain',
+      scale: 2.4,
+      offsetY: 0.46,
+      backgroundColor: '#f8e8ef',
+    },
+  },
+  {
     name: '케이',
     status: '할 말이 있으면 말씀하세요.',
     displayName: { ko: '케이', en: 'Kei', ja: 'ケイ', zh: '凯伊' },

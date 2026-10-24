@@ -77,7 +77,7 @@ const StoryContainer: React.FC = () => {
   const fullPaneView = communityOpen ? <CommunityPanel /> : settingsOpen ? (
     <SettingsPanel onOpenTutorial={() => setGuide('tutorial')} onOpenTerms={() => setGuide('terms')} />
   ) : savedStory ? (
-    <ConversationRoom key={savedStory.id} story={savedStory} />
+    <ConversationRoom key={savedStory.id} story={savedStory} setGlobalLoading={setGlobalLoading} />
   ) : (
     <StoryLibraryList onOpenStory={setSavedStory} />
   );

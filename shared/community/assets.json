@@ -136,6 +136,22 @@
     "sweat.png"
   ],
   "emotions": {
+    "코유키": [
+      "koyuki_default.png",
+      "koyuki_smile.png",
+      "koyuki_happy.png",
+      "koyuki_laugh.png",
+      "koyuki_surprised.png",
+      "koyuki_awkward_laugh.png",
+      "koyuki_sad.png",
+      "koyuki_shocked.png",
+      "koyuki_crying_hit_by_yuuka.png",
+      "koyuki_pout.png",
+      "koyuki_smug.png",
+      "koyuki_uneasy.png",
+      "koyuki_shy_smile.png",
+      "koyuki_embarrassed.png"
+    ],
     "호시노": [
       "hoshino_laugh.png",
       "hoshino_smug_talking.png",

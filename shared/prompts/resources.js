@@ -3,6 +3,31 @@
 // 프론트 constants/eventAssets.ts 의 키와 반드시 일치해야 한다.
 
 const resources = {
+  코유키: {
+    emotions: [
+      'koyuki_default.png', 'koyuki_smile.png', 'koyuki_happy.png',
+      'koyuki_laugh.png', 'koyuki_surprised.png', 'koyuki_awkward_laugh.png',
+      'koyuki_sad.png', 'koyuki_shocked.png', 'koyuki_crying_hit_by_yuuka.png',
+      'koyuki_pout.png', 'koyuki_smug.png', 'koyuki_uneasy.png',
+      'koyuki_shy_smile.png', 'koyuki_embarrassed.png',
+    ],
+    emotionDescriptions: {
+      'koyuki_default.png': '눈을 뜨고 입을 다문 기본 표정. 평범한 대화와 상대의 말을 듣는 장면.',
+      'koyuki_smile.png': '눈을 뜨고 작게 미소 짓는 표정. 가벼운 즐거움과 친근함.',
+      'koyuki_happy.png': '눈을 반짝이며 입을 벌린 밝은 웃음. 신나는 제안과 들뜬 기분.',
+      'koyuki_laugh.png': '양쪽 눈을 감고 활짝 웃음. 즐겁게 웃거나 기뻐하는 장면.',
+      'koyuki_surprised.png': '눈을 뜨고 입을 작게 동그랗게 벌림. 뜻밖의 말에 놀라거나 되묻는 장면.',
+      'koyuki_awkward_laugh.png': '눈을 질끈 감고 식은땀을 흘리며 웃음. 들킨 장난을 웃어넘기려는 어색함.',
+      'koyuki_sad.png': '눈을 감고 눈썹과 입매가 처진 표정. 실망하거나 풀이 죽은 장면.',
+      'koyuki_shocked.png': '얼굴에 푸른 그늘, 납작한 눈과 크게 벌린 입. 일이 크게 꼬였을 때의 당황과 경악.',
+      'koyuki_crying_hit_by_yuuka.png': '머리에 혹이 있고 눈물을 줄줄 흘리며 크게 우는 특수 표정. 실제로 머리를 부딪치거나 혼나는 소동이 묘사된 경우에만 사용한다. 일반적인 슬픔에는 sad를 쓴다. 파일명만으로 유우카를 등장시키지 않는다.',
+      'koyuki_pout.png': '한쪽 눈썹을 올리고 입을 삐죽임. 못마땅함과 삐침.',
+      'koyuki_smug.png': '반쯤 내린 눈매와 장난스러운 웃음. 의기양양함과 능청스러움.',
+      'koyuki_uneasy.png': '눈을 뜬 채 눈썹과 입매가 처짐. 불안과 난처함.',
+      'koyuki_shy_smile.png': '붉어진 볼과 작은 미소. 칭찬에 쑥스럽지만 기분 좋은 장면.',
+      'koyuki_embarrassed.png': '볼을 붉히고 눈썹과 입매가 처짐. 민망함과 부끄러움.',
+    },
+  },
   공통: {
     bg: [
       'BG_AbydosCouncilRoom.jpg',

@@ -65,10 +65,8 @@ export function episodeStory(story: SavedStory, episodeId?: string): SavedStory 
 export function publicationStory(story: SavedStory, episodeId?: string): SavedStory | null {
   const selected = episodeStory(story, episodeId);
   if (!selected) return null;
-  // Archive validation requires the public title and script title to agree.
-  // Room names are independent of individual script titles, so rename only the copy.
-  const script = selected.script.replace(/^([ \t]*(?:타이틀|title)[ \t]*[:：])[^\r\n]*/im, (_line, prefix: string) => `${prefix} ${story.title}`);
-  return { ...selected, id: story.id, title: story.title, script };
+  // Public titles belong to the selected script, independently of the room name.
+  return { ...selected, id: story.id, title: titleOf(selected.script, selected.character) };
 }
 
 export function updateRoom(id: string, change: Partial<Pick<SavedStory, 'title' | 'chatMessages' | 'episodes'>>): SavedStory | null {
@@ -87,8 +85,10 @@ export function appendRoomStory(id: string, script: string, chatMessages: SavedC
   const story = readStored().find(story => story.id === id);
   if (!story) return null;
   const messages = chatMessages.map(message => ({ ...message }));
-  return updateRoom(id, { chatMessages: messages, episodes: [...episodesOf(story), {
-    id: `${Date.now()}-${Math.random().toString(36).slice(2, 8)}`, title: titleOf(script, story.character),
+  const episodes = episodesOf(story);
+  const title = titleOf(script, story.character);
+  return updateRoom(id, { ...(episodes.length === 0 ? { title } : {}), chatMessages: messages, episodes: [...episodes, {
+    id: `${Date.now()}-${Math.random().toString(36).slice(2, 8)}`, title,
     script, createdAt: Date.now(), chatMessages: messages,
     afterMessageCount: messages.length,
   }] });

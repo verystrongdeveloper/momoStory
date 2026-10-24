@@ -26,6 +26,11 @@ const invalid = (changes, code) => assert.throws(() => validatePublicStory({ ...
   assert.equal(validatePublicStory(fubuki, assets).character, '후부키');
   const kei = { ...sample, clientId: 'kei', character: '케이', script: 'title : Test\n케이(초현상특무부) : 같이 확인해요. [emotion : kei_default.png]\nselection : (1)"좋아" [speaker : Kei, dialogue : 이쪽이에요., emotion : kei_smile.png]\nendEvent' };
   assert.equal(validatePublicStory(kei, assets).character, '케이');
+  const koyuki = { ...sample, clientId: 'koyuki', character: '코유키', script: 'title : Test\n코유키(세미나) : 같이 해 봐요! [emotion : koyuki_happy.png]\nendEvent' };
+  for (const speaker of ['코유키', 'Koyuki', 'コユキ', '小雪']) for (const emotion of assets.emotions.코유키) {
+    validatePublicStory({ ...koyuki, script: `title : Test\n${speaker}(세미나) : hi [emotion : ${emotion}]\nselection : (1)"Hi" [speaker : ${speaker}, dialogue : Hello, emotion : ${emotion}]\nendEvent` }, assets);
+  }
+  invalid({ ...koyuki, script: 'title : Test\n코유키 : hi [emotion : koyuki_missing.png]\nendEvent' }, 'INVALID_ASSET');
   for (const speaker of ['케이', 'Kei', 'ケイ', '凯伊']) for (const emotion of assets.emotions.케이) {
     validatePublicStory({ ...kei, script: `title : Test\n${speaker}(초현상특무부) : hi [emotion : ${emotion}]\nselection : (1)"Hi" [speaker : ${speaker}, dialogue : Hello, emotion : ${emotion}]\nendEvent` }, assets);
   }
@@ -103,6 +108,9 @@ const invalid = (changes, code) => assert.throws(() => validatePublicStory({ ...
   assert.equal((await invoke('publish', kei)).status, 200);
   assert.equal(calls.at(-1)[2].character, '케이');
   assert.equal((await invoke('list', { character: '케이' })).status, 200);
+  assert.equal((await invoke('publish', koyuki)).status, 200);
+  assert.equal(calls.at(-1)[2].character, '코유키');
+  assert.equal((await invoke('list', { character: '코유키' })).status, 200);
   assert.equal((await invoke('list', { offset: -1 })).status, 400);
   assert.equal((await invoke('list', { query: {} })).status, 400);
   for (const character of [null, {}, ['호시노'], 'x'.repeat(101)]) assert.equal((await invoke('list', { character })).status, 400);
@@ -139,6 +147,7 @@ const invalid = (changes, code) => assert.throws(() => validatePublicStory({ ...
     await db.exec(fs.readFileSync(path.join(root, 'supabase/migrations/202610210003_add_fubuki.sql'), 'utf8'));
     await db.exec(fs.readFileSync(path.join(root, 'supabase/migrations/202610220001_add_kei.sql'), 'utf8'));
     await db.exec(fs.readFileSync(path.join(root, 'supabase/migrations/202610240001_community_republish.sql'), 'utf8'));
+    await db.exec(fs.readFileSync(path.join(root, 'supabase/migrations/202610240002_add_koyuki.sql'), 'utf8'));
     const actor = '11111111-1111-4111-8111-111111111111', other = '22222222-2222-4222-8222-222222222222';
     await db.query('insert into auth.users values($1),($2)', [actor, other]);
     await db.query("insert into public.community_posts(author, client_id, title, character, script) values($1, 'mari-migration-check', 'Mari', '마리', 'test')", [actor]);
@@ -146,6 +155,15 @@ const invalid = (changes, code) => assert.throws(() => validatePublicStory({ ...
     const rpc = async (action, data = {}, user = actor) => (action === 'list'
       ? await db.query('select public.community_list($1::uuid, $2::jsonb) as result', [user, JSON.stringify(data)])
       : await db.query('select public.community_api($1::uuid, $2::text, $3::jsonb) as result', [user, action, JSON.stringify(data)])).rows[0].result;
+    const koyukiActor = '99999999-9999-4999-8999-999999999999';
+    await db.query('insert into auth.users values($1)', [koyukiActor]);
+    const koyukiPost = await rpc('publish', koyuki, koyukiActor);
+    assert.ok(koyukiPost.id);
+    const koyukiPage = await rpc('list', { character: '코유키', pagination: true }, koyukiActor);
+    assert.equal(koyukiPage.total, 1);
+    assert.equal(koyukiPage.posts[0].character, '코유키');
+    assert.equal((await rpc('detail', { id: koyukiPost.id }, koyukiActor)).script, koyuki.script);
+    await rpc('deletePost', { id: koyukiPost.id }, koyukiActor);
     // Publish, filter and read Fubuki through the real SQL API as a separate actor.
     const fubukiPost = await rpc('publish', fubuki, other);
     assert.ok(fubukiPost.id);

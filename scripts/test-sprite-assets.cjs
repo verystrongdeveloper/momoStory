@@ -16,9 +16,21 @@ function load(file) {
 (async () => {
   const { emotionMap } = load('constants/eventAssets.ts');
   const characters = load('constants/characters.ts').CHARACTERS;
-  assert.equal(manifest.length, Object.keys(emotionMap).length);
+  const pngSprites = Object.entries(emotionMap).filter(([, file]) => file.endsWith('.png'));
+  assert.equal(manifest.length + pngSprites.length, Object.keys(emotionMap).length);
   const files = new Set(manifest.map(entry => entry.file));
-  assert.deepEqual(new Set(Object.values(emotionMap).map(file => file.replace('../', ''))), files);
+  assert.deepEqual(new Set(Object.values(emotionMap).filter(file => file.endsWith('.webp')).map(file => file.replace('../', ''))), files);
+  // New PNG packs retain the user's filenames; the WebP provenance fixture
+  // continues to cover every existing converted sprite without weakening it.
+  for (const [key, file] of pngSprites) {
+    assert.match(key, /^koyuki_/);
+    const metadata = await sharp(path.resolve(root, 'constants', file)).metadata();
+    assert.equal(metadata.format, 'png');
+    assert.deepEqual([metadata.width, metadata.height], [371, 673]);
+    assert.equal(metadata.hasAlpha, true);
+  }
+  assert.equal(pngSprites.length, 14, 'all 14 Koyuki expressions are bundled');
+  console.log(`PASS ${pngSprites.length} Koyuki PNG sprites: original filenames, dimensions and transparency`);
   for (const character of characters) {
     for (const source of [character.image, character.avatar?.image].filter(Boolean)) {
       assert.ok(fs.existsSync(path.resolve(root, 'constants', source)), `Broken profile image: ${source}`);
@@ -47,7 +59,7 @@ function load(file) {
       assert.match(legacyName, /\.(png|jpg)$/);
       const script = `title : Legacy\n${character.name} : Hi [emotion : ${legacyName}]\nendEvent`;
       const key = parse(script).find(line => line.emotion).emotion;
-      assert.ok(emotionMap[key]?.endsWith('.webp'), `Legacy sprite does not resolve: ${legacyName}`);
+      assert.ok(emotionMap[key] && fs.existsSync(path.resolve(root, 'constants', emotionMap[key])), `Sprite does not resolve: ${legacyName}`);
       validate({ title: 'Legacy', character: character.name, script, chatMessages: [], clientId: 'legacy' }, assets);
     }
   }

@@ -11,7 +11,7 @@ import VideoExportModal from './VideoExportModal';
 import PublishStoryModal from '@/components/community/PublishStoryModal';
 import { downloadStory } from '@/utils/storyFile';
 
-export default function ConversationRoom({ story }: { story: SavedStory }) {
+export default function ConversationRoom({ story, setGlobalLoading }: { story: SavedStory; setGlobalLoading?: (value: boolean) => void }) {
   const { t, language } = useI18n();
   const [record, setRecord] = useState(() => listStories().find(item => item.id === story.id) ?? story);
   useEffect(() => subscribeStories(() => {
@@ -37,7 +37,7 @@ export default function ConversationRoom({ story }: { story: SavedStory }) {
       <TouchableOpacity accessibilityRole="button" disabled={isWaiting} style={[styles.action, isWaiting && { opacity: 0.4 }]} onPress={() => { setEditingStoryId(undefined); setEditing(true); }}><Text>{t('editRoom')}</Text></TouchableOpacity>
     </View>
     {!!notice && <Text accessibilityRole="alert" style={styles.hint}>{notice}</Text>}
-    <CharacterChat key={`${record.id}:${revision}`} characterName={record.character} displayName={displayCharacterName(record.character, language)} characterImage={avatarOf(record.character)} conversation={record} onStoryActions={setSelectedId} />
+    <CharacterChat key={`${record.id}:${revision}`} characterName={record.character} displayName={displayCharacterName(record.character, language)} characterImage={avatarOf(record.character)} conversation={record} setGlobalLoading={setGlobalLoading} onStoryActions={setSelectedId} />
     {selectedStory && <Modal transparent visible animationType="fade" onRequestClose={() => setSelectedId(null)}>
       <View style={styles.overlay}><View style={styles.menu} accessibilityViewIsModal>
         <Text style={styles.title}>{selectedStory.title}</Text>

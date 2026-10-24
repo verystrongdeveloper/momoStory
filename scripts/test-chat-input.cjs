@@ -371,10 +371,12 @@ process.once('beforeExit', () => { if (!completed) { console.error('FAIL unfinis
   assert.equal(tree.root.findAllByType('Text').some(node => ['bondEvent', 'generateStoryNowHint'].includes(node.props.children)), false, 'instant generation has no footer title or explanation');
   locked(false);
   await unmount();
-  await mount({ characterName: 'instant-story-test' });
+  const generationLoading = [];
+  await mount({ characterName: 'instant-story-test', setGlobalLoading: value => generationLoading.push(value) });
   assert.equal(instantButton().props.disabled, false, 'eligibility survives leaving the room');
   await React.act(async () => { void instantButton().props.onPress(); void instantButton().props.onPress(); });
   assert.equal(eventCalls.length, callsBeforeInstant + 1, 'rapid generate clicks make one request');
+  assert.deepEqual(generationLoading, [true], 'loading remains visible while generation is pending');
   locked(true);
   const errorLog = console.error;
   console.error = () => {};
@@ -382,10 +384,13 @@ process.once('beforeExit', () => { if (!completed) { console.error('FAIL unfinis
   finally { console.error = errorLog; }
   locked(false);
   assert.equal(instantButton().props.disabled, false, 'failed generation can be retried');
+  assert.deepEqual(generationLoading, [true, false], 'generation failure dismisses loading');
   await React.act(async () => { void instantButton().props.onPress(); });
+  assert.deepEqual(generationLoading, [true, false, true], 'retry shows loading again');
   await React.act(async () => eventCalls.at(-1).resolve({ eventScript: 'title : Instant\nendEvent' }));
   locked(false);
   assert.equal(temporaryChats.getTemporaryChat('instant-story-test', apiKey).getSnapshot().eventReady, true, 'generation stays available without locking chat');
+  assert.deepEqual(generationLoading, [true, false, true, false], 'successful generation dismisses loading');
   assert.deepEqual(savedStories.at(-1)[2].slice(0, 3).map(message => message.text), ['A story about this conversation', 'reply one', 'reply two']);
   const earlyStory = eventStore.consumePendingEvent();
   assert.equal(earlyStory.onComplete, undefined);

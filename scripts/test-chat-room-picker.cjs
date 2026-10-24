@@ -46,6 +46,15 @@ new Function('require', 'module', 'exports', code)(id => {
     await React.act(async () => option('conversationWithStory').props.onPress());
     assert.equal(tree.root.findByType('CharacterChat').props.room, 'bond');
     assert.ok(tree.root.findByType('StoryHeader').props.title.includes('conversationWithStory'));
+    if (compact) await React.act(async () => tree.root.findByType('StoryHeader').props.onBack());
+    await React.act(async () => tree.root.findByType('StorySidebar').props.onOpenLibrary());
+    await React.act(async () => tree.root.findByType('StoryLibraryList').props.onOpenStory({ id: 'library-loading', character: 'Hoshino', title: 'Room', script: '', chatMessages: [] }));
+    const libraryRoom = tree.root.findByType('ConversationRoom');
+    assert.equal(typeof libraryRoom.props.setGlobalLoading, 'function', 'library room receives the global loading callback');
+    await React.act(async () => libraryRoom.props.setGlobalLoading(true));
+    assert.ok(tree.root.findAllByType('Modal').some(node => node.props.visible === true && node.findAllByType('ActivityIndicator').length), 'library generation shows the loading overlay on desktop and mobile');
+    await React.act(async () => libraryRoom.props.setGlobalLoading(false));
+    assert.ok(!tree.root.findAllByType('Modal').some(node => node.props.visible === true && node.findAllByType('ActivityIndicator').length), 'loading overlay closes after generation settles');
     await React.act(async () => tree.unmount());
   }
   let greet = false;

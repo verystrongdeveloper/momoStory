@@ -41,6 +41,17 @@ assert.equal(library.publicationStory(rows[0]).id, legacy.id, 'republication ret
 assert.equal(library.publicationStory(rows[0], legacy.id).id, library.publicationStory(rows[0]).id, 'every episode and card menu publish to the same archive card');
 assert.equal(library.publicationStory(rows[0], legacy.id).title, rows[0].title, 'renaming a card updates its public title');
 assert.match(rows[0].script, /title : Second/);
+const validation = load('shared/community/validation.ts');
+const assets = require('../shared/community/assets.json');
+const publicCopy = library.publicationStory(rows[0]);
+assert.doesNotThrow(() => validation.validatePublicStory({ ...publicCopy, clientId: publicCopy.id }, assets), 'a room title different from its script title must still be publishable');
+assert.match(rows[0].script, /title : Second/, 'preparing publication must not rename the local script');
+const earlierPublicCopy = library.publicationStory(rows[0], legacy.id);
+assert.doesNotThrow(() => validation.validatePublicStory({ ...earlierPublicCopy, clientId: earlierPublicCopy.id }, assets), 'an earlier inline story is publishable under the room title too');
+assert.equal(earlierPublicCopy.id, publicCopy.id, 'different story titles retain the same republication identity');
+const koreanRoom = { ...rows[0], title: '케이와의 대화', episodes: [{ ...rows[0].episodes[0], script: '\r\n타이틀 ： 원래 제목\r\n호시노 : 안녕하세요\r\nendEvent' }] };
+assert.doesNotThrow(() => validation.validatePublicStory({ ...library.publicationStory(koreanRoom), clientId: koreanRoom.id }, assets), 'Korean title lines, full-width colons and CRLF are normalized on the public copy');
+assert.match(koreanRoom.episodes[0].script, /원래 제목/, 'local story titles remain intact');
 rows = types.parseStories(JSON.stringify(rows));
 assert.equal(rows[0].episodes.length, 2, 'native and web sanitization retain episodes across restart');
 assert.equal(rows[0].episodes[0].chatMessages.length, 2);
@@ -65,6 +76,19 @@ const Room = load('components/chat/ConversationRoom.tsx', {
 }).default;
 const button = (tree, text) => tree.root.findAllByType('TouchableOpacity').find(node => node.findAllByType('Text').some(item => item.props.children === text));
 (async () => {
+  let serverPayload;
+  const handler = load('supabase/functions/community/handler.ts', { '../../../shared/community/validation.ts': validation }).createCommunityHandler({
+    authenticate: async () => '11111111-1111-4111-8111-111111111111', assets,
+    rpc: async (_actor, _action, payload) => { serverPayload = payload; return { data: { id: 'published-post' }, error: null }; },
+  });
+  const response = await handler(new Request('https://example.com/community', {
+    method: 'POST', headers: { Authorization: 'Bearer test-token', 'Content-Type': 'application/json' },
+    body: JSON.stringify({ action: 'publish', data: { ...publicCopy, clientId: publicCopy.id } }),
+  }));
+  assert.equal(response.status, 200, 'the real Edge Function validator accepts a renamed-room publication');
+  assert.equal(serverPayload.title, publicCopy.title);
+  assert.equal(serverPayload.clientId, legacy.id);
+  assert.match(serverPayload.script, /^title : Independent room title/);
   let tree;
   await React.act(async () => { tree = Renderer.create(React.createElement(Room, { story: rows[0] })); });
   assert.equal(tree.root.findByType('CharacterChat').props.conversation.id, legacy.id);

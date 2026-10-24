@@ -64,7 +64,11 @@ export function episodeStory(story: SavedStory, episodeId?: string): SavedStory 
 /** A library card keeps one public identity, even when another episode is selected. */
 export function publicationStory(story: SavedStory, episodeId?: string): SavedStory | null {
   const selected = episodeStory(story, episodeId);
-  return selected ? { ...selected, id: story.id, title: story.title } : null;
+  if (!selected) return null;
+  // Archive validation requires the public title and script title to agree.
+  // Room names are independent of individual script titles, so rename only the copy.
+  const script = selected.script.replace(/^([ \t]*(?:타이틀|title)[ \t]*[:：])[^\r\n]*/im, (_line, prefix: string) => `${prefix} ${story.title}`);
+  return { ...selected, id: story.id, title: story.title, script };
 }
 
 export function updateRoom(id: string, change: Partial<Pick<SavedStory, 'title' | 'chatMessages' | 'episodes'>>): SavedStory | null {

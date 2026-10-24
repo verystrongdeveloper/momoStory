@@ -1,7 +1,7 @@
 {
   "name": "momostory",
   "main": "expo-router/entry",
-  "version": "1.4.0",
+  "version": "1.4.1",
   "scripts": {
     "community:assets": "node scripts/build-community-assets.cjs",
     "test:community": "node scripts/build-community-assets.cjs --check && node scripts/test-community.cjs && node scripts/test-community-client.cjs && node scripts/test-community-ui.cjs",

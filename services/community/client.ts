@@ -68,8 +68,8 @@ async function call<T>(action: string, data: Record<string, unknown>): Promise<T
   }
 }
 export const community = {
-  list: (options: { liked: boolean; query: string; character?: string; sort: 'latest' | 'popular'; period?: RankingPeriod; offset: number }) => call<CommunityPost[]>('list', options),
-  page: (options: { liked: boolean; query: string; character?: string; sort: 'latest' | 'popular'; period?: RankingPeriod; offset: number }) => call<{ posts: CommunityPost[]; total: number }>('list', { ...options, pagination: true }),
+  list: (options: { liked: boolean; mine?: boolean; query: string; character?: string; sort: 'latest' | 'popular'; period?: RankingPeriod; offset: number }) => call<CommunityPost[]>('list', options),
+  page: (options: { liked: boolean; mine?: boolean; query: string; character?: string; sort: 'latest' | 'popular'; period?: RankingPeriod; offset: number }) => call<{ posts: CommunityPost[]; total: number }>('list', { ...options, pagination: true }),
   detail: (id: string, offset = 0) => call<CommunityDetail>('detail', { id, offset }),
   publish: (story: StoryRecord) => {
     const clean = validatePublicStory({ title: story.title, character: story.character, script: story.script, chatMessages: story.chatMessages ?? [], clientId: story.id }, assets);

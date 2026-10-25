@@ -8,7 +8,8 @@ import { normalizeModel } from '../shared/geminiModels';
 import { normalizeSenseiMode, type SenseiMode } from '../shared/senseiMode';
 import { normalizeChatSound, type ChatSoundId } from '../utils/chatPresentation';
 
-type SettingKey = 'senseiMode' | 'geminiModel' | 'language' | 'chatSound' | 'chatSize' | 'bgmVolume' | 'sfxVolume' | 'greetMode' | 'rememberApiKey' | 'termsAccepted' | 'tutorialSeen';
+type NotificationSetting = 'notificationsEnabled' | 'chatNotifications' | 'storyNotifications' | 'exportNotifications' | 'notificationPreview';
+type SettingKey = NotificationSetting | 'senseiMode' | 'geminiModel' | 'language' | 'chatSound' | 'chatSize' | 'bgmVolume' | 'sfxVolume' | 'greetMode' | 'rememberApiKey' | 'termsAccepted' | 'tutorialSeen';
 
 let synced = readInitialSync() != null;
 
@@ -54,7 +55,7 @@ export function getSetting(key: 'geminiModel'): string;
 export function getSetting(key: 'senseiMode'): SenseiMode;
 export function getSetting(key: 'language'): AppLanguage;
 export function getSetting(key: 'chatSound'): ChatSoundId;
-export function getSetting(key: 'greetMode' | 'rememberApiKey' | 'termsAccepted' | 'tutorialSeen'): boolean;
+export function getSetting(key: NotificationSetting | 'greetMode' | 'rememberApiKey' | 'termsAccepted' | 'tutorialSeen'): boolean;
 export function getSetting(key: SettingKey): number | boolean | string {
   return memory[key];
 }
@@ -65,6 +66,11 @@ export function loadStories(): StoryRecord[] {
 
 async function persistAll() {
   const prefs: Preferences = {
+    notificationsEnabled: memory.notificationsEnabled,
+    chatNotifications: memory.chatNotifications,
+    storyNotifications: memory.storyNotifications,
+    exportNotifications: memory.exportNotifications,
+    notificationPreview: memory.notificationPreview,
     language: memory.language,
     geminiModel: memory.geminiModel,
     senseiMode: memory.senseiMode,
@@ -118,6 +124,7 @@ export function saveSetting(key: SettingKey, value: number | boolean | string) {
     if (next == null || next === memory[key]) return;
     memory[key] = next;
   } else if (
+    key === 'notificationsEnabled' || key === 'chatNotifications' || key === 'storyNotifications' || key === 'exportNotifications' || key === 'notificationPreview' ||
     key === 'greetMode' ||
     key === 'rememberApiKey' ||
     key === 'termsAccepted' ||
@@ -147,6 +154,11 @@ async function pullAll() {
   const stories = await readStoryRecords();
   if (dirty) return;
   memory = {
+    notificationsEnabled: prefs.notificationsEnabled,
+    chatNotifications: prefs.chatNotifications,
+    storyNotifications: prefs.storyNotifications,
+    exportNotifications: prefs.exportNotifications,
+    notificationPreview: prefs.notificationPreview,
     apiKey,
     language: prefs.language,
     geminiModel: prefs.geminiModel,

@@ -43,6 +43,7 @@ export async function migrateLegacyStorage(): Promise<boolean> {
     const apiKey = (oldKeyRaw ?? '').trim();
     const rememberApiKey = apiKey.length > 0;
     const prefs = {
+      ...DEFAULT_PREFERENCES,
       language: DEFAULT_PREFERENCES.language,
       geminiModel: DEFAULT_PREFERENCES.geminiModel,
       senseiMode: DEFAULT_PREFERENCES.senseiMode,

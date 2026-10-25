@@ -41,21 +41,22 @@ export const directClient = {
     resetChatSessions(character, apiKey, room);
     chatLogs.delete(dialogKey(character, apiKey, room));
   },
-  async trigger(character: string, room: ChatRoom = 'bond') {
+  async trigger(character: string, room: ChatRoom = 'bond', signal?: AbortSignal) {
     const language = getAppLanguage();
     const apiKey = readKey();
     if (!character) throw new Error('character 누락');
-    const triggerLine = await sendWithFallback(character, '', TRIGGER_MESSAGE, undefined, apiKey, language, room);
+    const triggerLine = await sendWithFallback(character, '', TRIGGER_MESSAGE, undefined, apiKey, language, room, undefined, signal);
     return { triggerLine };
   },
 
-  async chat(character: string, message: string, room: ChatRoom = 'bond', context?: ConversationContext) {
+  async chat(character: string, message: string, room: ChatRoom = 'bond', context?: ConversationContext, signal?: AbortSignal) {
     const language = getAppLanguage();
     const apiKey = readKey();
     if (!character || !message) throw new Error('character 또는 message 누락');
     const sessionRoom = context ? `room-${context.id}` : room;
     if (context) restoreConversation(character, apiKey, sessionRoom, context);
-    const reply = await sendWithFallback(character, '', message, undefined, apiKey, language, sessionRoom);
+    const reply = await sendWithFallback(character, '', message, undefined, apiKey, language, sessionRoom, undefined, signal);
+    if (signal?.aborted) throw Object.assign(new Error('REQUEST_CANCELED'), { name: 'AbortError' });
     const eventReady = room === 'bond' && (context ? true : pushLog(character, apiKey, { user: message, ai: reply }));
     return { reply, eventReady };
   },

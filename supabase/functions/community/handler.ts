@@ -47,8 +47,9 @@ export function createCommunityHandler(deps: Dependencies) {
         if (raw.character !== undefined && (typeof raw.character !== 'string' || raw.character.length > 100)) return response({ error: 'INVALID_REQUEST' }, 400);
         if (raw.pagination !== undefined && typeof raw.pagination !== 'boolean') return response({ error: 'INVALID_REQUEST' }, 400);
         if (raw.liked !== undefined && typeof raw.liked !== 'boolean') return response({ error: 'INVALID_REQUEST' }, 400);
+        if (raw.mine !== undefined && typeof raw.mine !== 'boolean') return response({ error: 'INVALID_REQUEST' }, 400);
         if (raw.period !== undefined && (typeof raw.period !== 'string' || !['all', 'day', 'week', 'month', 'year'].includes(raw.period))) return response({ error: 'INVALID_REQUEST' }, 400);
-        data = { pagination: raw.pagination === true, query: raw.query ?? '', character: typeof raw.character === 'string' ? raw.character.trim() : '', liked: raw.liked === true, sort: raw.sort === 'popular' ? 'popular' : 'latest', period: raw.period ?? 'all' };
+        data = { pagination: raw.pagination === true, query: raw.query ?? '', character: typeof raw.character === 'string' ? raw.character.trim() : '', liked: raw.liked === true, mine: raw.mine === true, sort: raw.sort === 'popular' ? 'popular' : 'latest', period: raw.period ?? 'all' };
       } else {
         if (typeof raw.id !== 'string' || !uuid.test(raw.id)) return response({ error: 'INVALID_REQUEST' }, 400);
         data.id = raw.id;

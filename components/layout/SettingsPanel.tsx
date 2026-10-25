@@ -15,6 +15,7 @@ import GeminiModelPicker from './GeminiModelPicker';
 import SenseiModePicker from './SenseiModePicker';
 import ChatSoundPicker from './ChatSoundPicker';
 import InAppUpdate from './InAppUpdate';
+import NotificationSettings from './NotificationSettings';
 import Constants from 'expo-constants';
 import appConfig from '../../app.json';
 import { checkAppUpdate, type UpdateResult } from '@/services/appUpdate';
@@ -153,6 +154,7 @@ export default function SettingsPanel({
         keyboardDismissMode="on-drag"
       >
       <Text style={styles.title}>{t('settings')}</Text>
+      <NotificationSettings />
 
       <View style={styles.card}>
         <Text style={styles.label}>{t('language')}</Text>

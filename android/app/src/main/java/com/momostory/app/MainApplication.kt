@@ -26,6 +26,7 @@ class MainApplication : Application(), ReactApplication {
           add(VideoDownloadsPackage())
           add(AppUpdatePackage())
           add(BackgroundGenerationPackage())
+          add(NotificationsPackage())
         }
     )
   }

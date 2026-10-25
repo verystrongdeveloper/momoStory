@@ -56,7 +56,11 @@ class GeminiHttpError extends Error {
 }
 
 
-async function generate(apiKey: string, modelName: string, systemInstruction: string, history: Content[], message: string): Promise<string> {
+function checkCanceled(signal?: AbortSignal) {
+  if (signal?.aborted) throw Object.assign(new Error('REQUEST_CANCELED'), { name: 'AbortError' });
+}
+async function generate(apiKey: string, modelName: string, systemInstruction: string, history: Content[], message: string, signal?: AbortSignal): Promise<string> {
+  checkCanceled(signal);
   throwIfOffline();
   let res: Response;
   try {
@@ -64,6 +68,7 @@ async function generate(apiKey: string, modelName: string, systemInstruction: st
       `https://generativelanguage.googleapis.com/v1beta/models/${encodeURIComponent(modelName)}:generateContent`,
       {
         method: 'POST',
+        signal,
         headers: {
           'Content-Type': 'application/json',
           'x-goog-api-key': apiKey,
@@ -75,10 +80,12 @@ async function generate(apiKey: string, modelName: string, systemInstruction: st
       },
     );
   } catch {
+    checkCanceled(signal);
     throw new Error(GEMINI_OFFLINE_MESSAGE);
   }
 
   const raw = await res.text();
+  checkCanceled(signal);
   let data: {
     error?: { message?: string };
     candidates?: { content?: { parts?: Part[] } }[];
@@ -111,20 +118,25 @@ export async function sendWithFallback(
   language: AppLanguage = 'ko',
   room: string = 'bond',
   modelSelection: string = getGeminiModel(),
+  signal?: AbortSignal,
 ): Promise<string> {
+  checkCanceled(signal);
   const selection = normalizeModel(modelSelection);
   const order = await modelOrder(apiKey, selection);
+  checkCanceled(signal);
   const attempted = new Set<string>();
   let refreshed = false;
   const instruction = withGenerationLanguage(systemText(character, systemInstruction), language, sessionKey === 'event' ? 'event' : sessionKey === 'select' ? 'select' : 'chat');
   let lastError: unknown;
 
   for (const modelName of order) {
+    checkCanceled(signal);
     if (attempted.has(modelName)) continue;
     attempted.add(modelName);
     const session = sessionFor(character, sessionKey, apiKey, room);
     try {
-      const text = await generate(apiKey, modelName, instruction, session.history, message);
+      const text = await generate(apiKey, modelName, instruction, session.history, message, signal);
+      checkCanceled(signal);
       session.history.push(
         { role: 'user', parts: [{ text: message }] },
         { role: 'model', parts: [{ text }] },
@@ -132,6 +144,7 @@ export async function sendWithFallback(
       if (selection === 'auto') rememberModel(apiKey, modelName);
       return text;
     } catch (err) {
+      checkCanceled(signal);
       lastError = err;
       if (selection !== 'auto' || !(err instanceof GeminiHttpError) || !canFallback(err.status)) throw err;
       if (!refreshed && (err.status === 404 || err.status === 410)) {

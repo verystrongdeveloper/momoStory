@@ -1,7 +1,7 @@
 import React, { useMemo } from 'react';
 import { Platform, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
-import { useFonts } from 'expo-font';
+import { useSelectionFont } from '@/hooks/useSelectionFont';
 import { storyFont, useLayout } from '@/hooks/useLayout';
 
 interface Props {
@@ -13,9 +13,8 @@ const labelOf = (opt: string) => opt.trim().replace(/^["“”]+|["“”]+$/g, 
 
 const EventSelection: React.FC<Props> = ({ options, onSelect }) => {
   const { eventWidth, eventHeight, isCompact } = useLayout();
-  const [fontLoaded, fontError] = useFonts({
-    PretendardSemiBold: require('../../assets/fonts/Pretendard-SemiBold.ttf'),
-  });
+  const fontStatus = useSelectionFont();
+  const fontLoaded = fontStatus === 'ready';
   const styles = useMemo(
     () => makeStyles(eventWidth, eventHeight, fontLoaded, isCompact),
     [eventWidth, eventHeight, fontLoaded, isCompact]
@@ -23,7 +22,7 @@ const EventSelection: React.FC<Props> = ({ options, onSelect }) => {
 
   // 첫 선택지에서도 기본 폰트가 보였다가 전용 폰트로 바뀌지 않게 한다.
   // 로딩 실패 시에는 기본 폰트로 선택지를 표시해 진행을 막지 않는다.
-  if (!fontLoaded && !fontError) return null;
+  if (fontStatus === 'loading') return null;
 
   return (
     <View style={styles.container}>
@@ -104,9 +103,9 @@ const makeStyles = (W: number, H: number, fontLoaded: boolean, isCompact: boolea
     text: {
       // SemiBold 파일 자체를 쓴다. fontWeight를 올리면 윈도우가 굵기를 합성해
       // 한글 자간이 들쭉날쭉하고 획이 번진다.
-      fontFamily: fontLoaded
-        ? 'PretendardSemiBold, "Malgun Gothic", "Apple SD Gothic Neo", sans-serif'
-        : '"Malgun Gothic", "Apple SD Gothic Neo", sans-serif',
+      fontFamily: Platform.OS === 'web'
+        ? fontLoaded ? 'PretendardSemiBold, "Malgun Gothic", "Apple SD Gothic Neo", sans-serif' : '"Malgun Gothic", "Apple SD Gothic Neo", sans-serif'
+        : fontLoaded ? 'PretendardSemiBold' : undefined,
       fontSize: storyFont(W, H, 0.026, 16),
       fontWeight: '400',
       color: '#263f5d',

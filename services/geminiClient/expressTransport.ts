@@ -8,7 +8,8 @@ import type { ConversationContext } from '../../shared/conversation';
 
 const API_URL = process.env.EXPO_PUBLIC_API_URL ?? 'http://localhost:3000';
 
-async function post<T>(path: string, body: Record<string, unknown>): Promise<T> {
+async function post<T>(path: string, body: Record<string, unknown>, signal?: AbortSignal): Promise<T> {
+  if (signal?.aborted) throw Object.assign(new Error('REQUEST_CANCELED'), { name: 'AbortError' });
   throwIfOffline();
   const apiKey = getGeminiKey();
   const payload = { ...body, language: getAppLanguage(), model: getGeminiModel() };
@@ -16,10 +17,12 @@ async function post<T>(path: string, body: Record<string, unknown>): Promise<T> 
   try {
     res = await fetch(`${API_URL}${path}`, {
       method: 'POST',
+      signal,
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(apiKey ? { ...payload, apiKey } : payload),
     });
   } catch {
+    if (signal?.aborted) throw Object.assign(new Error('REQUEST_CANCELED'), { name: 'AbortError' });
     throw new Error(GEMINI_OFFLINE_MESSAGE);
   }
   if (!res.ok) {
@@ -32,11 +35,11 @@ async function post<T>(path: string, body: Record<string, unknown>): Promise<T> 
 /** 기존 Express /api. 직접 호출이 production web에서 확인되기 전까지 기본 경로다. */
 export const expressTransport = {
   reset: (character: string, room: ChatRoom = 'bond') => post<{ ok: boolean }>('/api/chat/reset', { character, room }),
-  trigger: (character: string, room: ChatRoom = 'bond') =>
-    post<{ triggerLine: string }>('/api/trigger', { character, room }),
+  trigger: (character: string, room: ChatRoom = 'bond', signal?: AbortSignal) =>
+    post<{ triggerLine: string }>('/api/trigger', { character, room }, signal),
 
-  chat: (character: string, message: string, room: ChatRoom = 'bond', context?: ConversationContext) =>
-    post<{ reply: string; eventReady: boolean }>('/api/chat', { character, message, room, context }),
+  chat: (character: string, message: string, room: ChatRoom = 'bond', context?: ConversationContext, signal?: AbortSignal) =>
+    post<{ reply: string; eventReady: boolean }>('/api/chat', { character, message, room, context }, signal),
 
   createEvent: (character: string, context?: ConversationContext) =>
     post<{ eventScript: string }>('/api/event', { character, context, senseiMode: getSenseiMode() }),

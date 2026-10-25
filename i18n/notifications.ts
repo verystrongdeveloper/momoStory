@@ -1,0 +1,35 @@
+export const notificationTranslations = {
+  ko: {
+    storyNotifications: '스토리 생성 완료', notificationStoryDone: '스토리 생성이 완료되었습니다',
+    notifications: '알림', notificationsEnabled: '알림 받기', chatNotifications: '캐릭터 채팅 도착', exportNotifications: '영상 추출 완료·실패', notificationPreview: '알림에 메시지 내용 표시',
+    notificationHint: '읽고 있는 채팅은 알리지 않습니다. 소리·진동·잠금화면 표시는 시스템 알림 설정에서 변경할 수 있습니다.',
+    notificationUnsupported: '알림은 새 Android 앱에서 지원됩니다. APK를 업데이트해 주세요. 웹·iOS는 아직 지원하지 않습니다.',
+    notificationDenied: '시스템 알림이 꺼져 있습니다. 시스템 설정에서 허용해 주세요.', notificationError: '알림을 처리하지 못했습니다. 다시 시도해 주세요.',
+    notificationSystem: '시스템 알림 설정', notificationTest: '테스트 알림 보내기', notificationTestTitle: '알림이 연결되었습니다', notificationTestBody: '캐릭터 채팅과 영상 추출 결과를 알림으로 받을 수 있습니다.', notificationTestSent: '테스트 알림을 보냈습니다.',
+    notificationNewChat: '새 메시지가 도착했습니다.', notificationVideoDone: '영상 저장 완료', notificationVideoError: '영상 추출 실패',
+  },
+  en: {
+    storyNotifications: 'Story generation completed', notificationStoryDone: 'Your story is ready',
+    notifications: 'Notifications', notificationsEnabled: 'Receive notifications', chatNotifications: 'Character messages', exportNotifications: 'Video export results', notificationPreview: 'Show message previews',
+    notificationHint: 'No alerts for the chat you are reading. Manage sound, vibration and lock screen visibility in system settings.',
+    notificationUnsupported: 'Requires the updated Android APK. Web and iOS are not supported yet.', notificationDenied: 'System notifications are disabled. Allow them in system settings.', notificationError: 'Could not process the notification. Please try again.',
+    notificationSystem: 'System notification settings', notificationTest: 'Send a test notification', notificationTestTitle: 'Notifications are connected', notificationTestBody: 'Receive character messages and video export results here.', notificationTestSent: 'Test notification sent.',
+    notificationNewChat: 'A new message has arrived.', notificationVideoDone: 'Video saved', notificationVideoError: 'Video export failed',
+  },
+  ja: {
+    storyNotifications: 'ストーリー生成完了', notificationStoryDone: 'ストーリーが完成しました',
+    notifications: '通知', notificationsEnabled: '通知を受け取る', chatNotifications: 'キャラクターのメッセージ', exportNotifications: '動画の書き出し結果', notificationPreview: 'メッセージ内容を表示',
+    notificationHint: '閲覧中のチャットは通知しません。音・振動・ロック画面の表示はシステム設定で変更できます。',
+    notificationUnsupported: '更新済みのAndroid APKが必要です。Web・iOSは未対応です。', notificationDenied: 'システム通知が無効です。システム設定で許可してください。', notificationError: '通知を処理できませんでした。もう一度お試しください。',
+    notificationSystem: 'システムの通知設定', notificationTest: 'テスト通知を送信', notificationTestTitle: '通知が接続されました', notificationTestBody: 'メッセージや動画の書き出し結果を通知します。', notificationTestSent: 'テスト通知を送信しました。',
+    notificationNewChat: '新しいメッセージが届きました。', notificationVideoDone: '動画を保存しました', notificationVideoError: '動画の書き出しに失敗しました',
+  },
+  zh: {
+    storyNotifications: '故事生成完成', notificationStoryDone: '故事已生成',
+    notifications: '通知', notificationsEnabled: '接收通知', chatNotifications: '角色聊天消息', exportNotifications: '视频导出结果', notificationPreview: '显示消息预览',
+    notificationHint: '正在阅读的聊天不会通知。声音、振动和锁屏显示可在系统设置中更改。',
+    notificationUnsupported: '需要更新后的Android APK。暂不支持网页和iOS。', notificationDenied: '系统通知已关闭，请在系统设置中允许。', notificationError: '无法处理通知，请重试。',
+    notificationSystem: '系统通知设置', notificationTest: '发送测试通知', notificationTestTitle: '通知已连接', notificationTestBody: '在此接收角色消息和视频导出结果。', notificationTestSent: '测试通知已发送。',
+    notificationNewChat: '收到新消息。', notificationVideoDone: '视频已保存', notificationVideoError: '视频导出失败',
+  },
+};

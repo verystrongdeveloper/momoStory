@@ -25,6 +25,7 @@ export function readInitialSync(): StorageSnapshot | null {
 
     const apiKey = (localStorage.getItem(OLD_API_KEY) ?? '').trim();
     return {
+      ...DEFAULT_PREFERENCES,
       apiKey,
       language: DEFAULT_PREFERENCES.language,
       geminiModel: DEFAULT_PREFERENCES.geminiModel,

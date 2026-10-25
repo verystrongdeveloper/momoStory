@@ -127,6 +127,12 @@ const invalid = (changes, code) => assert.throws(() => validatePublicStory({ ...
   assert.equal((await invoke('list', { character: ' 호시노 ' })).status, 200);
   assert.equal(calls.at(-1)[2].character, '호시노');
   assert.equal((await invoke('list', { liked: 'true' })).status, 400);
+  for (const mine of ['true', null, 1, {}]) assert.equal((await invoke('list', { mine })).status, 400);
+  assert.equal((await invoke('list', { mine: true, author: 'forged', actor: 'forged' })).status, 200);
+  assert.equal(calls.at(-1)[0], 'trusted-actor', 'my-post ownership always uses verified authentication');
+  assert.equal(calls.at(-1)[2].mine, true);
+  assert.equal('author' in calls.at(-1)[2], false);
+  assert.equal('actor' in calls.at(-1)[2], false);
   for (const period of ['invalid', ['day'], {}, null]) assert.equal((await invoke('list', { period })).status, 400);
   for (const period of ['all', 'day', 'week', 'month', 'year']) {
     assert.equal((await invoke('list', { period })).status, 200);
@@ -158,6 +164,7 @@ const invalid = (changes, code) => assert.throws(() => validatePublicStory({ ...
     await db.exec(fs.readFileSync(path.join(root, 'supabase/migrations/202610220001_add_kei.sql'), 'utf8'));
     await db.exec(fs.readFileSync(path.join(root, 'supabase/migrations/202610240001_community_republish.sql'), 'utf8'));
     await db.exec(fs.readFileSync(path.join(root, 'supabase/migrations/202610240002_add_koyuki.sql'), 'utf8'));
+    await db.exec(fs.readFileSync(path.join(root, 'supabase/migrations/202610250001_community_my_posts.sql'), 'utf8'));
     const actor = '11111111-1111-4111-8111-111111111111', other = '22222222-2222-4222-8222-222222222222';
     await db.query('insert into auth.users values($1),($2)', [actor, other]);
     await db.query("insert into public.community_posts(author, client_id, title, character, script) values($1, 'mari-migration-check', 'Mari', '마리', 'test')", [actor]);
@@ -334,6 +341,32 @@ const invalid = (changes, code) => assert.throws(() => validatePublicStory({ ...
     }
     const week = (await db.query("select extract(isodow from date_trunc('week', now() at time zone 'Asia/Seoul'))::int as day")).rows[0].day;
     assert.equal(week, 1, 'weekly periods start on Monday in Korea');
+    // Older own posts must be found even when newer foreign posts fill the first page.
+    await db.query('insert into auth.users values($1) on conflict do nothing', [other]);
+    await db.query(`insert into public.community_posts(author, client_id, title, character, script, created_at)
+      select $1, 'mine-fixture-' || n, 'Mine fixture own ' || n,
+        case when n <= 12 then '호시노' else '히나' end, 'test', now() - interval '1 day'
+      from generate_series(1, 23) n`, [actor]);
+    await db.query(`insert into public.community_posts(author, client_id, title, character, script)
+      select $1, 'mine-fixture-other-' || n, 'Mine fixture foreign ' || n, '호시노', 'test'
+      from generate_series(1, 22) n`, [other]);
+    const mineQuery = { mine: true, pagination: true, query: 'Mine fixture' };
+    const allFixtures = await rpc('list', { pagination: true, query: 'Mine fixture' });
+    assert.equal(allFixtures.total, 45);
+    assert.ok(allFixtures.posts.every(post => !post.is_mine));
+    const mineFirst = await rpc('list', mineQuery);
+    assert.equal(mineFirst.total, 23); assert.equal(mineFirst.posts.length, 20);
+    assert.ok(mineFirst.posts.every(post => post.is_mine));
+    assert.ok(mineFirst.posts.every(post => !('author' in post)));
+    const mineSecond = await rpc('list', { ...mineQuery, offset: 20 });
+    assert.equal(mineSecond.total, 23); assert.equal(mineSecond.posts.length, 3);
+    assert.ok(mineSecond.posts.every(post => !mineFirst.posts.some(first => first.id === post.id)));
+    assert.equal((await rpc('list', { ...mineQuery, character: '호시노', sort: 'popular', period: 'day' })).total, 12);
+    assert.equal((await rpc('list', { ...mineQuery, query: 'Mine fixture foreign' })).total, 0);
+    assert.equal((await rpc('list', mineQuery, other)).total, 22, 'another actor sees only their own posts');
+    assert.equal((await rpc('list', mineQuery, likers[0])).total, 0);
+    await rpc('deletePost', { id: mineFirst.posts[0].id });
+    assert.equal((await rpc('list', mineQuery)).total, 22, 'deletion updates my-post totals');
     await assert.rejects(() => rpc('list', { period: 'invalid' }), /INVALID_REQUEST/);
   } finally { await db.close(); }
   console.log('PASS strict story/comment validation, HTTP token verification/body bounds, PostgreSQL migration/RLS/grants, quotas/cooldowns/deletion/day reset, idempotent publishing/likes/views, private author IDs and cleanup');

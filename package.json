@@ -1,8 +1,9 @@
 {
   "name": "momostory",
   "main": "expo-router/entry",
-  "version": "1.4.3",
+  "version": "1.4.4",
   "scripts": {
+    "test:notifications": "node scripts/test-notifications.cjs",
     "community:assets": "node scripts/build-community-assets.cjs && node scripts/build-community-validation.cjs",
     "test:community": "node scripts/build-community-assets.cjs --check && node scripts/build-community-validation.cjs --check && node scripts/test-community.cjs && node scripts/test-community-client.cjs && node scripts/test-community-ui.cjs",
     "test:editor": "node scripts/test-story-editor.cjs && node scripts/test-chat-editor.cjs && node scripts/test-keyboard-layout.cjs",

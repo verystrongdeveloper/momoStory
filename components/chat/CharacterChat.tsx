@@ -63,10 +63,15 @@ const CharacterChat: React.FC<Props> = ({ characterName, room = 'bond', displayN
   const hasKey = apiKey.trim().length > 0;
   const session = useMemo(() => {
     const chat = getTemporaryChat(characterName, apiKey, room, conversation?.id);
-    if (conversation && !chat.getSnapshot().roomId) chat.update({
-      roomId: conversation.id, messages: conversation.chatMessages ?? [],
-      completedPairs: dialogPairs(conversation.chatMessages ?? []).length, greetingStarted: true,
-    });
+    if (conversation && !chat.getSnapshot().roomId) {
+      const history = conversation.chatMessages ?? [];
+      const latestStory = episodesOf(conversation).at(-1);
+      const afterStory = Math.max(0, latestStory?.afterMessageCount ?? latestStory?.chatMessages.length ?? 0);
+      chat.update({
+        roomId: conversation.id, messages: history,
+        completedPairs: dialogPairs(history.slice(afterStory)).length, greetingStarted: true,
+      });
+    }
     if (conversation) activateTemporaryRoom(characterName, apiKey, conversation.id);
     return chat;
   // A room is hydrated once; subsequent changes come from the shared session.
@@ -87,8 +92,8 @@ const CharacterChat: React.FC<Props> = ({ characterName, room = 'bond', displayN
   })) : [];
   const showQuickGenerate = !savedStory && includeBondStory && completedPairs >= 1;
   const eventStartRef = useRef<() => void>(() => {});
-  const setMessages = (change: Chat[] | ((previous: Chat[]) => Chat[])) => {
-    session.update(previous => ({ messages: typeof change === 'function' ? change(previous.messages) : change }));
+  const setMessages = (change: Chat[] | ((previous: Chat[]) => Chat[]), arrival?: string) => {
+    session.update(previous => ({ messages: typeof change === 'function' ? change(previous.messages) : change }), arrival);
     const current = session.getSnapshot();
     if (current.roomId) updateRoom(current.roomId, { chatMessages: current.messages.filter((message): message is SavedChatMessage => message.sender !== 'typing') });
   };
@@ -97,7 +102,8 @@ const CharacterChat: React.FC<Props> = ({ characterName, room = 'bond', displayN
   const contextFor = (history: Chat[]): ConversationContext | undefined => {
     const id = session.getSnapshot().roomId;
     const stored = id ? listStories().find(story => story.id === id) : undefined;
-    return stored ? { id: stored.id, messages: history.filter((message): message is SavedChatMessage => message.sender !== 'typing'), scripts: episodesOf(stored).map(episode => episode.script) } : undefined;
+    const contextId = stored?.id ?? session.getSnapshot().recoveryContextId;
+    return contextId ? { id: contextId, messages: history.filter((message): message is SavedChatMessage => message.sender !== 'typing'), scripts: stored ? episodesOf(stored).map(episode => episode.script) : [] } : undefined;
   };
   useFocusEffect(useCallback(() => {
     if (savedStory) return;
@@ -169,7 +175,7 @@ const CharacterChat: React.FC<Props> = ({ characterName, room = 'bond', displayN
       return;
     }
 
-    setMessages((prev) => removeTyping(prev).concat({ sender: 'character', text: sentences[0], showImage: true }));
+    setMessages((prev) => removeTyping(prev).concat({ sender: 'character', text: sentences[0], showImage: true }), text);
 
     for (let i = 1; i < sentences.length; i++) {
       setMessages((prev) => [...prev, { sender: 'typing', text: '···' }]);
@@ -185,7 +191,8 @@ const CharacterChat: React.FC<Props> = ({ characterName, room = 'bond', displayN
 
     const current = session.getSnapshot();
     if (current.eventReady || current.greetingStarted || current.messages.length || current.isWaiting) return;
-    session.update({ greetingStarted: true, isWaiting: true });
+    const controller = new AbortController();
+    session.update({ greetingStarted: true, isWaiting: true, replyController: controller });
     const generation = current.generation;
     // Finish and store the reply even when the user switches to another screen.
     (async () => {
@@ -193,7 +200,9 @@ const CharacterChat: React.FC<Props> = ({ characterName, room = 'bond', displayN
       try {
         await ensureFreshConversation(generation);
         if (session.getSnapshot().generation !== generation) return;
-        const { triggerLine } = await geminiClient.trigger(characterName, room);
+        const { triggerLine } = await geminiClient.trigger(characterName, room, controller.signal);
+        if (session.getSnapshot().generation !== generation) return;
+        session.update({ replyController: undefined });
         await sleep(TYPING_DELAY_MS);
         await playReply(triggerLine ?? '', generation);
       } catch (e) {
@@ -201,7 +210,7 @@ const CharacterChat: React.FC<Props> = ({ characterName, room = 'bond', displayN
         console.error('[CharacterChat] trigger 실패:', e);
         setMessages((prev) => removeTyping(prev).concat({ sender: 'character', text: geminiFailureText(e), showImage: true }));
       } finally {
-        if (session.getSnapshot().generation === generation) setWaiting(false);
+        if (session.getSnapshot().generation === generation) session.update({ isWaiting: false, replyController: undefined });
       }
     })();
 
@@ -232,7 +241,8 @@ const CharacterChat: React.FC<Props> = ({ characterName, room = 'bond', displayN
     if (savedStory || !hasKey || !text || session.getSnapshot().isWaiting) return;
     const generation = session.getSnapshot().generation;
 
-    setWaiting(true);
+    const controller = new AbortController();
+    session.update({ isWaiting: true, replyController: controller });
     setMessages((prev) => [
       ...prev,
       { sender: 'user', text },
@@ -243,26 +253,34 @@ const CharacterChat: React.FC<Props> = ({ characterName, room = 'bond', displayN
     try {
       await ensureFreshConversation(generation);
       if (session.getSnapshot().generation !== generation) return;
-      const { reply, eventReady: ready } = await geminiClient.chat(characterName, text, room, contextFor(messages));
+      const { reply, eventReady: ready } = await geminiClient.chat(characterName, text, room, contextFor(messages), controller.signal);
       if (session.getSnapshot().generation !== generation) return;
+      session.update({ replyController: undefined });
       setEventReady(includeBondStory && ready);
-      if (reply.trim()) session.update(previous => ({ completedPairs: previous.completedPairs + 1 }));
       await playReply(reply, generation);
+      if (session.getSnapshot().generation !== generation) return;
+      if (reply.trim()) session.update(previous => ({ completedPairs: previous.completedPairs + 1 }));
       if (room === 'bond' && reply.trim() && session.getSnapshot().generation === generation && !session.getSnapshot().roomId) {
         const history = session.getSnapshot().messages.filter((message): message is SavedChatMessage => message.sender !== 'typing');
         const stored = saveStory(characterName, '', history);
         updateRoom(stored.id, { title: t('newConversation', { name: visibleName }), episodes: [] });
         linkTemporaryRoom(characterName, apiKey, stored.id, session);
       }
-      if (session.getSnapshot().generation === generation) setWaiting(false);
+      if (session.getSnapshot().generation === generation) session.update({ isWaiting: false, replyController: undefined });
     } catch (err) {
       if (session.getSnapshot().generation !== generation) return;
       console.error('[CharacterChat] chat 실패:', err);
-      setWaiting(false);
+      session.update({ isWaiting: false, replyController: undefined });
       setMessages((prev) =>
         removeTyping(prev).concat({ sender: 'character', text: geminiFailureText(err), showImage: true }),
       );
     }
+  };
+
+  const cancelMessage = () => {
+    if (!session.cancelReply()) return;
+    const current = session.getSnapshot();
+    if (current.roomId) updateRoom(current.roomId, { chatMessages: current.messages.filter((message): message is SavedChatMessage => message.sender !== 'typing') });
   };
 
   const handleEventStart = async () => {
@@ -291,7 +309,7 @@ const CharacterChat: React.FC<Props> = ({ characterName, room = 'bond', displayN
         const stored = saveStory(characterName, eventScript, chatSnapshot);
         linkTemporaryRoom(characterName, apiKey, stored.id, session);
       }
-      session.update({ storyScript: eventScript, eventReady: true });
+      session.update({ storyScript: eventScript, eventReady: true, completedPairs: 0 });
       openStory(eventScript);
     } catch (e) {
       if (session.getSnapshot().generation !== generation) return;
@@ -391,6 +409,7 @@ const CharacterChat: React.FC<Props> = ({ characterName, room = 'bond', displayN
           blurOnSubmit={false}
         />
         <Button title={t('send')} onPress={handleSend} disabled={!hasKey || isWaiting} />
+        {!!draft.replyController && <Button title={t('cancelMessage')} onPress={cancelMessage} />}
       </View>}
       {replaying && (
         <Pressable

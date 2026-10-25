@@ -45,6 +45,7 @@ function ArchiveThumbnail({ character, background }: { character: string; backgr
 export default function CommunityPanel() {
   const { t, language } = useI18n();
   const [liked, setLiked] = useState(false);
+  const [mine, setMine] = useState(false);
   const [sort, setSort] = useState<'latest' | 'popular'>('latest');
   const [period, setPeriod] = useState<RankingPeriod>('all');
   const [input, setInput] = useState('');
@@ -70,7 +71,7 @@ export default function CommunityPanel() {
     const id = ++generation.current;
     setBusy(true); setPosts([]); setNotice('');
     if (!communityConfigured()) { setNotice(t('communitySetup')); setBusy(false); return; }
-    void community.page({ liked, sort, period, query, character, offset: (page - 1) * PAGE_SIZE }).then(result => {
+    void community.page({ liked, mine, sort, period, query, character, offset: (page - 1) * PAGE_SIZE }).then(result => {
       if (generation.current === id) {
         setTotal(result.total);
         const lastPage = Math.max(1, Math.ceil(result.total / PAGE_SIZE));
@@ -80,7 +81,7 @@ export default function CommunityPanel() {
     }).catch(error => { if (generation.current === id) setNotice(t(communityErrorKey(error))); })
       .finally(() => { if (generation.current === id) setBusy(false); });
     return () => { generation.current++; };
-  }, [liked, sort, period, query, character, page, reload, t]);
+  }, [liked, mine, sort, period, query, character, page, reload, t]);
   const changePage = (value: number) => { setPage(value); scrollRef.current?.scrollTo({ y: 0, animated: true }); };
   if (selected) return <CommunityPostView key={selected.id} id={selected.id} onBack={() => { setSelected(null); setReload(value => value + 1); }} />;
   return <View style={styles.root}>
@@ -88,8 +89,9 @@ export default function CommunityPanel() {
       <View style={styles.row}><Text style={styles.title}>{t('community')}</Text><RefreshButton onPress={() => setReload(value => value + 1)} disabled={busy} /></View>
       <CharacterFilter value={character} onChange={value => { setCharacter(value); setPage(1); }} />
       <View style={styles.controls}>
-        <Button label={t('communityAll')} selected={!liked} onPress={() => { setLiked(false); setPage(1); }} />
-        <Button label={t('communityLiked')} selected={liked} onPress={() => { setLiked(true); setPage(1); }} />
+        <Button label={t('communityAll')} selected={!liked && !mine} onPress={() => { setLiked(false); setMine(false); setPage(1); }} />
+        <Button label={t('communityLiked')} selected={liked} onPress={() => { setLiked(true); setMine(false); setPage(1); }} />
+        <Button label={t('communityMine')} selected={mine} onPress={() => { setMine(true); setLiked(false); setPage(1); }} />
         <Button label={t('communityLatest')} selected={sort === 'latest'} onPress={() => { setSort('latest'); setPage(1); }} />
         <Button label={t('communityPopular')} selected={sort === 'popular'} onPress={() => { setSort('popular'); setPage(1); }} />
       </View>

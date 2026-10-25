@@ -26,6 +26,16 @@ function current() {
 }
 
 const pending = new Map<string, Set<Promise<unknown>>>();
+async function cancellable<T>(signal: AbortSignal | undefined, operation: () => Promise<T>): Promise<T> {
+  const canceled = () => Object.assign(new Error('REQUEST_CANCELED'), { name: 'AbortError' });
+  if (signal?.aborted) throw canceled();
+  if (!signal) return operation();
+  let abort!: () => void;
+  const cancellation = new Promise<never>((_resolve, reject) => { abort = () => reject(canceled()); });
+  signal.addEventListener('abort', abort, { once: true });
+  try { return await Promise.race([operation(), cancellation]); }
+  finally { signal.removeEventListener('abort', abort); }
+}
 function track<T>(character: string, operation: () => Promise<T>): Promise<T> {
   const requests = pending.get(character) ?? new Set<Promise<unknown>>();
   pending.set(character, requests);
@@ -43,7 +53,7 @@ export const geminiClient = {
     // Drain old replies before resetting AI memory so they cannot restore an old session.
     return track(slot, async () => { await Promise.allSettled(previous); return transport.reset(character, room); });
   },
-  trigger: (character: string, room: ChatRoom = 'bond') => track(`${character}:${room}`, () => withBackgroundGeneration(() => current().trigger(character, room))),
-  chat: (character: string, message: string, room: ChatRoom = 'bond', context?: ConversationContext) => track(`${character}:${context?.id ?? room}`, () => withBackgroundGeneration(() => current().chat(character, message, room, context))),
+  trigger: (character: string, room: ChatRoom = 'bond', signal?: AbortSignal) => track(`${character}:${room}`, () => withBackgroundGeneration(() => cancellable(signal, () => current().trigger(character, room, signal)))),
+  chat: (character: string, message: string, room: ChatRoom = 'bond', context?: ConversationContext, signal?: AbortSignal) => track(`${character}:${context?.id ?? room}`, () => withBackgroundGeneration(() => cancellable(signal, () => current().chat(character, message, room, context, signal)))),
   createEvent: (character: string, context?: ConversationContext) => track(`${character}:${context?.id ?? 'bond'}`, () => withBackgroundGeneration(() => current().createEvent(character, context))),
 };

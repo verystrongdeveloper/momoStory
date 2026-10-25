@@ -6,17 +6,17 @@ const React = require('react');
 const Renderer = require('react-test-renderer');
 global.IS_REACT_ACT_ENVIRONMENT = true;
 const root = path.resolve(__dirname, '..');
-function load(file, mocks = {}) {
+function load(file, mocks = {}, globals = {}) {
   const mod = { exports: {} };
   const code = ts.transpileModule(fs.readFileSync(path.join(root, file), 'utf8'), {
     compilerOptions: { module: ts.ModuleKind.CommonJS, target: ts.ScriptTarget.ES2022, jsx: ts.JsxEmit.React, esModuleInterop: true },
   }).outputText;
-  new Function('require', 'module', 'exports', code)(id => {
+  new Function('require', 'module', 'exports', ...Object.keys(globals), code)(id => {
     if (Object.hasOwn(mocks, id)) return mocks[id];
     if (id.startsWith('@/')) return load(id.slice(2) + '.ts', mocks);
     if (id.startsWith('.')) return load(path.relative(root, path.resolve(root, path.dirname(file), id + '.ts')), mocks);
     return require(id);
-  }, mod, mod.exports);
+  }, mod, mod.exports, ...Object.values(globals));
   return mod.exports;
 }
 const { EVENT_TIMING } = load('utils/eventPresentation.ts');
@@ -312,27 +312,43 @@ for (const ratio of ['16:9', '9:16']) {
   dialogueMocks['react-native'].Platform.OS = 'web';
   let fontLoaded = false, fontError = null;
   const selectionPlatform = { OS: 'web' };
+  let resolveFont, fontRequests = 0;
+  global.document = { fonts: { load: async (font, text) => {
+    fontRequests++;
+    assert.equal(font, '400 16px "PretendardSemiBold"');
+    assert.ok(text.includes('선택지'));
+    return new Promise(resolve => { resolveFont = resolve; });
+  } } };
+  const fontMocks = {
+    react: React, 'react-native': { Platform: selectionPlatform },
+    'expo-font': { useFonts: () => [fontLoaded, fontError] },
+    '../assets/fonts/Pretendard-SemiBold.ttf': 1,
+  };
+  const selectionFont = load('hooks/useSelectionFont.ts', fontMocks);
   const RealSelection = load('components/event/EventSelection.tsx', {
     ...dialogueMocks,
     'react-native': { Platform: selectionPlatform, View: 'View', Text: 'Text', TouchableOpacity: 'TouchableOpacity', StyleSheet: { create: s => s } },
-    'expo-font': { useFonts: () => [fontLoaded, fontError] },
-    '../../assets/fonts/Pretendard-SemiBold.ttf': 1,
+    '@/hooks/useSelectionFont': selectionFont,
   }).default;
   const selection = React.createElement(RealSelection, { options: ['first', 'second'], onSelect() {} });
   await React.act(async () => { tree = Renderer.create(selection); });
   assert.equal(tree.root.findAllByType('Text').length, 0, 'first choices never flash the fallback font while loading');
   fontLoaded = true;
   await React.act(async () => tree.update(React.cloneElement(selection)));
+  assert.equal(tree.root.findAllByType('Text').length, 0, 'a registered CSS font is not ready until browser font data loads');
+  await React.act(async () => resolveFont([{ status: 'loaded' }]));
   assert.deepEqual(tree.root.findAllByType('Text').map(text => text.props.children), [1, 'first', 2, 'second'], 'web choices have numbers in display order');
   for (const text of tree.root.findAllByType('Text').filter(text => typeof text.props.children === 'string')) assert.ok(text.props.style.fontFamily.startsWith('PretendardSemiBold'));
   await React.act(async () => tree.unmount());
   await React.act(async () => { tree = Renderer.create(selection); });
   assert.equal(tree.root.findAllByType('Text').length, 4, 'later choices use the cached font immediately');
+  assert.equal(fontRequests, 1, 'startup and later selections share browser font readiness');
   await React.act(async () => tree.unmount());
   for (const platform of ['android', 'ios']) {
     selectionPlatform.OS = platform;
     await React.act(async () => { tree = Renderer.create(selection); });
     assert.deepEqual(tree.root.findAllByType('Text').map(text => text.props.children), ['first', 'second'], 'native choices have no number badges');
+    assert.equal(tree.root.findAllByType('Text')[0].props.style.fontFamily, 'PretendardSemiBold', 'native uses one registered font family');
     await React.act(async () => tree.unmount());
   }
   selectionPlatform.OS = 'web';
@@ -340,5 +356,25 @@ for (const ratio of ['16:9', '9:16']) {
   await React.act(async () => { tree = Renderer.create(selection); });
   assert.equal(tree.root.findAllByType('TouchableOpacity').length, 2, 'a font load failure must not block story choices');
   await React.act(async () => tree.unmount());
+  fontLoaded = true; fontError = null;
+  let timeout, resolveLateFont;
+  global.document = { fonts: { load: () => new Promise(resolve => { resolveLateFont = resolve; }) } };
+  const slowFont = load('hooks/useSelectionFont.ts', fontMocks, {
+    setTimeout: (callback, delay) => { assert.equal(delay, 12000); timeout = callback; return 1; }, clearTimeout() {},
+  });
+  const SlowSelection = load('components/event/EventSelection.tsx', {
+    ...dialogueMocks,
+    'react-native': { Platform: selectionPlatform, View: 'View', Text: 'Text', TouchableOpacity: 'TouchableOpacity', StyleSheet: { create: s => s } },
+    '@/hooks/useSelectionFont': slowFont,
+  }).default;
+  await React.act(async () => { tree = Renderer.create(React.createElement(SlowSelection, { options: ['slow choice'], onSelect() {} })); });
+  assert.equal(tree.root.findAllByType('Text').length, 0);
+  await React.act(async () => timeout());
+  const choiceFont = () => tree.root.findAllByType('Text').find(node => node.props.children === 'slow choice').props.style.fontFamily;
+  assert.ok(!choiceFont().includes('PretendardSemiBold'), 'timeout shows stable fallback choices');
+  await React.act(async () => resolveLateFont([{ status: 'loaded' }]));
+  assert.ok(!choiceFont().includes('PretendardSemiBold'), 'late downloads cannot swap an already visible fallback font');
+  await React.act(async () => tree.unmount());
+  global.document = originalDocument;
   console.log('PASS live background fade/load gating, hidden dialogue, tap guard, unchanged background, MP4 timing and opacity in both ratios');
 })().catch(error => { console.error(error); process.exitCode = 1; });

@@ -59,6 +59,12 @@ function load(file, mocks, clock = { setTimeout, clearTimeout }) {
   assert.equal(prepareCalls[0][1], '9:16'); assert.equal(prepareCalls[0][4].includeChat, false);
   assert.equal(prepareCalls[0][4].quality, '1080p', 'selected quality survives closing the export options');
   assert.equal(closed, 1); assert.equal(tree.root.findAllByType('Modal').length, 0, 'options close before preparation finishes');
+  const hostRoot = tree.root.findByType(Host).findByType('AnimatedView').parent;
+  const hostStyle = Object.assign({}, ...hostRoot.props.style);
+  assert.equal(hostStyle.position, undefined, 'progress reserves space outside the screen instead of covering navigation');
+  assert.equal(hostStyle.flexShrink, 0);
+  assert.equal(hostRoot.props.pointerEvents, 'box-none');
+  assert.equal(tree.root.findByType('AnimatedView').props.style[0].position, undefined, 'banner stays in the reserved layout');
   const running = jobs.getVideoExportJob();
   await React.act(async () => tree.update(React.createElement(Harness, { screen: 'chat' })));
   assert.equal(running.controller.signal.aborted, false, 'screen navigation does not cancel export');
@@ -66,6 +72,13 @@ function load(file, mocks, clock = { setTimeout, clearTimeout }) {
   const worker = () => tree.root.findByType('VideoExportWorker');
   assert.equal(worker().props.payload.ratio, '9:16');
   assert.equal(worker().props.payload.quality, '1080p');
+  assert.equal(worker().parent.props.pointerEvents, 'none', 'hidden encoder cannot intercept gestures');
+  const mountedWorker = worker();
+  const activePayload = worker().props.payload;
+  await React.act(async () => tree.update(React.createElement(Harness, { screen: 'settings' })));
+  assert.equal(worker(), mountedWorker, 'navigation during encoding keeps the same worker mounted');
+  assert.equal(worker().props.payload, activePayload);
+  assert.equal(running.controller.signal.aborted, false);
   await React.act(async () => worker().props.options.onProgress({ phase: 'saving', progress: 0.97 }));
   assert.equal(button('cancel').props.disabled, true, 'final save cannot be interrupted');
   assert.equal(jobs.cancelVideoExport(running.id), false);

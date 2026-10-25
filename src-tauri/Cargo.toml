@@ -1,6 +1,6 @@
 [package]
 name = "momostory"
-version = "1.4.3"
+version = "1.4.4"
 description = "MomoStory"
 edition = "2021"
 

@@ -124,6 +124,18 @@ const hasCount = (tree, count) => tree.root.findAllByType('Text').some(text => J
   assert.equal(tree.root.findByType('Pagination').props.totalPages, 3);
   await React.act(async () => tree.root.findByType('Pagination').props.onChange(3));
   assert.equal(queries.at(-1).offset, 40);
+  await React.act(async () => button(tree, 'communityMine').props.onPress());
+  assert.equal(queries.at(-1).mine, true);
+  assert.equal(queries.at(-1).liked, false);
+  assert.equal(queries.at(-1).offset, 0, 'my-post filter starts at the first page');
+  assert.equal(button(tree, 'communityMine').props.accessibilityState.selected, true);
+  assert.equal(button(tree, 'communityAll').props.accessibilityState.selected, false);
+  await React.act(async () => button(tree, 'communityLiked').props.onPress());
+  assert.equal(queries.at(-1).mine, false);
+  assert.equal(queries.at(-1).liked, true);
+  await React.act(async () => button(tree, 'communityAll').props.onPress());
+  assert.equal(queries.at(-1).mine, false);
+  assert.equal(queries.at(-1).liked, false);
   await React.act(async () => tree.root.findByType('CharacterFilter').props.onChange('호시노'));
   assert.equal(queries.at(-1).offset, 0, 'filter resets archive page');
   pageTotal = 1;

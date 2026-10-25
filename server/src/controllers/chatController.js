@@ -32,12 +32,17 @@ exports.sendChat = async (req, res) => {
     return res.status(400).json({ error: 'character 또는 message 누락' });
   }
 
+  const controller = new AbortController();
+  const disconnected = () => { if (!res.writableEnded) controller.abort(); };
+  res.on?.('close', disconnected);
+
   try {
     const context = conversationContext(req.body.context);
     const sessionRoom = context ? `room-${context.id}` : room;
     if (context) restoreConversation(character, apiKey, sessionRoom, context);
     const chat   = await getChat(character, undefined, '', undefined, apiKey, req.body.language, sessionRoom, req.body.model);
-    const result = await chat.sendMessage(message);
+    const result = await chat.sendMessage(message, { signal: controller.signal });
+    if (controller.signal.aborted) return;
     const reply  = result.response.text();
 
     // 스토리 생성 후에도 다음 생성에 전체 대화를 전달한다.
@@ -49,8 +54,11 @@ exports.sendChat = async (req, res) => {
     const eventReady = room === 'bond' && (context !== null || log.length >= 1);
     res.json({ reply, eventReady });
   } catch (err) {
+    if (controller.signal.aborted) return;
     console.error('[Gemini 오류]', err);
     res.status(500).json({ error: 'Gemini 응답 실패' });
+  } finally {
+    res.off?.('close', disconnected);
   }
 };
 

@@ -42,6 +42,10 @@ function compile(file, mocks, globals = {}) {
   assert.ok(options[0].auth.storage); assert.equal(options[0].auth.detectSessionInUrl, false);
   assert.equal(requests[0].headers.Authorization, 'Bearer session-token');
   assert.equal(requests[0].url, 'https://example.supabase.co/functions/v1/community');
+  await connected.community.page({ mine: true, liked: false, query: 'my story', offset: 20, sort: 'latest' });
+  assert.equal(requests.at(-1).parsed.data.mine, true);
+  assert.equal(requests.at(-1).parsed.data.pagination, true);
+  assert.equal(requests.at(-1).parsed.data.offset, 20);
   const story = { id: 'story-1', title: 'Hello', character: '호시노', script: 'title : Hello\n호시노 : hi\nendEvent', chatMessages: [{ sender: 'user', text: 'hi' }], apiKey: 'never-send', settings: { key: 'private' } };
   await connected.community.publish(story);
   const body = requests.at(-1).parsed;

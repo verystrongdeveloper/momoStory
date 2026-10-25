@@ -33,8 +33,8 @@ export default function VideoExportHost() {
   const label = working ? `${t(job.progress.phase === 'preparing' ? 'videoPreparing' : saving ? 'videoSaving' : 'videoEncoding')} ${Math.floor(job.progress.progress * 100)}%`
     : t(job.status === 'error' ? job.error : job.status === 'canceled' ? 'videoExportCanceled'
       : Platform.OS === 'android' ? 'videoSavedDownloads' : job.destination?.kind === 'save-as' ? 'videoSavedFile' : 'videoDownloadStarted');
-  return <View pointerEvents="box-none" style={styles.root}>
-    <Animated.View style={[styles.banner, { top: insets.top + 64, opacity }]}>
+  return <View pointerEvents="box-none" style={[styles.root, { paddingBottom: insets.bottom + 8 }]}>
+    <Animated.View style={[styles.banner, { opacity }]}>
       <View style={styles.texts}>
         <Text style={styles.title} numberOfLines={1}>{job.title}</Text>
         <Text style={[styles.status, job.status === 'error' && styles.error]} accessibilityLiveRegion="polite">{label}</Text>
@@ -65,14 +65,18 @@ export default function VideoExportHost() {
         <TouchableOpacity accessibilityRole="button" style={styles.queueClose} onPress={() => setQueueOpen(false)}><Text style={styles.buttonText}>{t('close')}</Text></TouchableOpacity>
       </View></View>
     </Modal>}
-    {working && job.payload && <VideoExportWorker key={job.id} payload={job.payload} destination={job.destination}
+    {working && job.payload && <View pointerEvents="none" style={styles.worker} accessibilityElementsHidden importantForAccessibility="no-hide-descendants">
+      <VideoExportWorker key={job.id} payload={job.payload} destination={job.destination}
       options={{ signal: job.controller.signal, onProgress: progress => reportVideoExport(job.id, progress) }}
-      onComplete={() => completeVideoExport(job.id)} onError={error => failVideoExport(job.id, error)} />}
+      onComplete={() => completeVideoExport(job.id)} onError={error => failVideoExport(job.id, error)} />
+    </View>}
   </View>;
 }
 const styles = StyleSheet.create({
-  root: { ...StyleSheet.absoluteFill, zIndex: 40 },
-  banner: { position: 'absolute', right: 12, left: 12, maxWidth: 440, alignSelf: 'flex-end', flexDirection: 'row', alignItems: 'center', padding: 12, gap: 12, backgroundColor: '#fff5f8', borderWidth: 1, borderColor: '#efb3c3', borderRadius: 12, elevation: 5 },
+  // Reserve space below the navigator so progress never covers navigation or scrolling.
+  root: { flexShrink: 0, paddingTop: 8, paddingHorizontal: 12, backgroundColor: '#fff5f8' },
+  worker: { position: 'absolute', width: 1, height: 1, bottom: 0, right: 0, overflow: 'hidden' },
+  banner: { width: '100%', maxWidth: 440, alignSelf: 'flex-end', flexDirection: 'row', alignItems: 'center', padding: 12, gap: 12, backgroundColor: '#fff5f8', borderWidth: 1, borderColor: '#efb3c3', borderRadius: 12, elevation: 5 },
   texts: { flex: 1, minWidth: 0 }, title: { fontSize: 13, fontWeight: '700', color: '#243044' },
   status: { fontSize: 12, lineHeight: 18, marginTop: 3, color: '#67717d' }, error: { color: '#a33a54' },
   track: { height: 4, marginTop: 6, borderRadius: 2, overflow: 'hidden', backgroundColor: '#f0dce3' }, fill: { height: '100%', backgroundColor: '#dc7394' },

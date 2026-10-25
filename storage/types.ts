@@ -4,6 +4,11 @@ import { normalizeChatSound, type ChatSoundId } from '../utils/chatPresentation'
 export type AppLanguage = 'ko' | 'en' | 'ja' | 'zh';
 
 export type Preferences = {
+  notificationsEnabled: boolean;
+  chatNotifications: boolean;
+  storyNotifications: boolean;
+  exportNotifications: boolean;
+  notificationPreview: boolean;
   language: AppLanguage;
   geminiModel: string;
   senseiMode: SenseiMode;
@@ -60,6 +65,11 @@ export type StorageSnapshot = Preferences & {
 };
 
 export const DEFAULT_PREFERENCES: Preferences = {
+  notificationsEnabled: false,
+  chatNotifications: true,
+  storyNotifications: true,
+  exportNotifications: true,
+  notificationPreview: false,
   language: 'en',
   geminiModel: 'auto',
   senseiMode: 'mild',
@@ -146,6 +156,11 @@ export function parsePreferences(raw: string | null): Preferences {
   try {
     const parsed = JSON.parse(raw) as Partial<Preferences>;
     return {
+      notificationsEnabled: parsed.notificationsEnabled === true,
+      chatNotifications: parsed.chatNotifications !== false,
+      storyNotifications: parsed.storyNotifications !== false,
+      exportNotifications: parsed.exportNotifications !== false,
+      notificationPreview: parsed.notificationPreview === true,
       language: parsed.language === 'ko' || parsed.language === 'en' || parsed.language === 'ja' || parsed.language === 'zh' ? parsed.language : DEFAULT_PREFERENCES.language,
       geminiModel: normalizeModel(parsed.geminiModel),
       senseiMode: normalizeSenseiMode(parsed.senseiMode),

@@ -49,31 +49,44 @@ async function openChat(character, modelName, sessionKey, systemInstruction, api
     model: modelName,
     systemInstruction: instruction,
   });
-  const chat = model.startChat({ history });
+  // The SDK mutates its history array; confirmed history must remain independent
+  // so a canceled send cannot leak an unconfirmed turn into a later request.
+  const chat = model.startChat({ history: structuredClone(history) });
   const session = { chat, history, instruction, modelName, failed: false };
   sessions.set(cacheKey, session);
   return session;
 }
 
-async function sendWithFallback(character, sessionKey, message, systemInstruction, apiKey, language, room, selection = 'auto') {
+function checkCanceled(signal) {
+  if (signal?.aborted) throw Object.assign(new Error('REQUEST_CANCELED'), { name: 'AbortError' });
+}
+async function sendWithFallback(character, sessionKey, message, systemInstruction, apiKey, language, room, selection = 'auto', signal) {
+  checkCanceled(signal);
   selection = normalizeModel(selection);
   const order = await modelOrder(apiKey, selection);
+  checkCanceled(signal);
   const attempted = new Set(); let refreshed = false;
   let lastError;
 
   for (const modelName of order) {
+    checkCanceled(signal);
     if (attempted.has(modelName)) continue;
     attempted.add(modelName);
     try {
       const session = await openChat(character, modelName, sessionKey, systemInstruction, apiKey, language, room);
       let result;
       try {
-        result = await session.chat.sendMessage(message);
-        session.history = await session.chat.getHistory();
+        checkCanceled(signal);
+        result = await session.chat.sendMessage(message, signal ? { signal } : undefined);
+        checkCanceled(signal);
+        const history = await session.chat.getHistory();
+        checkCanceled(signal);
+        session.history = structuredClone(history);
       } catch (error) { session.failed = true; throw error; }
       if (selection === 'auto') rememberModel(apiKey, modelName);
       return result;
     } catch (err) {
+      checkCanceled(signal);
       lastError = err;
       if (selection !== 'auto' || !canFallback(err?.status)) throw err;
       if (!refreshed && (err.status === 404 || err.status === 410)) {
@@ -95,8 +108,8 @@ async function sendWithFallback(character, sessionKey, message, systemInstructio
 async function getChat(character, _modelName = GEMINI_MODEL, sessionKey = '', systemInstruction, apiKey, language = 'ko', room = 'bond', selection = 'auto') {
   const selectedLanguage = normalizeGenerationLanguage(language);
   return {
-    sendMessage(message) {
-      return sendWithFallback(character, sessionKey, message, systemInstruction, apiKey, selectedLanguage, room, selection);
+    sendMessage(message, options) {
+      return sendWithFallback(character, sessionKey, message, systemInstruction, apiKey, selectedLanguage, room, selection, options?.signal);
     },
   };
 }

@@ -75,6 +75,39 @@ for (const [name, folder] of [['후부키', 'fubuki'], ['케이', 'kei']]) {
   assert.deepEqual(expected, fs.readdirSync(path.join(__dirname, '../assets/images', folder)).sort());
 }
 const { keepAssetSpeakers, getAvailableCharacters } = require('../shared/prompts/characterList');
+assert.ok(getAvailableCharacters().includes('유우카'));
+assert.ok(buildSelectionPrompt([]).includes('유우카'));
+assert.deepEqual([...resources.유우카.emotions].sort(), fs.readdirSync(path.join(__dirname, '../assets/images/yuuka')).sort());
+const yuukaPrompt = buildEventPromptPro('유우카', [], [{ name: '유우카', emotions: resources.유우카.emotions }], '함께 서류를 정리한다.');
+const spriteLayout = loadTs('constants/spriteLayout.ts', () => ({}));
+assert.equal(spriteLayout.getSpriteAspectRatio('yuuka_default'), 687 / 1024);
+for (const [language, name] of Object.entries({ ko: '유우카', en: 'Yuuka', ja: 'ユウカ', zh: '优香' })) {
+  assert.equal(characters.find(character => character.name === '유우카').displayName[language], name);
+  for (const file of resources.유우카.emotions) {
+    assert.ok(yuukaPrompt.includes(file));
+    assert.ok(yuukaPrompt.includes(resources.유우카.emotionDescriptions[file]));
+    const localized = keepAssetSpeakers(`title : Test\n유우카(세미나) : 같이 확인해요. [emotion : ${file}]\nselection : (1)"좋아" [speaker : 유우카, dialogue : 이쪽이에요., emotion : ${file}]\nendEvent`, ['유우카'], language);
+    assert.ok(localized.includes(`${name}(`));
+    assert.ok(localized.includes(`speaker : ${name}`));
+    assert.equal(parse(localized).filter(line => line.emotion === file.replace('.png', '')).length, 2);
+  }
+}
+assert.ok(getAvailableCharacters().includes('키쿄'));
+assert.ok(buildSelectionPrompt([]).includes('키쿄'));
+assert.deepEqual([...resources.키쿄.emotions].sort(), fs.readdirSync(path.join(__dirname, '../assets/images/kikyou')).sort());
+const kikyouPrompt = buildEventPromptPro('키쿄', [], [{ name: '키쿄', emotions: resources.키쿄.emotions }], '햇볕을 쬐며 함께 쉰다.');
+assert.equal(spriteLayout.getSpriteAspectRatio('kikyou_default'), 409 / 610);
+for (const [language, name] of Object.entries({ ko: '키쿄', en: 'Kikyou', ja: 'キキョウ', zh: '桔梗' })) {
+  assert.equal(characters.find(character => character.name === '키쿄').displayName[language], name);
+  for (const file of resources.키쿄.emotions) {
+    assert.ok(kikyouPrompt.includes(file));
+    assert.ok(kikyouPrompt.includes(resources.키쿄.emotionDescriptions[file]));
+    const localized = keepAssetSpeakers(`title : Test\n키쿄(백화요란 분쟁조정위원회) : 같이 확인해요. [emotion : ${file}]\nselection : (1)"좋아" [speaker : 키쿄, dialogue : 이쪽이에요., emotion : ${file}]\nendEvent`, ['키쿄'], language);
+    assert.ok(localized.includes(`${name}(`));
+    assert.ok(localized.includes(`speaker : ${name}`));
+    assert.equal(parse(localized).filter(line => line.emotion === file.replace('.png', '')).length, 2);
+  }
+}
 assert.ok(getAvailableCharacters().includes('코유키'));
 assert.ok(buildSelectionPrompt([]).includes('코유키'));
 assert.deepEqual([...resources.코유키.emotions].sort(), fs.readdirSync(path.join(__dirname, '../assets/images/koyuki')).sort());

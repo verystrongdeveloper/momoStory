@@ -22,7 +22,7 @@ for (const code of ['ko', 'en', 'ja', 'zh']) {
   assert.equal(storageTypes.parsePreferences(JSON.stringify({ language: code })).language, code);
   assert.equal(onboarding.onboardingContent[code].terms.length, 6);
 }
-const ids = ['welcome', 'api', 'key', 'chat', 'story', 'library', 'editor', 'video', 'community', 'publish', 'limits', 'settings'];
+const ids = ['welcome', 'api', 'key', 'chat', 'story', 'library', 'editor', 'video', 'community', 'publish', 'limits', 'settings', 'display', 'sound'];
 for (const language of ['ko', 'en', 'ja', 'zh']) {
   const pages = content.getTutorialContent(language);
   assert.deepEqual(pages.map(page => page.id), ids);
@@ -40,7 +40,19 @@ for (const [language, label] of [['ko', '스토리 생성'], ['en', 'Create stor
 for (const word of ['좋아요한', '일간', '주간', '월간', '연간', '월요일', '신고', '조회수']) assert.ok(ko.community.includes(word));
 for (const word of ['공개하기', '개인정보', '익명', '복구', '자동으로 바뀌지']) assert.ok(ko.publish.includes(word));
 for (const word of ['채팅 포함', '스토리만', '10분', '저장 위치', '자동', '선택지']) assert.ok(ko.video.includes(word));
-for (const word of ['80~150%', '미리듣기', '자동 번역', '업데이트']) assert.ok(ko.settings.includes(word));
+for (const word of ['자동 번역', '업데이트', '설정 → 안내', '설정 → 알림', '뒤로가기']) assert.ok(ko.settings.includes(word));
+for (const word of ['80~150%', '세로 고정', '설정 → 화면 → 화면 방향', 'Android·iOS', '100%']) assert.ok(ko.display.includes(word));
+for (const word of ['미리듣기', '설정 → 사운드', '스토리 선택지', '영상 추출']) assert.ok(ko.sound.includes(word));
+assert.ok(ko.key.includes('설정 → AI 및 대화 → Gemini API 키'));
+assert.ok(ko.key.includes('Gemini 모델과 선생 모드'));
+const settingsLabels = load('i18n/settings.ts').settingsTranslations;
+for (const language of ['ko', 'en', 'ja', 'zh']) {
+  const pages = Object.fromEntries(content.getTutorialContent(language).map(page => [page.id, page.paragraphs.join(' ')]));
+  assert.ok(pages.key.includes(settingsLabels[language].settingsAI));
+  assert.ok(pages.settings.includes(settingsLabels[language].settingsAbout));
+  assert.ok(pages.display.includes(settingsLabels[language].settingsDisplay));
+  assert.ok(pages.display.includes('Android') && pages.display.includes('iOS'));
+}
 let language = 'ko', flags = { termsAccepted: true, tutorialSeen: true }, closed = 0;
 const listeners = new Set(), writes = [], links = [];
 const rn = Object.fromEntries(['View', 'Text', 'ScrollView', 'TouchableOpacity', 'Pressable'].map(name => [name, name]));
@@ -116,5 +128,5 @@ const onManualClose = () => { closed++; };
   assert.ok(button(tree, 'next'), 'tutorial follows explicit consent');
   await React.act(async () => tree.unmount());
   assert.equal(listeners.size, 0); assert.deepEqual(links, []);
-  console.log('PASS 12 localized tutorial pages, community/privacy/quotas/rankings/editor/video/sound/version coverage, navigation and completion, no forced onboarding or automatic consent');
+  console.log('PASS 14 localized tutorial pages, categorized settings paths, manual orientation, AI/display/sound coverage, navigation and completion, no forced onboarding or automatic consent');
 })().catch(error => { console.error(error); process.exitCode = 1; });

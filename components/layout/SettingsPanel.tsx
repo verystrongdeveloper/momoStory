@@ -1,5 +1,7 @@
 import React, { useEffect, useRef, useState } from 'react';
 import {
+  BackHandler,
+  Keyboard,
   GestureResponderEvent,
   KeyboardAvoidingView,
   Platform,
@@ -16,7 +18,9 @@ import SenseiModePicker from './SenseiModePicker';
 import ChatSoundPicker from './ChatSoundPicker';
 import InAppUpdate from './InAppUpdate';
 import NotificationSettings from './NotificationSettings';
+import ScreenOrientationPicker from './ScreenOrientationPicker';
 import Constants from 'expo-constants';
+import { Ionicons } from '@expo/vector-icons';
 import appConfig from '../../app.json';
 import { checkAppUpdate, type UpdateResult } from '@/services/appUpdate';
 import { openExternalUrl } from '@/platform/openExternalUrl';
@@ -27,6 +31,17 @@ import { useI18n } from '@/i18n';
 import { setChatSize, useChatSize } from '@/services/chatSize';
 import { MAX_CHAT_SIZE, MIN_CHAT_SIZE } from '@/storage/types';
 import { makeChatSizeStyles } from '@/components/chat/chatSizeStyles';
+
+const SETTINGS_SECTIONS = [
+  { id: 'notifications', label: 'notifications', icon: 'notifications-outline' },
+  { id: 'display', label: 'settingsDisplay', icon: 'phone-portrait-outline' },
+  { id: 'sound', label: 'sound', icon: 'volume-medium-outline' },
+  { id: 'ai', label: 'settingsAI', icon: 'sparkles-outline' },
+  { id: 'language', label: 'language', icon: 'language-outline' },
+  { id: 'help', label: 'guide', icon: 'help-circle-outline' },
+  { id: 'about', label: 'settingsAbout', icon: 'information-circle-outline' },
+] as const;
+type SettingsSection = typeof SETTINGS_SECTIONS[number]['id'];
 
 const clamp = (value: number) => {
   if (!Number.isFinite(value)) return null;
@@ -92,6 +107,21 @@ export default function SettingsPanel({
   onOpenTerms: () => void;
 }) {
   const { language, t } = useI18n();
+  const [section, setSection] = useState<SettingsSection | null>(null);
+  const activeSection = SETTINGS_SECTIONS.find(item => item.id === section);
+  const openSection = (next: SettingsSection | null) => {
+    Keyboard.dismiss();
+    setSection(next);
+  };
+  useEffect(() => {
+    if (!section || Platform.OS !== 'android') return;
+    const subscription = BackHandler.addEventListener('hardwareBackPress', () => {
+      Keyboard.dismiss();
+      setSection(null);
+      return true;
+    });
+    return () => subscription.remove();
+  }, [section]);
   const chatSize = useChatSize();
   const chatStyles = makeChatSizeStyles(chatSize);
   const [volume, setVolume] = useState(getBgmVolume);
@@ -146,16 +176,45 @@ export default function SettingsPanel({
       style={styles.keyboardView}
       behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
     >
+      <View style={styles.header}>
+        {section && (
+          <TouchableOpacity accessibilityRole="button" accessibilityLabel={t('settingsBack')} style={styles.backButton} onPress={() => openSection(null)}>
+            <Ionicons name="chevron-back" size={24} color="#42343c" />
+          </TouchableOpacity>
+        )}
+        <Text accessibilityRole="header" style={styles.title}>{t(activeSection?.label ?? 'settings')}</Text>
+      </View>
       <ScrollView
+        key={section ?? 'menu'}
         ref={scrollRef}
         style={styles.scroll}
-        contentContainerStyle={styles.container}
+        contentContainerStyle={[styles.container, !section && styles.menuContainer]}
         keyboardShouldPersistTaps="handled"
         keyboardDismissMode="on-drag"
       >
-      <Text style={styles.title}>{t('settings')}</Text>
-      <NotificationSettings />
+      {!section ? (
+        <View style={styles.menu}>
+          {SETTINGS_SECTIONS.map((item, index) => (
+            <TouchableOpacity
+              key={item.id}
+              accessibilityRole="button"
+              accessibilityLabel={t(item.label)}
+              style={[styles.menuRow, index === 5 && styles.menuGroup]}
+              onPress={() => openSection(item.id)}
+            >
+              <Ionicons name={item.icon} size={21} color="#775b69" />
+              <Text style={styles.menuLabel}>{t(item.label)}</Text>
+              {item.id === 'about' && <Text style={styles.menuValue}>{appVersion}</Text>}
+              {item.id === 'language' && <Text style={styles.menuValue}>{APP_LANGUAGES.find(option => option.code === language)?.label}</Text>}
+              <Ionicons name="chevron-forward" size={18} color="#b8afb5" />
+            </TouchableOpacity>
+          ))}
+        </View>
+      ) : <>
+      {section === 'notifications' && <NotificationSettings />}
+      {section === 'display' && <ScreenOrientationPicker />}
 
+      {section === 'language' && <>
       <View style={styles.card}>
         <Text style={styles.label}>{t('language')}</Text>
         <View style={styles.languageRow}>
@@ -173,6 +232,8 @@ export default function SettingsPanel({
         </View>
       </View>
 
+      </>}
+      {section === 'display' && <>
       <View style={styles.card}>
         <Text style={styles.label}>{t('chatSize')}</Text>
         <Text style={styles.value} accessibilityLiveRegion="polite">{Math.round(chatSize * 100)}%</Text>
@@ -206,6 +267,8 @@ export default function SettingsPanel({
         </View>
       </View>
 
+      </>}
+      {section === 'sound' && <>
       <View style={styles.card}>
         <Text style={styles.label}>{t('sound')}</Text>
         <VolumeControl label={t('bgm')} value={volume} onChange={(next) => setVolume(setBgmVolume(next))} />
@@ -214,6 +277,8 @@ export default function SettingsPanel({
         <ChatSoundPicker />
       </View>
 
+      </>}
+      {section === 'ai' && <>
       <SenseiModePicker />
 
       <View style={styles.keyWrap} onLayout={(event) => setKeyOffset(event.nativeEvent.layout.y)}>
@@ -221,6 +286,8 @@ export default function SettingsPanel({
         <GeminiModelPicker />
       </View>
 
+      </>}
+      {section === 'help' && <>
       <View style={styles.card}>
         <Text style={styles.label}>{t('guide')}</Text>
         <View style={styles.guideRow}>
@@ -232,6 +299,8 @@ export default function SettingsPanel({
           </TouchableOpacity>
         </View>
       </View>
+      </>}
+      {section === 'about' && <>
       <View style={styles.card}>
         <Text style={styles.label}>{t('appVersion')}</Text>
         <Text selectable style={styles.value}>{appVersion}</Text>
@@ -255,6 +324,8 @@ export default function SettingsPanel({
         {updateStatus === 'error' && <Text style={styles.hint} accessibilityLiveRegion="polite">{t('updateCheckFailed')}</Text>}
         {linkError && <Text selectable style={styles.hint}>{t('updateOpenFailed')} {updateResult?.url}</Text>}
       </View>
+      </>}
+      </>}
       </ScrollView>
     </KeyboardAvoidingView>
   );
@@ -264,20 +335,28 @@ const styles = StyleSheet.create({
   keyboardView: {
     flex: 1,
   },
+  header: { flexDirection: 'row', alignItems: 'center', minHeight: 60, paddingHorizontal: 20, borderBottomWidth: 1, borderBottomColor: '#ece7eb', backgroundColor: '#fff' },
+  backButton: { minWidth: 44, minHeight: 48, alignItems: 'flex-start', justifyContent: 'center' },
+  menuContainer: { padding: 0 },
+  menu: { width: '100%', maxWidth: 680, alignSelf: 'flex-start', paddingTop: 10 },
+  menuRow: { minHeight: 60, flexDirection: 'row', alignItems: 'center', gap: 14, paddingHorizontal: 22, paddingVertical: 16, backgroundColor: '#fff', borderBottomWidth: StyleSheet.hairlineWidth, borderBottomColor: '#eee9ed' },
+  menuGroup: { marginTop: 18 },
+  menuLabel: { flex: 1, fontSize: 16, color: '#42343c' },
+  menuValue: { flexShrink: 1, fontSize: 14, color: '#8b7f86', textAlign: 'right' },
   scroll: {
     flex: 1,
   },
   container: {
     flexGrow: 1,
     backgroundColor: '#f7f4f5',
-    padding: 28,
+    padding: 20,
     paddingBottom: 48,
   },
   title: {
     fontSize: 22,
     fontWeight: 'bold',
     color: '#222',
-    marginBottom: 18,
+    flex: 1,
   },
   card: {
     alignSelf: 'flex-start',

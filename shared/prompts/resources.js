@@ -3,6 +3,55 @@
 // 프론트 constants/eventAssets.ts 의 키와 반드시 일치해야 한다.
 
 const resources = {
+  키쿄: {
+    emotions: [
+      'kikyou_default.png', 'kikyou_serious.png', 'kikyou_frustrated.png',
+      'kikyou_angry.png', 'kikyou_gloomy.png', 'kikyou_distressed.png',
+      'kikyou_sigh.png', 'kikyou_worried.png', 'kikyou_uneasy.png',
+      'kikyou_smile.png', 'kikyou_talking.png', 'kikyou_eyesClosed.png',
+      'kikyou_smileTalking.png', 'kikyou_unamused.png',
+      'kikyou_poutEyesClosed.png', 'kikyou_pout.png', 'kikyou_flustered.png',
+    ],
+    emotionDescriptions: {
+      'kikyou_default.png': '반쯤 뜬 눈과 작게 다문 입의 담담한 기본 표정. 평범한 대화와 경청.',
+      'kikyou_serious.png': '살짝 좁힌 눈매와 다문 입. 상황을 살피거나 진지하게 판단함.',
+      'kikyou_frustrated.png': '찡그린 눈썹, 이를 드러낸 입과 식은땀. 일이 뜻대로 되지 않아 분하거나 짜증남.',
+      'kikyou_angry.png': '얼굴 윗부분에 푸른 음영과 붉은 분노 표시, 일그러진 입매. 강한 분노와 적의.',
+      'kikyou_gloomy.png': '처진 눈썹과 어두운 얼굴 음영, 작게 벌어진 입과 식은땀. 침울함과 낙담.',
+      'kikyou_distressed.png': '눈을 질끈 감고 얼굴에 푸른 빗금과 식은땀, 괴로운 입매. 감당하기 힘들어 괴로워함.',
+      'kikyou_sigh.png': '눈을 감고 입을 작게 벌림. 한숨을 쉬거나 체념하며 말함. 하품이나 웃음으로 쓰지 않는다.',
+      'kikyou_worried.png': '처진 눈썹과 다문 입의 걱정스러운 표정. 상대를 염려하거나 망설임. 식은땀은 없음.',
+      'kikyou_uneasy.png': '처진 눈썹과 물결 모양의 입, 한쪽 식은땀. 난처함과 불편함.',
+      'kikyou_smile.png': '눈을 뜬 채 입을 다문 작은 미소. 조용한 기쁨과 친근함.',
+      'kikyou_talking.png': '담담한 눈매에 입을 작게 벌림. 차분하게 설명하거나 되물음.',
+      'kikyou_eyesClosed.png': '눈을 감고 입을 다문 평온한 표정. 생각을 정리하거나 조용히 기다림.',
+      'kikyou_smileTalking.png': '눈을 뜨고 입을 벌린 부드러운 웃음. 기분 좋게 말하거나 가벼운 장난을 받아줌.',
+      'kikyou_unamused.png': '힘이 빠진 눈썹과 눈매, 다문 입. 심드렁하거나 어이없어함.',
+      'kikyou_poutEyesClosed.png': '눈을 꼭 감고 눈썹과 입매를 찡그림. 토라져 불만을 드러냄. 울음으로 쓰지 않는다.',
+      'kikyou_pout.png': '눈썹을 좁히고 입을 삐죽임. 가벼운 삐침과 못마땅함.',
+      'kikyou_flustered.png': '눈을 크게 뜨고 짙게 붉어진 얼굴, 떨리는 입매와 식은땀. 뜻밖의 친근함이나 칭찬에 크게 당황함.',
+    },
+  },
+  유우카: {
+    emotions: [
+      'yuuka_default.png', 'yuuka_surprised.png', 'yuuka_laugh.png',
+      'yuuka_embarrassed.png', 'yuuka_shocked.png', 'yuuka_pout.png',
+      'yuuka_uneasy.png', 'yuuka_smug.png', 'yuuka_poutEyesClosed.png',
+      'yuuka_eyesClosed.png',
+    ],
+    emotionDescriptions: {
+      'yuuka_default.png': '눈을 뜨고 입을 다문 진지한 기본 표정. 평범한 대화와 차분한 설명.',
+      'yuuka_surprised.png': '눈을 크게 뜨고 입을 동그랗게 벌리며 볼을 붉힘. 뜻밖의 말에 놀라거나 되묻는 장면.',
+      'yuuka_laugh.png': '양쪽 눈을 감고 입을 크게 벌린 밝은 웃음. 즐겁거나 기쁜 장면.',
+      'yuuka_embarrassed.png': '짙은 홍조와 양쪽 식은땀, 떨리는 입매. 칭찬이나 예상 밖의 친근함에 부끄러워 당황함.',
+      'yuuka_shocked.png': '얼굴에 푸른 그늘, 반쯤 내린 눈과 식은땀, 벌어진 입. 황당한 상황에 충격을 받거나 질림.',
+      'yuuka_pout.png': '눈을 가늘게 뜨고 입을 삐죽임. 못마땅하거나 삐친 장면.',
+      'yuuka_uneasy.png': '처진 눈썹과 벌어진 입, 한쪽 식은땀. 곤란하거나 걱정스러워 말문이 막힘.',
+      'yuuka_smug.png': '반쯤 감긴 눈과 자신만만한 작은 웃음. 계산이 맞았거나 성과를 자랑스러워함.',
+      'yuuka_poutEyesClosed.png': '눈을 감고 입을 삐죽임. 토라지거나 고집스럽게 못마땅함을 표현함.',
+      'yuuka_eyesClosed.png': '눈을 감고 입을 다문 차분한 표정. 생각을 정리하거나 침착하게 설명함. 웃음이나 울음으로 해석하지 않는다.',
+    },
+  },
   코유키: {
     emotions: [
       'koyuki_default.png', 'koyuki_smile.png', 'koyuki_happy.png',

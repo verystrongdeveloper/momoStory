@@ -136,6 +136,37 @@
     "sweat.png"
   ],
   "emotions": {
+    "키쿄": [
+      "kikyou_default.png",
+      "kikyou_serious.png",
+      "kikyou_frustrated.png",
+      "kikyou_angry.png",
+      "kikyou_gloomy.png",
+      "kikyou_distressed.png",
+      "kikyou_sigh.png",
+      "kikyou_worried.png",
+      "kikyou_uneasy.png",
+      "kikyou_smile.png",
+      "kikyou_talking.png",
+      "kikyou_eyesClosed.png",
+      "kikyou_smileTalking.png",
+      "kikyou_unamused.png",
+      "kikyou_poutEyesClosed.png",
+      "kikyou_pout.png",
+      "kikyou_flustered.png"
+    ],
+    "유우카": [
+      "yuuka_default.png",
+      "yuuka_surprised.png",
+      "yuuka_laugh.png",
+      "yuuka_embarrassed.png",
+      "yuuka_shocked.png",
+      "yuuka_pout.png",
+      "yuuka_uneasy.png",
+      "yuuka_smug.png",
+      "yuuka_poutEyesClosed.png",
+      "yuuka_eyesClosed.png"
+    ],
     "코유키": [
       "koyuki_default.png",
       "koyuki_smile.png",

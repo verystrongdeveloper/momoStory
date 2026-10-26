@@ -21,7 +21,7 @@ const fail = (code, line) => { throw new CommunityValidationError(code, line); }
 const charCount = (text) => Array.from(text).length;
 exports.charCount = charCount;
 const controls = /[\u0000-\u0008\u000B\u000C\u000E-\u001F\u007F]/;
-const aliases = { '코유키': '코유키', koyuki: '코유키', 'コユキ': '코유키', '小雪': '코유키', '케이': '케이', kei: '케이', 'ケイ': '케이', '凯伊': '케이', '후부키': '후부키', fubuki: '후부키', 'フブキ': '후부키', '吹雪': '후부키', '호시노': '호시노', hoshino: '호시노', 'ホシノ': '호시노', '星野': '호시노', '히나': '히나', hina: '히나', 'ヒナ': '히나', '日奈': '히나', '마리': '마리', mari: '마리', 'マリー': '마리', '玛丽': '마리' };
+const aliases = { '키쿄': '키쿄', kikyou: '키쿄', 'キキョウ': '키쿄', '桔梗': '키쿄', '유우카': '유우카', yuuka: '유우카', 'ユウカ': '유우카', '优香': '유우카', '코유키': '코유키', koyuki: '코유키', 'コユキ': '코유키', '小雪': '코유키', '케이': '케이', kei: '케이', 'ケイ': '케이', '凯伊': '케이', '후부키': '후부키', fubuki: '후부키', 'フブキ': '후부키', '吹雪': '후부키', '호시노': '호시노', hoshino: '호시노', 'ホシノ': '호시노', '星野': '호시노', '히나': '히나', hina: '히나', 'ヒナ': '히나', '日奈': '히나', '마리': '마리', mari: '마리', 'マリー': '마리', '玛丽': '마리' };
 function speaker(value) {
     const name = value.match(/^([^()（）:：\[\]]+?)(?:\s*[（(][^()（）\[\]]{1,80}[）)])?$/)?.[1]?.trim();
     return name ? aliases[name.toLowerCase()] : undefined;

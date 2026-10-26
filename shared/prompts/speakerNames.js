@@ -1,4 +1,6 @@
 const NAMES = {
+  키쿄: { ko: '키쿄', en: 'Kikyou', ja: 'キキョウ', zh: '桔梗' },
+  유우카: { ko: '유우카', en: 'Yuuka', ja: 'ユウカ', zh: '优香' },
   코유키: { ko: '코유키', en: 'Koyuki', ja: 'コユキ', zh: '小雪' },
   케이: { ko: '케이', en: 'Kei', ja: 'ケイ', zh: '凯伊' },
   후부키: { ko: '후부키', en: 'Fubuki', ja: 'フブキ', zh: '吹雪' },
@@ -7,6 +9,10 @@ const NAMES = {
   마리: { ko: '마리', en: 'Mari', ja: 'マリー', zh: '玛丽' },
 };
 const AFFILIATIONS = {
+  '백화요란 분쟁조정위원회': { en: 'Hyakkaryouran Resolution Council', ja: '百花繚乱紛争調停委員会', zh: '百花缭乱纠纷调解委员会' },
+  백화요란: { en: 'Hyakkaryouran', ja: '百花繚乱', zh: '百花缭乱' },
+  '백귀야행 연합학원': { en: 'Hyakkiyako Alliance Academy', ja: '百鬼夜行連合学院', zh: '百鬼夜行联合学园' },
+  백귀야행: { en: 'Hyakkiyako', ja: '百鬼夜行', zh: '百鬼夜行' },
   세미나: { en: 'Seminar', ja: 'セミナー', zh: '研讨会' },
   '밀레니엄 사이언스 스쿨': { en: 'Millennium Science School', ja: 'ミレニアムサイエンススクール', zh: '千年科学学园' },
   초현상특무부: { en: 'Super Phenomenon Task Force', ja: '特異現象捜査部', zh: '超现象特务部' },

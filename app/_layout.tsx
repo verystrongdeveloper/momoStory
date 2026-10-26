@@ -10,9 +10,11 @@ import { I18nProvider } from '@/i18n';
 import StartupUpdatePrompt from '@/components/layout/StartupUpdatePrompt';
 import VideoExportHost from '@/components/layout/VideoExportHost';
 import NotificationHost from '@/components/layout/NotificationHost';
+import { useScreenOrientation } from '@/services/screenOrientation';
 
 export default function RootLayout() {
   useSelectionFont();
+  const orientation = useScreenOrientation();
 
   useEffect(() => {
     void hydrateStorage();
@@ -22,7 +24,7 @@ export default function RootLayout() {
   return (
     <SafeAreaProvider>
       <I18nProvider>
-        <Stack screenOptions={{ headerShown: false }}>
+        <Stack screenOptions={{ headerShown: false, orientation: orientation === 'landscape' ? 'landscape' : 'portrait_up' }}>
           <Stack.Screen name="index" />
           <Stack.Screen name="event" />
           <Stack.Screen name="+not-found" options={{ headerShown: true }} />

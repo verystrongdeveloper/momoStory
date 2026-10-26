@@ -7,6 +7,8 @@ import { appUpdateTranslations } from './appUpdate';
 import { geminiModelTranslations } from './geminiModel';
 import { senseiModeTranslations } from './senseiMode';
 import { notificationTranslations } from './notifications';
+import { screenOrientationTranslations } from './screenOrientation';
+import { settingsTranslations } from './settings';
 
 type Dictionary = Record<string, string>;
 
@@ -14,6 +16,8 @@ const translations: Record<AppLanguage, Dictionary> = {
   ko: {
     cancelMessage: '응답 취소',
     ...notificationTranslations.ko,
+    ...screenOrientationTranslations.ko,
+    ...settingsTranslations.ko,
     deleteRoomQuestion: "이 채팅방의 대화와 모든 스토리를 삭제할까요?",
     roomBusy: "응답이나 스토리 생성이 끝난 뒤 수정해 주세요.",
     editRoom: "채팅방 수정", roomTitle: "채팅방 제목", roomTitleRequired: "채팅방 제목을 입력해 주세요.", roomStoryCount: "스토리 {count}개", roomContinueHint: "이 방의 대화와 스토리를 이어갑니다. 원하는 때 새 스토리를 생성하세요.", roomEditHint: "채팅 사이의 인연 스토리 버튼을 누르면 해당 대본을 수정할 수 있습니다. 방 제목과 대화도 수정할 수 있으며, 수정 내용은 이후 대화와 스토리 생성에 반영됩니다.", newConversation: "{name}와의 대화",
@@ -61,6 +65,8 @@ const translations: Record<AppLanguage, Dictionary> = {
   en: {
     cancelMessage: 'Cancel reply',
     ...notificationTranslations.en,
+    ...screenOrientationTranslations.en,
+    ...settingsTranslations.en,
     deleteRoomQuestion: "Delete this room, its chat and all episodes?",
     roomBusy: "Wait for the reply or story generation to finish before editing.",
     editRoom: "Edit room", roomTitle: "Room title", roomTitleRequired: "Enter a room title.", roomStoryCount: "{count} stories", roomContinueHint: "Continue this room’s conversation and stories. Generate a new story whenever you want.", roomEditHint: "Story buttons appear between chat messages. Select one to edit that script. Room title and chat edits are used in future conversations and story generation.", newConversation: "Chat with {name}",
@@ -108,6 +114,8 @@ const translations: Record<AppLanguage, Dictionary> = {
   ja: {
     cancelMessage: '返信をキャンセル',
     ...notificationTranslations.ja,
+    ...screenOrientationTranslations.ja,
+    ...settingsTranslations.ja,
     deleteRoomQuestion: "このルームの会話とすべての話を削除しますか？",
     roomBusy: "返答やストーリー生成の完了後に編集してください。",
     editRoom: "ルームを編集", roomTitle: "ルーム名", roomTitleRequired: "ルーム名を入力してください。", roomStoryCount: "ストーリー{count}件", roomContinueHint: "このルームの会話とストーリーを続けます。好きな時に新しいストーリーを生成できます。", roomEditHint: "会話の間に絆ストーリーボタンを表示します。選ぶとその台本を編集できます。ルーム名と会話の編集も以降の会話と生成に反映されます。", newConversation: "{name}との会話",
@@ -155,6 +163,8 @@ const translations: Record<AppLanguage, Dictionary> = {
   zh: {
     cancelMessage: '取消回复',
     ...notificationTranslations.zh,
+    ...screenOrientationTranslations.zh,
+    ...settingsTranslations.zh,
     deleteRoomQuestion: "删除此聊天室、聊天记录和所有故事？",
     roomBusy: "请等待回复或故事生成完成后再编辑。",
     editRoom: "编辑聊天室", roomTitle: "聊天室名称", roomTitleRequired: "请输入聊天室名称。", roomStoryCount: "{count}个故事", roomContinueHint: "继续这个房间的对话和故事，随时生成新故事。", roomEditHint: "羁绊故事按钮显示在聊天之间，点击即可编辑对应剧本。房间名称和聊天的修改将用于后续对话与故事生成。", newConversation: "与{name}的对话",

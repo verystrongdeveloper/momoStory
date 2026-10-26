@@ -12,9 +12,10 @@ const content: Record<AppLanguage, TutorialPage[]> = {
       '2. API 키를 생성하고 복사합니다. 필요한 프로젝트 설정과 이용 가능 여부는 Google의 안내를 따르세요.',
       '키는 비밀번호와 같습니다. 다른 사람에게 보내거나 채팅·댓글·공개 대본에 붙여 넣지 마세요. API 사용량과 비용은 본인 Google 계정에 적용됩니다.',
     ] },
-    { id: 'key', title: '키를 넣는 곳', paragraphs: [
-      '톱니바퀴 설정 → Gemini API 키에 붙여 넣고 저장합니다. 좁은 화면에서는 설정 아이콘이 아래쪽에 있습니다.',
-      'API 키 기억하기를 켜면 이 기기에 저장하고, 끄면 이번 실행에서만 사용합니다. 프로그램에 공용 Gemini 키가 포함되어 있지는 않습니다.',
+    { id: 'key', title: "키와 AI 설정", paragraphs: [
+      "톱니바퀴 설정 → AI 및 대화 → Gemini API 키에 붙여 넣고 저장합니다. 좁은 화면에서는 설정 아이콘이 아래쪽에 있습니다.",
+      "API 키 기억하기를 켜면 이 기기에 저장하고, 끄면 이번 실행에서만 사용합니다. 프로그램에 공용 Gemini 키가 포함되어 있지는 않습니다.",
+      "같은 AI 및 대화 화면에서 Gemini 모델과 선생 모드도 고릅니다. 모델 변경은 다음 요청부터, 순한맛·매운맛 변경은 다음 스토리 생성부터 적용됩니다.",
     ] },
     { id: 'chat', title: '캐릭터와 대화하기', paragraphs: [
       '사람 아이콘에서 상대를 고르고 메시지를 입력한 뒤 보내기를 누릅니다. 먼저 말 걸기를 켜면 방에 들어갈 때 캐릭터가 먼저 말을 겁니다.',
@@ -60,17 +61,29 @@ const content: Record<AppLanguage, TutorialPage[]> = {
       '해석할 수 없는 대본, 지원하지 않는 화자·에셋, 잘못된 선택지·명령, 과도하게 긴 내용은 공개할 수 없습니다. 오류가 뜨면 라이브러리 편집기의 오류 목록을 확인하세요.',
       '아카이브 서버가 연결되지 않았다는 안내가 나오면 운영자의 서버 설정이 필요합니다. 개인 Gemini 키를 입력해서 해결하는 문제가 아닙니다.',
     ] },
-    { id: 'settings', title: '언어·크기·소리·업데이트', paragraphs: [
-      '설정에서 채팅 크기를 80~150%로 조절합니다. 일반 채팅과 저장된 대화에 적용되며 자동 저장됩니다.',
-      'BGM·효과음 볼륨을 바꾸고, 채팅 효과음 5종 또는 사용 안 함을 선택할 수 있습니다. 미리듣기는 음소거 상태에서도 기본 볼륨으로 재생됩니다. 선택한 소리는 채팅·스토리 선택지·영상 추출에 적용됩니다.',
-      '언어를 바꾸면 UI와 새로 생성하는 채팅·스토리의 제목·이름·소속·대사에 적용됩니다. 기존 저장본이나 공개된 스토리는 자동 번역하지 않습니다.',
-      '현재 버전과 업데이트 확인에서 새 버전을 확인할 수 있습니다. 사용 방법과 이용 약관도 설정에서 언제든 다시 열 수 있습니다.',
+    { id: 'settings', title: "설정 목록과 세부 화면", paragraphs: [
+      "설정을 열면 알림·화면·사운드·AI 및 대화·언어·안내·앱 정보 및 업데이트 목록이 나옵니다. 원하는 항목을 눌러 그 안에서 설정을 조작합니다. 상단 뒤로가기나 Android 뒤로가기 버튼으로 목록에 돌아옵니다.",
+      "설정 → 언어에서 표시 언어를 바꿉니다. UI와 새로 생성하는 채팅·스토리의 제목·이름·소속·대사에 적용되며, 기존 저장본이나 공개된 스토리는 자동 번역하지 않습니다.",
+      "설정 → 알림에서 채팅·스토리 생성·영상 추출 완료 알림과 내용 미리보기를 조절합니다. 기기에서 알림 권한을 허용해야 받을 수 있습니다.",
+      "설정 → 앱 정보 및 업데이트에서 현재 버전을 확인하고 업데이트를 확인합니다. 사용 방법과 이용 약관은 설정 → 안내에서 다시 열 수 있습니다.",
+    ] },
+    { id: 'display', title: "화면 방향과 채팅 크기", paragraphs: [
+      "휴대폰 앱은 기본적으로 세로 고정입니다. 설정 → 화면 → 화면 방향에서 세로 또는 가로를 직접 선택합니다. 기기를 돌려도 선택한 방향을 유지하며 앱과 스토리에 바로 적용되고 자동 저장됩니다. 화면 방향 선택은 Android·iOS 앱에서만 표시됩니다.",
+      "설정 → 화면 → 채팅 크기에서 80~150%로 조절하고 미리보기로 확인합니다. 일반 채팅과 저장된 대화에 적용되며 자동 저장됩니다. 기본 크기를 누르면 100%로 돌아갑니다.",
+    ] },
+    { id: 'sound', title: "사운드와 채팅 효과음", paragraphs: [
+      "설정 → 사운드에서 BGM·효과음 볼륨을 조절하고 채팅 효과음 5종 또는 사용 안 함을 고릅니다. 미리듣기는 음소거 상태에서도 기본 볼륨으로 재생됩니다.",
+      "선택한 소리는 채팅·스토리 선택지·영상 추출에 적용됩니다. 스토리 안에서 바꾼 BGM·효과음 볼륨도 이 설정과 공유합니다.",
     ] },
   ],
   en: [
     { id: 'welcome', title: 'MomoStory', paragraphs: ['An unofficial fan app for chatting with Blue Archive characters and creating bond stories from your conversations. AI-generated content may differ from the official setting.', 'You can also watch stories in the archive without a Gemini API key. Your own key is required only to generate new chats and stories.'] },
     { id: 'api', title: 'Get a Gemini API key', aiStudio: true, paragraphs: ['1. Open Google AI Studio below and sign in with your own Google account.', '2. Create and copy an API key. Follow Google’s instructions for project requirements and availability.', 'Treat your key like a password. Never send it to others or paste it into chats, comments or public scripts. API usage and charges apply to your Google account.'] },
-    { id: 'key', title: 'Save your key', paragraphs: ['Open the gear-shaped Settings icon, paste the key into Gemini API key, and save. On narrow screens, Settings is in the bottom navigation.', 'Remember API key keeps it on this device. Turn it off to use it only for the current session. The app does not include a shared Gemini key.'] },
+    { id: 'key', title: "Key and AI settings", paragraphs: [
+      "Open the gear-shaped Settings icon → AI & conversations → Gemini API key, paste your key, and save. On narrow screens, Settings is in the bottom navigation.",
+      "Remember API key keeps it on this device. Turn it off to use it only for the current session. The app does not include a shared Gemini key.",
+      "Choose Gemini model and Sensei mode on the same AI & conversations screen. Model changes apply to the next request; Mild/Spicy changes apply to the next story generation.",
+    ] },
     { id: 'chat', title: 'Chat with a character', paragraphs: ['Use the person icon to choose a character, enter a message and send. Enable Greet first to let the character start when you enter.', 'In Bond story chat, Create story becomes available after at least one completed message and character reply. It creates a story from the current conversation and saves it to your library. The initial greeting alone does not count. Chat without an exchange limit and generate whenever you want. After generating or watching a story, continue the same conversation and generate more stories from the accumulated chat.'] },
     { id: 'story', title: 'Play a bond story', paragraphs: ['Tap the dialogue or an empty part of the screen. On PC and web, Space works too. While text is appearing, the first tap completes it; the next advances.', 'Choose options yourself. Normal playback’s AUTO stops at choices. Selecting an option plays your selected chat sound.', 'Background changes fade between scenes, briefly hiding dialogue and choices. Use the in-story volume menu for music and effects.'] },
     { id: 'library', title: 'Library and saved chat', paragraphs: ['The book icon opens your library. Select title or content as the search scope.', 'Each card is an independent chat room. A bond story button appears after its conversation, with more chat continuing below. Generate another story to add its button at that point. The menu beside each button offers editing, export and publishing.', 'The card’s … menu offers script editing, text export, video export, publishing and deletion.', 'Copy prompt copies script-writing instructions. Import opens a text file. New opens a blank script editor.'] },
@@ -79,12 +92,29 @@ const content: Record<AppLanguage, TutorialPage[]> = {
     { id: 'community', title: 'Archive and liked stories', paragraphs: ['The people icon opens the archive. Switch between All and Liked stories, search titles, and sort by latest or popularity.', 'Popularity supports all-time, daily, weekly, monthly and yearly periods. It counts currently active likes received during that period, not the post date. Periods use Korea time: today, this week from Monday, this month, or this year.', 'Watch chat & story opens read-only messages and story playback. Like a post to find it later in Liked stories; press again to unlike.', 'Write comments, delete your own comments/posts, and report problematic posts. Views count once per anonymous user per Korean calendar day.'] },
     { id: 'publish', title: 'Publish and protect your privacy', paragraphs: ['Choose … → Publish on a library card, then select Chat + bond story or Bond story only. Review the selected content before confirming. Story-only publishing excludes chat while keeping it in your library. Check the public title, script and any included chat for personal information or API keys.', 'There is no registration or nickname form. An internal anonymous session identifies your likes and ownership. Switching devices, clearing app data or deleting browser storage loses that identity; it cannot be recovered.', 'Local edits alone do not change the public post. Publish the same library card again to update its title, script and selected chat while preserving likes, comments, views and the original publication date. Choosing Story only removes previously public chat. Publications and updates share a limit of 5 per day, one minute apart.'] },
     { id: 'limits', title: 'Posting and comment limits', paragraphs: ['Each anonymous user may publish 5 posts and 10 comments per Korean calendar day, resetting at midnight. Wait 1 minute between posts and 10 seconds between comments. Deleting does not refund your daily quota.', 'Comments must contain 1–300 characters including spaces; empty comments are rejected. Titles are up to 100 characters. Script plus chat must fit within 50,000 characters and 200KB of UTF-8 text.', 'Unparseable scripts, unsupported speakers/assets, invalid choices/commands and overly long content cannot be published. Check the script editor’s error list.', 'A archive server not connected message requires configuration by the operator. Entering a personal Gemini key does not fix it.'] },
-    { id: 'settings', title: 'Language, size, sound and updates', paragraphs: ['Adjust chat size from 80–150% in Settings. It applies to live and saved chats and is saved automatically.', 'Adjust music/effects volumes and choose one of five chat sounds or Off. Preview uses a default volume even when muted. The selected sound is used for chat, story choices and video exports.', 'Language selection changes the UI and newly generated chat/story titles, names, affiliations and dialogue. Saved or public stories are not automatically translated.', 'View the current version and check for updates. You can reopen this guide and the terms from Settings at any time.'] },
+    { id: 'settings', title: "Settings list and detail screens", paragraphs: [
+      "Settings lists Notifications, Display, Sound, AI & conversations, Language, Help, and About & updates. Tap a category to adjust its settings. Use the top back arrow or Android Back to return to the list.",
+      "Use Settings → Language to change the UI and newly generated chat/story titles, names, affiliations and dialogue. Saved and public stories are not automatically translated.",
+      "Use Settings → Notifications for chat, story generation and video completion alerts, and content previews. Device notification permission is required to receive alerts.",
+      "Check the current version and updates in Settings → About & updates. Reopen this guide and the terms in Settings → Help.",
+    ] },
+    { id: 'display', title: "Screen orientation and chat size", paragraphs: [
+      "The phone app defaults to portrait lock. Choose Portrait or Landscape in Settings → Display → Screen orientation. Turning your phone keeps the selected orientation. It applies immediately to the app and stories and saves automatically. This control is only shown in Android and iOS apps.",
+      "Use Settings → Display → Chat size to adjust to 80–150% and check the preview. It applies to normal and saved chats and saves automatically. Reset restores 100%.",
+    ] },
+    { id: 'sound', title: "Sound and chat effects", paragraphs: [
+      "Use Settings → Sound to adjust BGM and effects volume and select one of five chat sounds or None. Preview uses a default volume even when muted.",
+      "The selected sound applies to chats, story choices and video export. BGM and effects volumes are shared with the in-story volume menu.",
+    ] },
   ],
   ja: [
     { id: 'welcome', title: 'MomoStory', paragraphs: ['ブルーアーカイブのキャラクターと会話し、その会話から絆ストーリーを作る非公式ファンアプリです。AIの生成内容は公式設定と異なる場合があります。', 'アーカイブのストーリー鑑賞にGemini APIキーは不要です。新しい会話やストーリーを生成するときだけ、自分のキーを使用します。'] },
     { id: 'api', title: 'Gemini APIキーの取得', aiStudio: true, paragraphs: ['1. 下のボタンでGoogle AI Studioを開き、自分のGoogleアカウントでログインします。', '2. APIキーを作成してコピーします。必要なプロジェクト設定や利用条件はGoogleの案内に従ってください。', 'キーはパスワードと同じです。他人に渡したり、会話・コメント・公開台本に貼り付けたりしないでください。使用量や料金は自分のGoogleアカウントに適用されます。'] },
-    { id: 'key', title: 'キーの保存', paragraphs: ['歯車の設定を開き、Gemini APIキー欄に貼り付けて保存します。狭い画面では設定は下部タブにあります。', 'APIキーを記憶するとこの端末に保存します。オフの場合は今回の起動中のみ使用します。共用のGeminiキーは含まれていません。'] },
+    { id: 'key', title: "キーとAIの設定", paragraphs: [
+      "歯車の設定 → AIと会話 → Gemini APIキーに貼り付けて保存します。狭い画面では設定は下部タブにあります。",
+      "APIキーを記憶するとこの端末に保存します。オフの場合は今回の起動中のみ使用します。共用のGeminiキーは含まれていません。",
+      "同じAIと会話の画面でGeminiモデルと先生モードも選べます。モデル変更は次のリクエストから、マイルド・スパイシーの変更は次のストーリー生成から適用されます。",
+    ] },
     { id: 'chat', title: 'キャラクターと会話する', paragraphs: ['人のアイコンで相手を選び、メッセージを入力して送信します。先に話しかける設定をオンにすると、入室時に相手が話し始めます。', '絆ストーリーチャットでは、メッセージと相手の返答が1往復以上完了すると「ストーリー生成」で現在の会話からストーリーを作り、ライブラリに保存できます。最初の挨拶だけでは生成できません。会話回数に制限はなく、好きなタイミングで生成できます。生成や鑑賞の後も同じ会話を続け、蓄積した会話から新しいストーリーを何度でも生成できます。'] },
     { id: 'story', title: '絆ストーリーの操作', paragraphs: ['会話欄や画面の空いた場所をタップして進めます。PC・Webではスペースキーも使えます。文字表示中は全文を表示し、もう一度押すと次へ進みます。', '選択肢は自分で選びます。通常再生のAUTOも選択肢で止まります。選ぶと設定したチャット効果音が鳴ります。', '背景変更時はフェードし、切り替え中は会話欄と選択肢を一時的に隠します。音量メニューでBGMと効果音を調整できます。'] },
     { id: 'library', title: 'ライブラリと保存済み会話', paragraphs: ['本のアイコンがライブラリです。検索範囲をタイトル・内容から選べます。', 'カード1枚が独立したルームです。会話の後に絆ストーリーボタンが表示され、その下で会話が続きます。生成するたびにその位置にボタンが追加され、横のメニューから編集・出力・公開できます。', 'カードの…から編集・テキスト出力・動画出力・アーカイブ公開・削除ができます。', 'プロンプトのコピーは台本作成の案内をコピーします。読み込みはテキストファイルを取り込み、新規作成は空の編集画面を開きます。'] },
@@ -93,12 +123,29 @@ const content: Record<AppLanguage, TutorialPage[]> = {
     { id: 'community', title: 'アーカイブといいね', paragraphs: ['複数人のアイコンでアーカイブを開きます。すべて・いいねしたストーリーの切り替え、タイトル検索、新着順・人気順に対応します。', '人気順は全期間・日間・週間・月間・年間を選べます。投稿日時ではなく、その期間に受けた現在有効ないいね数で集計します。韓国時間の今日・今週月曜から・今月・今年が基準です。', 'チャット・ストーリー鑑賞は読み取り専用です。いいねした作品は専用一覧で再確認でき、もう一度押すと解除します。', 'コメント投稿、自分の投稿・コメントの削除、問題のある投稿の通報ができます。閲覧数は韓国時間の1日につき匿名ユーザーごとに1回です。'] },
     { id: 'publish', title: '公開と個人情報', paragraphs: ['ライブラリの…→公開するで「チャット＋絆ストーリー」か「絆ストーリーのみ」を選び、内容を確認して投稿します。ストーリーのみの場合、チャットは公開せずライブラリに残ります。公開するタイトル・台本・選択した会話に個人情報やキーが含まれていないか確認してください。', '登録・ニックネーム入力はありません。内部の匿名セッションでいいねと管理権限を区別します。端末変更・アプリデータ削除・ブラウザー保存データ削除後は復元できません。', 'ローカル編集だけでは公開投稿は変わりません。同じライブラリカードを再公開すると既存投稿を更新し、いいね・コメント・閲覧数・初回公開日は保持します。ストーリーのみを選ぶと以前公開した会話も削除します。公開と更新は1日合計5回、1分間隔です。'] },
     { id: 'limits', title: '投稿・コメントの制限', paragraphs: ['韓国時間の午前0時にリセットされ、匿名ユーザーごとに公開は1日5件、コメントは10件です。公開は1分、コメントは10秒間隔で、削除しても回数は戻りません。', 'コメントは空白を含め1〜300文字で、空のコメントは不可です。タイトルは100文字、台本と会話は合計5万文字・UTF-8で200KB以内です。', '解釈できない台本、未対応の話者・素材、不正な選択肢・命令、長すぎる内容は公開できません。編集画面のエラー一覧を確認してください。', 'アーカイブ未接続の場合は運営者の設定が必要です。個人のGeminiキーを入力しても解決しません。'] },
-    { id: 'settings', title: '言語・サイズ・音・更新', paragraphs: ['設定でチャットの大きさを80〜150%に変更できます。通常・保存済み会話に適用し、自動保存します。', 'BGMと効果音の音量、5種類のチャット音またはオフを選べます。試聴は消音中も既定音量で鳴ります。選んだ音は会話・選択肢・動画出力に適用します。', '言語はUIと新しく生成する会話・ストーリーの題名・名前・所属・セリフに適用します。保存済み・公開済み作品は自動翻訳しません。', '現在のバージョンと更新を確認できます。使い方と利用規約も設定から再表示できます。'] },
+    { id: 'settings', title: "設定一覧と詳細画面", paragraphs: [
+      "設定には通知・画面・サウンド・AIと会話・言語・ガイド・アプリ情報とアップデートが並びます。項目をタップして詳細を変更し、上部の戻るボタンかAndroidの戻るボタンで一覧に戻ります。",
+      "設定 → 言語で表示言語を変更します。UIと新しく生成する会話やストーリーのタイトル・名前・所属・台詞に適用されます。保存済み・公開済みの作品は自動翻訳しません。",
+      "設定 → 通知でチャット、ストーリー生成、動画書き出しの完了通知と内容のプレビューを調整します。受信には端末の通知権限が必要です。",
+      "設定 → アプリ情報とアップデートで現在のバージョンと更新を確認できます。使い方と利用規約は設定 → ガイドから再度開けます。",
+    ] },
+    { id: 'display', title: "画面の向きとチャットサイズ", paragraphs: [
+      "スマートフォンアプリは初期状態で縦向き固定です。設定 → 画面 → 画面の向きで縦か横を選びます。端末を回しても選んだ向きを維持し、アプリとストーリーにすぐ反映して自動保存します。この項目はAndroid・iOSアプリのみ表示されます。",
+      "設定 → 画面 → チャットサイズで80～150%に調整し、プレビューで確認できます。通常と保存済みの会話に適用され、自動保存されます。初期サイズに戻すと100%になります。",
+    ] },
+    { id: 'sound', title: "サウンドとチャット効果音", paragraphs: [
+      "設定 → サウンドでBGMと効果音の音量を調整し、5種類のチャット効果音またはオフを選べます。ミュート中でも試聴は標準音量で再生します。",
+      "選んだ音はチャット・ストーリーの選択肢・動画書き出しに反映されます。ストーリー内のBGM・効果音の音量も同じ設定を共有します。",
+    ] },
   ],
   zh: [
     { id: 'welcome', title: 'MomoStory', paragraphs: ['这是与《蔚蓝档案》角色聊天并根据对话生成羁绊故事的非官方同人应用。AI生成的内容可能与官方设定不同。', '观看档案馆故事不需要Gemini API密钥。只有生成新聊天和故事时才需要使用自己的密钥。'] },
     { id: 'api', title: '获取Gemini API密钥', aiStudio: true, paragraphs: ['1. 点击下方按钮打开Google AI Studio，用自己的Google账号登录。', '2. 创建并复制API密钥。所需项目配置和可用条件请遵循Google的说明。', '密钥如同密码。不要提供给他人，也不要粘贴到聊天、评论或公开剧本中。API用量及费用计入你的Google账号。'] },
-    { id: 'key', title: '保存密钥', paragraphs: ['打开齿轮设置，在Gemini API密钥栏粘贴并保存。窄屏的设置位于底部导航。', '开启记住API密钥会保存在本设备；关闭后仅本次运行有效。应用不包含公用Gemini密钥。'] },
+    { id: 'key', title: "密钥与AI设置", paragraphs: [
+      "打开齿轮设置 → AI与对话 → Gemini API密钥，粘贴后保存。窄屏的设置位于底部导航。",
+      "开启记住API密钥会保存在本设备；关闭后仅本次运行有效。应用不包含公用Gemini密钥。",
+      "同一AI与对话页面还可选择Gemini模型与老师模式。模型更改从下一次请求生效；温和或辛辣模式从下次生成故事起生效。",
+    ] },
     { id: 'chat', title: '与角色聊天', paragraphs: ['点击人物图标选择角色，输入消息并发送。开启主动开场后，进入时角色会先说话。', '在羁绊故事聊天室中，至少完成一组消息与角色回复后，即可点击“生成故事”，根据当前对话生成故事并保存到资料库。仅有开场问候不算一组。聊天轮数不限，可自行选择生成时机。生成或看完故事后仍可继续原来的对话，并根据累积的对话再次生成新故事。'] },
     { id: 'story', title: '推进羁绊故事', paragraphs: ['点击对话框或画面空白处推进。PC和网页也支持空格键。文字显示中先补全句子，再次点击进入下一句。', '选项须自行选择，普通播放的AUTO也会在选项处暂停。选择时播放设置中的聊天音效。', '背景变化时淡出淡入，并暂时隐藏对话和选项。可在故事音量菜单中调整背景音乐及音效。'] },
     { id: 'library', title: '资料库与已保存聊天', paragraphs: ['书本图标打开资料库，可选择按标题或内容搜索。', '每张卡片都是独立聊天室。对话后出现羁绊故事按钮，后续聊天显示在按钮下方。每次生成新故事，按钮都保留在当时的位置，旁边的菜单可编辑、导出或发布。', '卡片的…菜单提供剧本编辑、文本导出、视频导出、档案馆发布和删除。', '复制提示词用于获取剧本创作说明；导入用于读取文本文件；新建打开空白编辑器。'] },
@@ -107,7 +154,20 @@ const content: Record<AppLanguage, TutorialPage[]> = {
     { id: 'community', title: '档案馆与点赞列表', paragraphs: ['多人图标打开档案馆。可切换全部与点赞的故事，搜索标题，并按最新或热门排序。', '热门支持全部时间、日榜、周榜、月榜及年榜。按该期间收到且仍有效的点赞计算，而非发帖日期。以韩国时间的今天、本周周一起、本月、本年为准。', '观看聊天与故事为只读播放。点赞后可在点赞列表中再次找到，再按一次即可取消。', '可发表评论、删除自己的帖子及评论、举报问题帖子。浏览量以韩国日期为准，每名匿名用户每天计一次。'] },
     { id: 'publish', title: '公开发布与隐私', paragraphs: ['在资料库卡片的…→公开发布中选择“聊天＋羁绊故事”或“仅羁绊故事”，确认内容后提交。仅公开故事时，聊天不会公开，仍保留在你的资料库中。请检查公开的标题、剧本和所选聊天是否包含个人信息或密钥。', '无需注册或输入昵称。应用内部的匿名会话区分点赞及管理权限。更换设备、清除应用数据或浏览器存储后无法恢复。', '仅修改本地剧本不会更新公开帖子。再次发布同一资料库卡片将更新原帖，保留点赞、评论、浏览量及首次发布日期。选择仅故事会移除之前公开的聊天。发布和更新合计每天5次，间隔1分钟。'] },
     { id: 'limits', title: '发帖与评论限制', paragraphs: ['以韩国时间午夜重置，每名匿名用户每天最多发布5篇、评论10条。发布间隔1分钟，评论间隔10秒；删除不会恢复次数。', '评论为1至300字，含空格，不允许空评论。标题最多100字；剧本与聊天合计不得超过5万字、UTF-8文本200KB。', '无法解析的剧本、不支持的角色或资源、错误选项或指令以及过长内容不能公开，请查看编辑器错误列表。', '档案馆服务器未连接需要运营者配置，输入个人Gemini密钥无法解决。'] },
-    { id: 'settings', title: '语言、大小、声音及更新', paragraphs: ['设置中可将聊天大小调整为80至150%，适用于普通及保存的聊天，并自动保存。', '可调整背景音乐与音效音量，选择五种聊天音效或关闭。静音时试听仍使用默认音量。选定声音应用于聊天、故事选项及视频导出。', '语言设置影响界面以及新生成的聊天和故事的标题、姓名、所属、对话。已保存及已公开故事不会自动翻译。', '可查看当前版本并检查更新，也可随时从设置重新打开使用方法和条款。'] },
+    { id: 'settings', title: "设置列表与详情页面", paragraphs: [
+      "设置列表包含通知、显示、声音、AI与对话、语言、帮助、应用信息与更新。点击项目后在详情页调整，通过顶部返回按钮或Android返回键回到列表。",
+      "在设置 → 语言中更改界面与新生成聊天、故事的标题、姓名、所属及对话。已有保存和公开故事不会自动翻译。",
+      "在设置 → 通知中调整聊天、故事生成、视频导出完成通知与内容预览。接收通知需要设备授予通知权限。",
+      "在设置 → 应用信息与更新中查看当前版本并检查更新。在设置 → 帮助中重新打开使用方法与条款。",
+    ] },
+    { id: 'display', title: "屏幕方向与聊天大小", paragraphs: [
+      "手机应用默认锁定竖屏。在设置 → 显示 → 屏幕方向中选择竖屏或横屏。转动手机时保持所选方向，立即应用于应用和剧情并自动保存。此选项仅在Android与iOS应用中显示。",
+      "在设置 → 显示 → 聊天大小中调整为80至150%，并查看预览。适用于普通和已保存聊天，自动保存。恢复默认大小可回到100%。",
+    ] },
+    { id: 'sound', title: "声音与聊天音效", paragraphs: [
+      "在设置 → 声音中调整背景音乐和音效音量，选择五种聊天音效或关闭。静音时试听仍以默认音量播放。",
+      "所选声音应用于聊天、剧情选项和视频导出。剧情内背景音乐及音效音量也与此设置共用。",
+    ] },
   ],
 };
 

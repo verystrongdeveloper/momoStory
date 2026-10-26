@@ -3,11 +3,12 @@
     "name": "MomoStory",
     "slug": "momostory",
     "version": "1.4.4",
-    "orientation": "portrait",
+    "orientation": "default",
     "scheme": "momostory",
     "userInterfaceStyle": "automatic",
     "ios": {
-      "supportsTablet": true
+      "supportsTablet": true,
+      "requireFullScreen": true
     },
     "icon": "./public/icon-512.png",
     "android": {
@@ -25,6 +26,7 @@
     },
     "plugins": [
       "expo-router",
+      ["expo-screen-orientation", { "initialOrientation": "PORTRAIT_UP" }],
       [
         "expo-splash-screen",
         {

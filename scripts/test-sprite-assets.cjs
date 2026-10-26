@@ -23,14 +23,16 @@ function load(file) {
   // New PNG packs retain the user's filenames; the WebP provenance fixture
   // continues to cover every existing converted sprite without weakening it.
   for (const [key, file] of pngSprites) {
-    assert.match(key, /^koyuki_/);
+    assert.match(key, /^(koyuki|yuuka|kikyou)_/);
     const metadata = await sharp(path.resolve(root, 'constants', file)).metadata();
     assert.equal(metadata.format, 'png');
-    assert.deepEqual([metadata.width, metadata.height], [371, 673]);
+    assert.deepEqual([metadata.width, metadata.height], key.startsWith('yuuka_') ? [687, 1024] : key.startsWith('kikyou_') ? [409, 610] : [371, 673]);
     assert.equal(metadata.hasAlpha, true);
   }
-  assert.equal(pngSprites.length, 14, 'all 14 Koyuki expressions are bundled');
-  console.log(`PASS ${pngSprites.length} Koyuki PNG sprites: original filenames, dimensions and transparency`);
+  assert.equal(pngSprites.filter(([key]) => key.startsWith('koyuki_')).length, 14);
+  assert.equal(pngSprites.filter(([key]) => key.startsWith('yuuka_')).length, 10);
+  assert.equal(pngSprites.filter(([key]) => key.startsWith('kikyou_')).length, 17);
+  console.log(`PASS ${pngSprites.length} PNG sprites: original filenames, dimensions and transparency`);
   for (const character of characters) {
     for (const source of [character.image, character.avatar?.image].filter(Boolean)) {
       assert.ok(fs.existsSync(path.resolve(root, 'constants', source)), `Broken profile image: ${source}`);

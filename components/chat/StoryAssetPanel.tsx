@@ -18,6 +18,7 @@ const CATEGORIES: { id: Category; label: 'background' | 'emotion' | 'music' | 's
 
 /** 긴 접두사를 먼저 맞춰 표정 파일을 묶는다. */
 const EMOTION_GROUPS: { label: string; prefixes: string[] }[] = [
+  { label: '키쿄', prefixes: ['kikyou_'] },
   { label: '케이', prefixes: ['kei_'] },
   { label: '호시노', prefixes: ['hoshino_'] },
   { label: '히나', prefixes: ['hina_'] },

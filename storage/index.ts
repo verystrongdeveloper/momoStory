@@ -3,13 +3,13 @@ import { loadPreferences, savePreferences } from './preferencesStorage';
 import { readStoryRecords, writeStoryRecords } from './storyStorage';
 import { migrateLegacyStorage } from './migrate';
 import { readInitialSync } from './prime';
-import { AppLanguage, DEFAULT_PREFERENCES, Preferences, StoryRecord, clampChatSize, clampVolume } from './types';
+import { AppLanguage, DEFAULT_PREFERENCES, Preferences, ScreenOrientationMode, StoryRecord, clampChatSize, clampVolume } from './types';
 import { normalizeModel } from '../shared/geminiModels';
 import { normalizeSenseiMode, type SenseiMode } from '../shared/senseiMode';
 import { normalizeChatSound, type ChatSoundId } from '../utils/chatPresentation';
 
 type NotificationSetting = 'notificationsEnabled' | 'chatNotifications' | 'storyNotifications' | 'exportNotifications' | 'notificationPreview';
-type SettingKey = NotificationSetting | 'senseiMode' | 'geminiModel' | 'language' | 'chatSound' | 'chatSize' | 'bgmVolume' | 'sfxVolume' | 'greetMode' | 'rememberApiKey' | 'termsAccepted' | 'tutorialSeen';
+type SettingKey = NotificationSetting | 'screenOrientation' | 'senseiMode' | 'geminiModel' | 'language' | 'chatSound' | 'chatSize' | 'bgmVolume' | 'sfxVolume' | 'greetMode' | 'rememberApiKey' | 'termsAccepted' | 'tutorialSeen';
 
 let synced = readInitialSync() != null;
 
@@ -55,6 +55,7 @@ export function getSetting(key: 'geminiModel'): string;
 export function getSetting(key: 'senseiMode'): SenseiMode;
 export function getSetting(key: 'language'): AppLanguage;
 export function getSetting(key: 'chatSound'): ChatSoundId;
+export function getSetting(key: 'screenOrientation'): ScreenOrientationMode;
 export function getSetting(key: NotificationSetting | 'greetMode' | 'rememberApiKey' | 'termsAccepted' | 'tutorialSeen'): boolean;
 export function getSetting(key: SettingKey): number | boolean | string {
   return memory[key];
@@ -75,6 +76,7 @@ async function persistAll() {
     geminiModel: memory.geminiModel,
     senseiMode: memory.senseiMode,
     chatSize: memory.chatSize,
+    screenOrientation: memory.screenOrientation,
     bgmVolume: memory.bgmVolume,
     sfxVolume: memory.sfxVolume,
     chatSound: memory.chatSound,
@@ -97,7 +99,11 @@ export function saveApiKey(key: string, remember = memory.rememberApiKey) {
 }
 
 export function saveSetting(key: SettingKey, value: number | boolean | string) {
-  if (key === 'senseiMode') {
+  if (key === 'screenOrientation') {
+    if (value !== 'portrait' && value !== 'landscape') return;
+    if (value === memory.screenOrientation) return;
+    memory.screenOrientation = value;
+  } else if (key === 'senseiMode') {
     const next = normalizeSenseiMode(value);
     if (next === memory.senseiMode) return;
     memory.senseiMode = next;
@@ -164,6 +170,7 @@ async function pullAll() {
     geminiModel: prefs.geminiModel,
     senseiMode: prefs.senseiMode,
     chatSize: prefs.chatSize,
+    screenOrientation: prefs.screenOrientation,
     bgmVolume: prefs.bgmVolume,
     sfxVolume: prefs.sfxVolume,
     chatSound: prefs.chatSound,

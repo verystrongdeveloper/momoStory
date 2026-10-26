@@ -2,6 +2,7 @@ import { normalizeModel } from '../shared/geminiModels';
 import { normalizeSenseiMode, type SenseiMode } from '../shared/senseiMode';
 import { normalizeChatSound, type ChatSoundId } from '../utils/chatPresentation';
 export type AppLanguage = 'ko' | 'en' | 'ja' | 'zh';
+export type ScreenOrientationMode = 'portrait' | 'landscape';
 
 export type Preferences = {
   notificationsEnabled: boolean;
@@ -13,6 +14,7 @@ export type Preferences = {
   geminiModel: string;
   senseiMode: SenseiMode;
   chatSize: number;
+  screenOrientation: ScreenOrientationMode;
   bgmVolume: number;
   sfxVolume: number;
   chatSound: ChatSoundId;
@@ -74,6 +76,7 @@ export const DEFAULT_PREFERENCES: Preferences = {
   geminiModel: 'auto',
   senseiMode: 'mild',
   chatSize: 1,
+  screenOrientation: 'portrait',
   bgmVolume: 0.5,
   sfxVolume: 0.5,
   chatSound: 'pop',
@@ -165,6 +168,7 @@ export function parsePreferences(raw: string | null): Preferences {
       geminiModel: normalizeModel(parsed.geminiModel),
       senseiMode: normalizeSenseiMode(parsed.senseiMode),
       chatSize: typeof parsed.chatSize === 'number' ? clampChatSize(parsed.chatSize) ?? DEFAULT_PREFERENCES.chatSize : DEFAULT_PREFERENCES.chatSize,
+      screenOrientation: parsed.screenOrientation === 'landscape' ? 'landscape' : 'portrait',
       bgmVolume: clampVolume(Number(parsed.bgmVolume)) ?? DEFAULT_PREFERENCES.bgmVolume,
       sfxVolume: clampVolume(Number(parsed.sfxVolume)) ?? DEFAULT_PREFERENCES.sfxVolume,
       chatSound: normalizeChatSound(parsed.chatSound),

@@ -21,6 +21,35 @@ export interface Character {
 
 export const CHARACTERS: Character[] = [
   {
+    name: '키쿄',
+    status: '잠깐 햇볕을 쬐는 중.',
+    displayName: { ko: '키쿄', en: 'Kikyou', ja: 'キキョウ', zh: '桔梗' },
+    displayStatus: { ko: '잠깐 햇볕을 쬐는 중.', en: 'Taking a moment in the sun.', ja: '少し日向ぼっこ中。', zh: '正在晒一会儿太阳。' },
+    image: require('../assets/images/kikyou/kikyou_default.png'),
+    avatar: {
+      image: require('../assets/images/kikyou/kikyou_smile.png'),
+      fit: 'contain',
+      scale: 2.8,
+      offsetY: 0.60,
+      offsetX: -0.04,
+      backgroundColor: '#e5eef3',
+    },
+  },
+  {
+    name: '유우카',
+    status: '영수증은 꼭 챙겨 주세요.',
+    displayName: { ko: '유우카', en: 'Yuuka', ja: 'ユウカ', zh: '优香' },
+    displayStatus: { ko: '영수증은 꼭 챙겨 주세요.', en: 'Please keep your receipts.', ja: '領収書は忘れずにお願いします。', zh: '请务必保留收据。' },
+    image: require('../assets/images/yuuka/yuuka_default.png'),
+    avatar: {
+      image: require('../assets/images/yuuka/yuuka_default.png'),
+      fit: 'contain',
+      scale: 2.8,
+      offsetY: 0.60,
+      backgroundColor: '#eee8f7',
+    },
+  },
+  {
     name: '코유키',
     status: '아니 이게 제 잘못임;;?',
     displayName: { ko: '코유키', en: 'Koyuki', ja: 'コユキ', zh: '小雪' },

@@ -42,6 +42,7 @@ function IconLine({ name, label, text }: { name: keyof typeof Ionicons.glyphMap;
 
 const tutorialIcons: Partial<Record<string, keyof typeof Ionicons.glyphMap>> = {
   key: 'settings-outline', chat: 'person-outline', library: 'library-outline', community: 'people-outline',
+  settings: 'settings-outline', display: 'phone-portrait-outline', sound: 'volume-medium-outline',
 };
 
 function tutorialSteps(language: AppLanguage, aiStudioLabel: string): Step[] {

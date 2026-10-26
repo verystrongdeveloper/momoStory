@@ -16,23 +16,14 @@ function load(file) {
 (async () => {
   const { emotionMap } = load('constants/eventAssets.ts');
   const characters = load('constants/characters.ts').CHARACTERS;
-  const pngSprites = Object.entries(emotionMap).filter(([, file]) => file.endsWith('.png'));
-  assert.equal(manifest.length + pngSprites.length, Object.keys(emotionMap).length);
+  assert.equal(manifest.length, Object.keys(emotionMap).length);
   const files = new Set(manifest.map(entry => entry.file));
-  assert.deepEqual(new Set(Object.values(emotionMap).filter(file => file.endsWith('.webp')).map(file => file.replace('../', ''))), files);
-  // New PNG packs retain the user's filenames; the WebP provenance fixture
-  // continues to cover every existing converted sprite without weakening it.
-  for (const [key, file] of pngSprites) {
-    assert.match(key, /^(koyuki|yuuka|kikyou)_/);
-    const metadata = await sharp(path.resolve(root, 'constants', file)).metadata();
-    assert.equal(metadata.format, 'png');
-    assert.deepEqual([metadata.width, metadata.height], key.startsWith('yuuka_') ? [687, 1024] : key.startsWith('kikyou_') ? [409, 610] : [371, 673]);
-    assert.equal(metadata.hasAlpha, true);
+  assert.deepEqual(new Set(Object.values(emotionMap).map(file => file.replace('../', ''))), files);
+  assert.ok(Object.values(emotionMap).every(file => file.endsWith('.webp')), 'all bundled character sprites must be WebP');
+  for (const [folder, count] of [['koyuki', 14], ['yuuka', 10], ['kikyou', 17]]) {
+    const entries = manifest.filter(entry => entry.file.startsWith('assets/images/' + folder + '/'));
+    assert.equal(entries.length, count);
   }
-  assert.equal(pngSprites.filter(([key]) => key.startsWith('koyuki_')).length, 14);
-  assert.equal(pngSprites.filter(([key]) => key.startsWith('yuuka_')).length, 10);
-  assert.equal(pngSprites.filter(([key]) => key.startsWith('kikyou_')).length, 17);
-  console.log(`PASS ${pngSprites.length} PNG sprites: original filenames, dimensions and transparency`);
   for (const character of characters) {
     for (const source of [character.image, character.avatar?.image].filter(Boolean)) {
       assert.ok(fs.existsSync(path.resolve(root, 'constants', source)), `Broken profile image: ${source}`);

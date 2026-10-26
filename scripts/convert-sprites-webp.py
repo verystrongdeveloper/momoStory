@@ -12,7 +12,8 @@ from pathlib import Path
 from PIL import Image
 
 ROOT = Path(__file__).resolve().parent.parent
-FOLDERS = [ROOT / 'assets' / 'images' / name for name in ('kei', 'fubuki', 'hoshino', 'hina', 'mari')]
+FOLDERS = sorted(folder for folder in (ROOT / 'assets' / 'images').iterdir()
+                 if folder.is_dir() and folder.name not in ('background', 'expression'))
 MANIFEST = ROOT / 'scripts' / 'fixtures' / 'sprite-webp.json'
 
 
@@ -44,7 +45,10 @@ def convert():
     if not sources:
         verify(json.loads(MANIFEST.read_text(encoding='utf-8')))
         return
-    entries, converted = [], []
+    entries = json.loads(MANIFEST.read_text(encoding='utf-8')) if MANIFEST.exists() else []
+    if entries:
+        verify(entries)
+    new_entries, converted = [], []
     for source in sources:
         # All mutations target individual files inside the named sprite folders.
         assert source.resolve().parent in [folder.resolve() for folder in FOLDERS], source
@@ -59,7 +63,7 @@ def convert():
         size, raw = pixels(original)
         assert (size, raw) == pixels(encoded), f'Pixel mismatch: {source}'
         assert len(encoded) < len(original), f'No size saving: {source}'
-        entries.append({'file': target.relative_to(ROOT).as_posix(), 'original': source.relative_to(ROOT).as_posix(),
+        new_entries.append({'file': target.relative_to(ROOT).as_posix(), 'original': source.relative_to(ROOT).as_posix(),
                         'originalBytes': len(original), 'bytes': len(encoded), 'size': list(size),
                         'rgbaSha256': hashlib.sha256(raw).hexdigest()})
         converted.append((source, target, encoded))
@@ -69,10 +73,12 @@ def convert():
     for filename in ('constants/eventAssets.ts', 'constants/characters.ts'):
         path = ROOT / filename
         text = path.read_text(encoding='utf-8')
-        for entry in entries:
+        for entry in new_entries:
             text = text.replace('../' + entry['original'], '../' + entry['file'])
         path.write_text(text, encoding='utf-8', newline='\n')
     MANIFEST.parent.mkdir(parents=True, exist_ok=True)
+    entries = sorted(entries + new_entries, key=lambda entry: entry['file'])
+    assert len({entry['file'] for entry in entries}) == len(entries), 'Duplicate provenance entries'
     MANIFEST.write_text(json.dumps(entries, ensure_ascii=False, indent=2) + '\n', encoding='utf-8')
     verify(entries)
     for source, target, encoded in converted:

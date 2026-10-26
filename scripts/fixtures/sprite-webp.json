@@ -176,15 +176,15 @@
     "rgbaSha256": "bd99143c2baf91cbef55bcd2a3a22626f0ca863827b3e05ad72fc2c267037abf"
   },
   {
-    "file": "assets/images/hina/hina_default.webp",
-    "original": "assets/images/hina/hina_default.jpg",
-    "originalBytes": 887194,
-    "bytes": 385524,
+    "file": "assets/images/hina/hina_angry_shout.webp",
+    "original": "assets/images/hina/hina_shout.jpg",
+    "originalBytes": 922471,
+    "bytes": 405778,
     "size": [
       572,
       1024
     ],
-    "rgbaSha256": "9af1e2485abf53357b59a1a5044b70af262b9e38124456cda89b83b89b66bc33"
+    "rgbaSha256": "0b76ae5fbd25f5499e8a26972e27491e32e410787ae94d03cbc85600d1245791"
   },
   {
     "file": "assets/images/hina/hina_blushing_flustered.webp",
@@ -198,17 +198,6 @@
     "rgbaSha256": "27f73dc148e848420f8a78abf914d31874e31d30da3b56f8fb9f1ac4f1ccb216"
   },
   {
-    "file": "assets/images/hina/hina_blushing_shout.webp",
-    "original": "assets/images/hina/hina_embarrased2.jpg",
-    "originalBytes": 912161,
-    "bytes": 379744,
-    "size": [
-      572,
-      1024
-    ],
-    "rgbaSha256": "026d36aa0eabc761ad14bdf0fbffaa2f3d06aede2694a0428b229c398281882c"
-  },
-  {
     "file": "assets/images/hina/hina_blushing_overwhelmed.webp",
     "original": "assets/images/hina/hina_embarrased3.jpg",
     "originalBytes": 894367,
@@ -220,6 +209,50 @@
     "rgbaSha256": "437614a1641dff3c64b5ede159d7b43a232368b72fe64c153f2d7ef4f123f4f6"
   },
   {
+    "file": "assets/images/hina/hina_blushing_shout.webp",
+    "original": "assets/images/hina/hina_embarrased2.jpg",
+    "originalBytes": 912161,
+    "bytes": 379744,
+    "size": [
+      572,
+      1024
+    ],
+    "rgbaSha256": "026d36aa0eabc761ad14bdf0fbffaa2f3d06aede2694a0428b229c398281882c"
+  },
+  {
+    "file": "assets/images/hina/hina_default.webp",
+    "original": "assets/images/hina/hina_default.jpg",
+    "originalBytes": 887194,
+    "bytes": 385524,
+    "size": [
+      572,
+      1024
+    ],
+    "rgbaSha256": "9af1e2485abf53357b59a1a5044b70af262b9e38124456cda89b83b89b66bc33"
+  },
+  {
+    "file": "assets/images/hina/hina_distressed_sweat.webp",
+    "original": "assets/images/hina/hina_unamused.jpg",
+    "originalBytes": 899099,
+    "bytes": 377544,
+    "size": [
+      572,
+      1024
+    ],
+    "rgbaSha256": "e5bc0641d7088f37c3e27afc881d9fd98ccd1cd71d4b396e226367d3b9ceda7d"
+  },
+  {
+    "file": "assets/images/hina/hina_one_eye_closed.webp",
+    "original": "assets/images/hina/hina_wink.jpg",
+    "originalBytes": 876480,
+    "bytes": 379908,
+    "size": [
+      572,
+      1024
+    ],
+    "rgbaSha256": "ef0c5938ad57383cd6a91ac82594145c3baaac8ad5a5c6a2a367f391e10cf3cf"
+  },
+  {
     "file": "assets/images/hina/hina_shy.webp",
     "original": "assets/images/hina/hina_littlebitembarrased.jpg",
     "originalBytes": 871258,
@@ -229,17 +262,6 @@
       1024
     ],
     "rgbaSha256": "9264d9951be747f861bc3f2e4e699f7d14940db856a8560fe2bd3db83fa0cb72"
-  },
-  {
-    "file": "assets/images/hina/hina_angry_shout.webp",
-    "original": "assets/images/hina/hina_shout.jpg",
-    "originalBytes": 922471,
-    "bytes": 405778,
-    "size": [
-      572,
-      1024
-    ],
-    "rgbaSha256": "0b76ae5fbd25f5499e8a26972e27491e32e410787ae94d03cbc85600d1245791"
   },
   {
     "file": "assets/images/hina/hina_smile.webp",
@@ -264,28 +286,6 @@
     "rgbaSha256": "c9237b89be83794a6ba2a53136a2c2e9ea0762ecb10948f916bd9b2b43e9c309"
   },
   {
-    "file": "assets/images/hina/hina_worried_sweat.webp",
-    "original": "assets/images/hina/hina_sweating.jpg",
-    "originalBytes": 910300,
-    "bytes": 400528,
-    "size": [
-      572,
-      1024
-    ],
-    "rgbaSha256": "ad87b82434a7478caa4a59793e094d7bb21558707875bbaf9c9d3071ac15ec5c"
-  },
-  {
-    "file": "assets/images/hina/hina_distressed_sweat.webp",
-    "original": "assets/images/hina/hina_unamused.jpg",
-    "originalBytes": 899099,
-    "bytes": 377544,
-    "size": [
-      572,
-      1024
-    ],
-    "rgbaSha256": "e5bc0641d7088f37c3e27afc881d9fd98ccd1cd71d4b396e226367d3b9ceda7d"
-  },
-  {
     "file": "assets/images/hina/hina_tired.webp",
     "original": "assets/images/hina/hina_upset.jpg",
     "originalBytes": 881986,
@@ -297,48 +297,26 @@
     "rgbaSha256": "d56ba2989a9a86b1c7f51e41b2857f374c1c0cc02de3bf6b6872b28b84479582"
   },
   {
-    "file": "assets/images/hina/hina_one_eye_closed.webp",
-    "original": "assets/images/hina/hina_wink.jpg",
-    "originalBytes": 876480,
-    "bytes": 379908,
+    "file": "assets/images/hina/hina_worried_sweat.webp",
+    "original": "assets/images/hina/hina_sweating.jpg",
+    "originalBytes": 910300,
+    "bytes": 400528,
     "size": [
       572,
       1024
     ],
-    "rgbaSha256": "ef0c5938ad57383cd6a91ac82594145c3baaac8ad5a5c6a2a367f391e10cf3cf"
+    "rgbaSha256": "ad87b82434a7478caa4a59793e094d7bb21558707875bbaf9c9d3071ac15ec5c"
   },
   {
-    "file": "assets/images/hoshino/hoshino_laugh.webp",
-    "original": "assets/images/hoshino/hoshino_bigLaugh.png",
-    "originalBytes": 257772,
-    "bytes": 141954,
+    "file": "assets/images/hoshino/hoshino_cat_mouth_smile.webp",
+    "original": "assets/images/hoshino/hoshino_kawaiiface.png",
+    "originalBytes": 258199,
+    "bytes": 142256,
     "size": [
       373,
       668
     ],
-    "rgbaSha256": "9ebc2ac59fbc3d4eaaa9c1d786b9ac24521705f16de86562acbf933974eb0ec6"
-  },
-  {
-    "file": "assets/images/hoshino/hoshino_smug_talking.webp",
-    "original": "assets/images/hoshino/hoshino_confidence.png",
-    "originalBytes": 253961,
-    "bytes": 135462,
-    "size": [
-      373,
-      668
-    ],
-    "rgbaSha256": "bab34eedc82c6842a64195fd581828df0df46506692bebbf24910097f33a640b"
-  },
-  {
-    "file": "assets/images/hoshino/hoshino_worried_sweat.webp",
-    "original": "assets/images/hoshino/hoshino_difficult.png",
-    "originalBytes": 255757,
-    "bytes": 138536,
-    "size": [
-      373,
-      668
-    ],
-    "rgbaSha256": "f06c5bda0b3aac073e3b1a4bff123e23e2d0b38dc9603dbd93ae9ac8ffc519a4"
+    "rgbaSha256": "06f5edecc93ad044ea1db09f4a3f95d0bed7219b4be619856b6659c42b63fab6"
   },
   {
     "file": "assets/images/hoshino/hoshino_closed_eye_smile.webp",
@@ -352,6 +330,28 @@
     "rgbaSha256": "30367c62629e5648f829c55cb88f65ace7a1fb119761a4301fcd3ac3f2c4607a"
   },
   {
+    "file": "assets/images/hoshino/hoshino_laugh.webp",
+    "original": "assets/images/hoshino/hoshino_bigLaugh.png",
+    "originalBytes": 257772,
+    "bytes": 141954,
+    "size": [
+      373,
+      668
+    ],
+    "rgbaSha256": "9ebc2ac59fbc3d4eaaa9c1d786b9ac24521705f16de86562acbf933974eb0ec6"
+  },
+  {
+    "file": "assets/images/hoshino/hoshino_relaxed_smile.webp",
+    "original": "assets/images/hoshino/hoshino_smallsmile.png",
+    "originalBytes": 258456,
+    "bytes": 140812,
+    "size": [
+      373,
+      668
+    ],
+    "rgbaSha256": "1caaf111003dacde007256437447e759ca553b11280810d5cbc574cfaacb0112"
+  },
+  {
     "file": "assets/images/hoshino/hoshino_serious.webp",
     "original": "assets/images/hoshino/hoshino_getserious.png",
     "originalBytes": 257469,
@@ -363,15 +363,37 @@
     "rgbaSha256": "cff89fae3461daf6c2f753fb694fabd3c4d0b39511d7e3ce0b5c1f95e7336f52"
   },
   {
-    "file": "assets/images/hoshino/hoshino_cat_mouth_smile.webp",
-    "original": "assets/images/hoshino/hoshino_kawaiiface.png",
-    "originalBytes": 258199,
-    "bytes": 142256,
+    "file": "assets/images/hoshino/hoshino_smile.webp",
+    "original": "assets/images/hoshino/hoshino_smile.png",
+    "originalBytes": 262483,
+    "bytes": 139746,
     "size": [
       373,
       668
     ],
-    "rgbaSha256": "06f5edecc93ad044ea1db09f4a3f95d0bed7219b4be619856b6659c42b63fab6"
+    "rgbaSha256": "45bf5a98876fca2c7680d6516590a1aa7726a7c48962c8446b1bafe89ee70623"
+  },
+  {
+    "file": "assets/images/hoshino/hoshino_smug_talking.webp",
+    "original": "assets/images/hoshino/hoshino_confidence.png",
+    "originalBytes": 253961,
+    "bytes": 135462,
+    "size": [
+      373,
+      668
+    ],
+    "rgbaSha256": "bab34eedc82c6842a64195fd581828df0df46506692bebbf24910097f33a640b"
+  },
+  {
+    "file": "assets/images/hoshino/hoshino_surprised.webp",
+    "original": "assets/images/hoshino/hoshino_surprised.png",
+    "originalBytes": 258415,
+    "bytes": 141396,
+    "size": [
+      373,
+      668
+    ],
+    "rgbaSha256": "a3bee56b04c3183c478abb83c2a1ddbaf442ea93216702b0054b961ad70a120d"
   },
   {
     "file": "assets/images/hoshino/hoshino_teasing_smile.webp",
@@ -396,37 +418,15 @@
     "rgbaSha256": "7a4fec4ee6b2805493fedf96c48b33edbadef26b16cfb453609b6b3b83de509e"
   },
   {
-    "file": "assets/images/hoshino/hoshino_relaxed_smile.webp",
-    "original": "assets/images/hoshino/hoshino_smallsmile.png",
-    "originalBytes": 258456,
-    "bytes": 140812,
+    "file": "assets/images/hoshino/hoshino_worried_sweat.webp",
+    "original": "assets/images/hoshino/hoshino_difficult.png",
+    "originalBytes": 255757,
+    "bytes": 138536,
     "size": [
       373,
       668
     ],
-    "rgbaSha256": "1caaf111003dacde007256437447e759ca553b11280810d5cbc574cfaacb0112"
-  },
-  {
-    "file": "assets/images/hoshino/hoshino_smile.webp",
-    "original": "assets/images/hoshino/hoshino_smile.png",
-    "originalBytes": 262483,
-    "bytes": 139746,
-    "size": [
-      373,
-      668
-    ],
-    "rgbaSha256": "45bf5a98876fca2c7680d6516590a1aa7726a7c48962c8446b1bafe89ee70623"
-  },
-  {
-    "file": "assets/images/hoshino/hoshino_surprised.webp",
-    "original": "assets/images/hoshino/hoshino_surprised.png",
-    "originalBytes": 258415,
-    "bytes": 141396,
-    "size": [
-      373,
-      668
-    ],
-    "rgbaSha256": "a3bee56b04c3183c478abb83c2a1ddbaf442ea93216702b0054b961ad70a120d"
+    "rgbaSha256": "f06c5bda0b3aac073e3b1a4bff123e23e2d0b38dc9603dbd93ae9ac8ffc519a4"
   },
   {
     "file": "assets/images/hoshino/hoshino_yawn.webp",
@@ -682,6 +682,347 @@
     "rgbaSha256": "3e96bc77f038908720993224583f12091a0be266cb2e6bd1892479197f1876b9"
   },
   {
+    "file": "assets/images/kikyou/kikyou_angry.webp",
+    "original": "assets/images/kikyou/kikyou_angry.png",
+    "originalBytes": 247665,
+    "bytes": 131504,
+    "size": [
+      409,
+      610
+    ],
+    "rgbaSha256": "d0424c6fc2d4e09b92df33bbb211e70b93bae87da55f8f137886d52141e81179"
+  },
+  {
+    "file": "assets/images/kikyou/kikyou_default.webp",
+    "original": "assets/images/kikyou/kikyou_default.png",
+    "originalBytes": 248960,
+    "bytes": 130724,
+    "size": [
+      409,
+      610
+    ],
+    "rgbaSha256": "9400286b58b4336351853965a14bc128c0419d4fff140e851ccdfdeedca9cb1f"
+  },
+  {
+    "file": "assets/images/kikyou/kikyou_distressed.webp",
+    "original": "assets/images/kikyou/kikyou_distressed.png",
+    "originalBytes": 247517,
+    "bytes": 131428,
+    "size": [
+      409,
+      610
+    ],
+    "rgbaSha256": "2d89cfe5ac029fe27e8ebb6a57da4ebd6941d33cdf67532f22cc4461c397aec7"
+  },
+  {
+    "file": "assets/images/kikyou/kikyou_eyesClosed.webp",
+    "original": "assets/images/kikyou/kikyou_eyesClosed.png",
+    "originalBytes": 243917,
+    "bytes": 129036,
+    "size": [
+      409,
+      610
+    ],
+    "rgbaSha256": "d303c822dcf5d252066d942c264035f94c6e39e57592c2063c387237e892f835"
+  },
+  {
+    "file": "assets/images/kikyou/kikyou_flustered.webp",
+    "original": "assets/images/kikyou/kikyou_flustered.png",
+    "originalBytes": 243213,
+    "bytes": 126376,
+    "size": [
+      409,
+      610
+    ],
+    "rgbaSha256": "919b55fd16da21d3362028cd4072361a5aefffc3a35b39cd49fe47e24a3d4b5d"
+  },
+  {
+    "file": "assets/images/kikyou/kikyou_frustrated.webp",
+    "original": "assets/images/kikyou/kikyou_frustrated.png",
+    "originalBytes": 244254,
+    "bytes": 130616,
+    "size": [
+      409,
+      610
+    ],
+    "rgbaSha256": "35b40c685cb051f17f29e414b0b81cbaa1cc4a06dc712f3f19aadd84ad271379"
+  },
+  {
+    "file": "assets/images/kikyou/kikyou_gloomy.webp",
+    "original": "assets/images/kikyou/kikyou_gloomy.png",
+    "originalBytes": 245618,
+    "bytes": 129828,
+    "size": [
+      409,
+      610
+    ],
+    "rgbaSha256": "da20fbee90d61010b2a02fe55583d5ed6c8e6cae3ebabd5f40caab671479992d"
+  },
+  {
+    "file": "assets/images/kikyou/kikyou_pout.webp",
+    "original": "assets/images/kikyou/kikyou_pout.png",
+    "originalBytes": 244621,
+    "bytes": 130254,
+    "size": [
+      409,
+      610
+    ],
+    "rgbaSha256": "775f8b3229493b74b09cb4bca4ef89f2b7ed7f25526fe2aba5c13271d9c42ddc"
+  },
+  {
+    "file": "assets/images/kikyou/kikyou_poutEyesClosed.webp",
+    "original": "assets/images/kikyou/kikyou_poutEyesClosed.png",
+    "originalBytes": 248229,
+    "bytes": 129832,
+    "size": [
+      409,
+      610
+    ],
+    "rgbaSha256": "be8e8d2958914ddb5c00d056935fd5e98008bf764e2c07a6dbb5cf86745cbd54"
+  },
+  {
+    "file": "assets/images/kikyou/kikyou_serious.webp",
+    "original": "assets/images/kikyou/kikyou_serious.png",
+    "originalBytes": 248370,
+    "bytes": 131330,
+    "size": [
+      409,
+      610
+    ],
+    "rgbaSha256": "8d92f6284f03c8a9a62478e5e586ed05b7308685299f5f3f80431a155e881bdd"
+  },
+  {
+    "file": "assets/images/kikyou/kikyou_sigh.webp",
+    "original": "assets/images/kikyou/kikyou_sigh.png",
+    "originalBytes": 248539,
+    "bytes": 129844,
+    "size": [
+      409,
+      610
+    ],
+    "rgbaSha256": "3ec46b3f346802d2ae0c67b1b8dc77d526e644c4a39944581b71b7d28c2ec13d"
+  },
+  {
+    "file": "assets/images/kikyou/kikyou_smile.webp",
+    "original": "assets/images/kikyou/kikyou_smile.png",
+    "originalBytes": 242606,
+    "bytes": 128334,
+    "size": [
+      409,
+      610
+    ],
+    "rgbaSha256": "e5f3766252148f3949146981baf43bbbf7a55526204f9e6b11b2e9f8d7a98f1c"
+  },
+  {
+    "file": "assets/images/kikyou/kikyou_smileTalking.webp",
+    "original": "assets/images/kikyou/kikyou_smileTalking.png",
+    "originalBytes": 247642,
+    "bytes": 131148,
+    "size": [
+      409,
+      610
+    ],
+    "rgbaSha256": "2b21d4506130d9240121787ca816d9fdf035d83f9228bf53f0213e83873dc0af"
+  },
+  {
+    "file": "assets/images/kikyou/kikyou_talking.webp",
+    "original": "assets/images/kikyou/kikyou_talking.png",
+    "originalBytes": 248610,
+    "bytes": 130268,
+    "size": [
+      409,
+      610
+    ],
+    "rgbaSha256": "bb8e992439ad8ba7336bd4de8318284958065fc689d8950a2a371e795b2186cc"
+  },
+  {
+    "file": "assets/images/kikyou/kikyou_unamused.webp",
+    "original": "assets/images/kikyou/kikyou_unamused.png",
+    "originalBytes": 247746,
+    "bytes": 131712,
+    "size": [
+      409,
+      610
+    ],
+    "rgbaSha256": "945e30848aaa5050625d594de13cdf5de80e922e152855971976d3965b31fed2"
+  },
+  {
+    "file": "assets/images/kikyou/kikyou_uneasy.webp",
+    "original": "assets/images/kikyou/kikyou_uneasy.png",
+    "originalBytes": 246283,
+    "bytes": 129294,
+    "size": [
+      409,
+      610
+    ],
+    "rgbaSha256": "d565c3bf2fce775d25a4ede9b10198f0544a3fd03dcc3d6d8d67538b2ac22de9"
+  },
+  {
+    "file": "assets/images/kikyou/kikyou_worried.webp",
+    "original": "assets/images/kikyou/kikyou_worried.png",
+    "originalBytes": 248502,
+    "bytes": 132098,
+    "size": [
+      409,
+      610
+    ],
+    "rgbaSha256": "089e64af773d6fc73c322c7ca614552be0dcab42b99a6ac25d26f69af115534c"
+  },
+  {
+    "file": "assets/images/koyuki/koyuki_awkward_laugh.webp",
+    "original": "assets/images/koyuki/koyuki_awkward_laugh.png",
+    "originalBytes": 379502,
+    "bytes": 173066,
+    "size": [
+      371,
+      673
+    ],
+    "rgbaSha256": "ed97db56639b3f510bb280ef8c6bdb1fabaa043c899f03699ef3ca8f6ad7a814"
+  },
+  {
+    "file": "assets/images/koyuki/koyuki_crying_hit_by_yuuka.webp",
+    "original": "assets/images/koyuki/koyuki_crying_hit_by_yuuka.png",
+    "originalBytes": 382844,
+    "bytes": 182112,
+    "size": [
+      371,
+      673
+    ],
+    "rgbaSha256": "35c0ae6bb27a3949f902f0a719d62542256c3ab376f7e07e9d0f2f750f5f165a"
+  },
+  {
+    "file": "assets/images/koyuki/koyuki_default.webp",
+    "original": "assets/images/koyuki/koyuki_default.png",
+    "originalBytes": 377954,
+    "bytes": 173768,
+    "size": [
+      371,
+      673
+    ],
+    "rgbaSha256": "c1b2b11506b256047d317260ff6e8cd9bcc392ea89a1ccc266f0aa99fffddea9"
+  },
+  {
+    "file": "assets/images/koyuki/koyuki_embarrassed.webp",
+    "original": "assets/images/koyuki/koyuki_embarrassed.png",
+    "originalBytes": 377672,
+    "bytes": 178154,
+    "size": [
+      371,
+      673
+    ],
+    "rgbaSha256": "20aee8f4e845ebe54806ae9c22a9df9c1d479e643996fe0e8ef5c0d1d82da1f2"
+  },
+  {
+    "file": "assets/images/koyuki/koyuki_happy.webp",
+    "original": "assets/images/koyuki/koyuki_happy.png",
+    "originalBytes": 376955,
+    "bytes": 178588,
+    "size": [
+      371,
+      673
+    ],
+    "rgbaSha256": "e3b05cf5ce88879faac430b4af345616e6b80c10b6e0cdbe64ab040afe751c64"
+  },
+  {
+    "file": "assets/images/koyuki/koyuki_laugh.webp",
+    "original": "assets/images/koyuki/koyuki_laugh.png",
+    "originalBytes": 377494,
+    "bytes": 175384,
+    "size": [
+      371,
+      673
+    ],
+    "rgbaSha256": "611365f80225692101ca624842254c3f6d763b235bff1c327795c33200133964"
+  },
+  {
+    "file": "assets/images/koyuki/koyuki_pout.webp",
+    "original": "assets/images/koyuki/koyuki_pout.png",
+    "originalBytes": 381632,
+    "bytes": 178602,
+    "size": [
+      371,
+      673
+    ],
+    "rgbaSha256": "3ccd89c9e372976bed2d4b212a75fe9d9fae80ea5a6e1a39aa1010eb44e1d920"
+  },
+  {
+    "file": "assets/images/koyuki/koyuki_sad.webp",
+    "original": "assets/images/koyuki/koyuki_sad.png",
+    "originalBytes": 377491,
+    "bytes": 180790,
+    "size": [
+      371,
+      673
+    ],
+    "rgbaSha256": "f1e8d82c0d60196e4f7abe6d164d72752828ba0c2c82eb0a4c148367008cdcd5"
+  },
+  {
+    "file": "assets/images/koyuki/koyuki_shocked.webp",
+    "original": "assets/images/koyuki/koyuki_shocked.png",
+    "originalBytes": 341617,
+    "bytes": 192060,
+    "size": [
+      371,
+      673
+    ],
+    "rgbaSha256": "003b076d84828fa5e6961092d397ce1ca20700cccb03c0a9829471457aa92a9c"
+  },
+  {
+    "file": "assets/images/koyuki/koyuki_shy_smile.webp",
+    "original": "assets/images/koyuki/koyuki_shy_smile.png",
+    "originalBytes": 381019,
+    "bytes": 177836,
+    "size": [
+      371,
+      673
+    ],
+    "rgbaSha256": "a9b1e34803ff31db2ea6d36c448a76441091e859a53a0219adef51b3c62c643a"
+  },
+  {
+    "file": "assets/images/koyuki/koyuki_smile.webp",
+    "original": "assets/images/koyuki/koyuki_smile.png",
+    "originalBytes": 376780,
+    "bytes": 178416,
+    "size": [
+      371,
+      673
+    ],
+    "rgbaSha256": "9161d3a25949a296b7c2a14338b760c123670307f37ddfbcbe26d96650ae3720"
+  },
+  {
+    "file": "assets/images/koyuki/koyuki_smug.webp",
+    "original": "assets/images/koyuki/koyuki_smug.png",
+    "originalBytes": 374913,
+    "bytes": 173192,
+    "size": [
+      371,
+      673
+    ],
+    "rgbaSha256": "6049ccd3eaf06d0b3b41661044136c625806588ada7e7c0876ededddc0ad79cc"
+  },
+  {
+    "file": "assets/images/koyuki/koyuki_surprised.webp",
+    "original": "assets/images/koyuki/koyuki_surprised.png",
+    "originalBytes": 376392,
+    "bytes": 181190,
+    "size": [
+      371,
+      673
+    ],
+    "rgbaSha256": "04c9f583a49a80cedf2a8e57b57747babd886c678cdf9867b914ec004aac5d1e"
+  },
+  {
+    "file": "assets/images/koyuki/koyuki_uneasy.webp",
+    "original": "assets/images/koyuki/koyuki_uneasy.png",
+    "originalBytes": 377426,
+    "bytes": 182026,
+    "size": [
+      371,
+      673
+    ],
+    "rgbaSha256": "9a83cc815e422d8cc41d408b3a4bae8c903eefb67bb89791ac41bf5a4541eba0"
+  },
+  {
     "file": "assets/images/mari/mari_angry.webp",
     "original": "assets/images/mari/mari_angry.png",
     "originalBytes": 3789267,
@@ -790,5 +1131,115 @@
       2400
     ],
     "rgbaSha256": "82ab8efd52f0c5836863d7cca6ef8f936aad03ac5b91507d76db255bb5d75ce8"
+  },
+  {
+    "file": "assets/images/yuuka/yuuka_default.webp",
+    "original": "assets/images/yuuka/yuuka_default.png",
+    "originalBytes": 790997,
+    "bytes": 408920,
+    "size": [
+      687,
+      1024
+    ],
+    "rgbaSha256": "37c1797df7e0dc8305a09f62d52625e049599cfafca2d935e1b25324bb7766e5"
+  },
+  {
+    "file": "assets/images/yuuka/yuuka_embarrassed.webp",
+    "original": "assets/images/yuuka/yuuka_embarrassed.png",
+    "originalBytes": 799649,
+    "bytes": 416502,
+    "size": [
+      687,
+      1024
+    ],
+    "rgbaSha256": "92d26c54e4aaef96fdff864b9fb82953949e0eacbc390d1f3ceeaaa0aa9cb6fa"
+  },
+  {
+    "file": "assets/images/yuuka/yuuka_eyesClosed.webp",
+    "original": "assets/images/yuuka/yuuka_eyesClosed.png",
+    "originalBytes": 793285,
+    "bytes": 414296,
+    "size": [
+      687,
+      1024
+    ],
+    "rgbaSha256": "fea21be02ded1b1daf818a3110a8eecefb59102758d3490feb934a4b03cc1762"
+  },
+  {
+    "file": "assets/images/yuuka/yuuka_laugh.webp",
+    "original": "assets/images/yuuka/yuuka_laugh.png",
+    "originalBytes": 792228,
+    "bytes": 409372,
+    "size": [
+      687,
+      1024
+    ],
+    "rgbaSha256": "88c275f937566a6c18c00163a3978150137564803ed1d1ceb7044677f0091ff2"
+  },
+  {
+    "file": "assets/images/yuuka/yuuka_pout.webp",
+    "original": "assets/images/yuuka/yuuka_pout.png",
+    "originalBytes": 795893,
+    "bytes": 414910,
+    "size": [
+      687,
+      1024
+    ],
+    "rgbaSha256": "625ce278d1e0c4ec3238e2a29d7f8f79632627fd24a03fc98b8f787b4a485803"
+  },
+  {
+    "file": "assets/images/yuuka/yuuka_poutEyesClosed.webp",
+    "original": "assets/images/yuuka/yuuka_poutEyesClosed.png",
+    "originalBytes": 792886,
+    "bytes": 412592,
+    "size": [
+      687,
+      1024
+    ],
+    "rgbaSha256": "d9011dd434f8e594761ac89a486073983dd59e28a2a42386138891e37a622b28"
+  },
+  {
+    "file": "assets/images/yuuka/yuuka_shocked.webp",
+    "original": "assets/images/yuuka/yuuka_shocked.png",
+    "originalBytes": 795059,
+    "bytes": 411114,
+    "size": [
+      687,
+      1024
+    ],
+    "rgbaSha256": "def3177b222abb89e6b77d32685fe067a6f1f120e71eb32a17faf8fa25799b36"
+  },
+  {
+    "file": "assets/images/yuuka/yuuka_smug.webp",
+    "original": "assets/images/yuuka/yuuka_smug.png",
+    "originalBytes": 793522,
+    "bytes": 412146,
+    "size": [
+      687,
+      1024
+    ],
+    "rgbaSha256": "940bd3b6829393f49690843fab6d61f775168ffbf43a7c8451013cb79695b4bb"
+  },
+  {
+    "file": "assets/images/yuuka/yuuka_surprised.webp",
+    "original": "assets/images/yuuka/yuuka_surprised.png",
+    "originalBytes": 793642,
+    "bytes": 411110,
+    "size": [
+      687,
+      1024
+    ],
+    "rgbaSha256": "d9f4612674bcced642ff6aa9bc830fec7fd36471db7207765e70790982c42162"
+  },
+  {
+    "file": "assets/images/yuuka/yuuka_uneasy.webp",
+    "original": "assets/images/yuuka/yuuka_uneasy.png",
+    "originalBytes": 792964,
+    "bytes": 410740,
+    "size": [
+      687,
+      1024
+    ],
+    "rgbaSha256": "1b98d02dd3e0094a29b78b37103f25fcdb52039d146f1b26c971be3ba3f13e74"
   }
 ]

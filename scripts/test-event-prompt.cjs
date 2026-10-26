@@ -77,7 +77,7 @@ for (const [name, folder] of [['후부키', 'fubuki'], ['케이', 'kei']]) {
 const { keepAssetSpeakers, getAvailableCharacters } = require('../shared/prompts/characterList');
 assert.ok(getAvailableCharacters().includes('유우카'));
 assert.ok(buildSelectionPrompt([]).includes('유우카'));
-assert.deepEqual([...resources.유우카.emotions].sort(), fs.readdirSync(path.join(__dirname, '../assets/images/yuuka')).sort());
+assert.deepEqual(resources.유우카.emotions.map(file => file.replace(/\.png$/, '.webp')).sort(), fs.readdirSync(path.join(__dirname, '../assets/images/yuuka')).sort());
 const yuukaPrompt = buildEventPromptPro('유우카', [], [{ name: '유우카', emotions: resources.유우카.emotions }], '함께 서류를 정리한다.');
 const spriteLayout = loadTs('constants/spriteLayout.ts', () => ({}));
 assert.equal(spriteLayout.getSpriteAspectRatio('yuuka_default'), 687 / 1024);
@@ -94,7 +94,7 @@ for (const [language, name] of Object.entries({ ko: '유우카', en: 'Yuuka', ja
 }
 assert.ok(getAvailableCharacters().includes('키쿄'));
 assert.ok(buildSelectionPrompt([]).includes('키쿄'));
-assert.deepEqual([...resources.키쿄.emotions].sort(), fs.readdirSync(path.join(__dirname, '../assets/images/kikyou')).sort());
+assert.deepEqual(resources.키쿄.emotions.map(file => file.replace(/\.png$/, '.webp')).sort(), fs.readdirSync(path.join(__dirname, '../assets/images/kikyou')).sort());
 const kikyouPrompt = buildEventPromptPro('키쿄', [], [{ name: '키쿄', emotions: resources.키쿄.emotions }], '햇볕을 쬐며 함께 쉰다.');
 assert.equal(spriteLayout.getSpriteAspectRatio('kikyou_default'), 409 / 610);
 for (const [language, name] of Object.entries({ ko: '키쿄', en: 'Kikyou', ja: 'キキョウ', zh: '桔梗' })) {
@@ -110,7 +110,7 @@ for (const [language, name] of Object.entries({ ko: '키쿄', en: 'Kikyou', ja: 
 }
 assert.ok(getAvailableCharacters().includes('코유키'));
 assert.ok(buildSelectionPrompt([]).includes('코유키'));
-assert.deepEqual([...resources.코유키.emotions].sort(), fs.readdirSync(path.join(__dirname, '../assets/images/koyuki')).sort());
+assert.deepEqual(resources.코유키.emotions.map(file => file.replace(/\.png$/, '.webp')).sort(), fs.readdirSync(path.join(__dirname, '../assets/images/koyuki')).sort());
 const koyukiPrompt = buildEventPromptPro('코유키', [], [{ name: '코유키', emotions: resources.코유키.emotions }], '추첨 결과를 함께 확인한다.');
 for (const [language, name] of Object.entries({ ko: '코유키', en: 'Koyuki', ja: 'コユキ', zh: '小雪' })) {
   assert.equal(characters.find(character => character.name === '코유키').displayName[language], name);

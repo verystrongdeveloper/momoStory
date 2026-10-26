@@ -1,7 +1,7 @@
 {
   "name": "momostory",
   "main": "expo-router/entry",
-  "version": "1.4.4",
+  "version": "1.4.5",
   "scripts": {
     "test:orientation": "node scripts/test-screen-orientation.cjs",
     "test:notifications": "node scripts/test-notifications.cjs",

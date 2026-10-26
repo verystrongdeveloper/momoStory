@@ -63,6 +63,11 @@ function load(file, mocks = {}) {
   assert.equal(platform.notificationsSupported(), false);
   assert.equal(await platform.showNotification('chat', 'channel', 'title', 'body'), false);
   rn.Platform.OS = 'android';
+  await platform.showNotification('chat', 'channel', 'Hina', 'legacy reply', false, '히나');
+  assert.deepEqual(sent.pop(), ['chat', 'channel', 'Hina', 'legacy reply', false], 'older APKs fall back to ordinary chat alerts');
+  rn.NativeModules.MomoNotifications.showChat = async (channel, title, body, preview, character) => {
+    sent.push(['chat', channel, title, body, preview, character]); return granted;
+  };
 
   const chats = load('store/temporaryChats.ts');
   let queue = [], notifyQueue;
@@ -84,9 +89,12 @@ function load(file, mocks = {}) {
   rn.AppState.currentState = 'background';
   add('background', 'background'); assert.equal(sent.length, 1);
   assert.equal(sent.at(-1)[3], 'notificationNewChat', 'preview is hidden by default');
+  assert.equal(sent.at(-1)[5], '히나', 'chat alerts use the canonical character identity for the profile photo');
   close(); rn.AppState.currentState = 'active';
   storage.saveSetting('notificationPreview', true);
   add('new reply', 'new reply'); assert.equal(sent.at(-1)[3], 'new reply');
+  await platform.showNotification('chat', 'channel', '日奈', 'localized reply', true, '히나');
+  assert.deepEqual(sent.at(-1), ['chat', 'channel', '日奈', 'localized reply', true, '히나'], 'translated titles retain the same character photo');
   assert.ok(!JSON.stringify(sent).includes('secret-api-key'));
   storage.saveSetting('notificationsEnabled', false);
   const count = sent.length; add('muted', 'muted'); assert.equal(sent.length, count);

@@ -68,7 +68,7 @@ const content: Record<AppLanguage, TutorialPage[]> = {
       "설정 → 앱 정보 및 업데이트에서 현재 버전을 확인하고 업데이트를 확인합니다. 사용 방법과 이용 약관은 설정 → 안내에서 다시 열 수 있습니다.",
     ] },
     { id: 'display', title: "화면 방향과 채팅 크기", paragraphs: [
-      "휴대폰 앱은 기본적으로 세로 고정입니다. 설정 → 화면 → 화면 방향에서 세로 또는 가로를 직접 선택합니다. 기기를 돌려도 선택한 방향을 유지하며 앱과 스토리에 바로 적용되고 자동 저장됩니다. 화면 방향 선택은 Android·iOS 앱에서만 표시됩니다.",
+      "휴대폰 앱은 기본적으로 세로 고정입니다. 설정 → 화면 → 화면 방향에서 세로 또는 가로를 직접 선택합니다. 선택한 방향은 스토리 재생 화면에만 적용되고 자동 저장됩니다. 다른 화면은 세로로 유지됩니다. 화면 방향 선택은 Android·iOS 앱에서만 표시됩니다.",
       "설정 → 화면 → 채팅 크기에서 80~150%로 조절하고 미리보기로 확인합니다. 일반 채팅과 저장된 대화에 적용되며 자동 저장됩니다. 기본 크기를 누르면 100%로 돌아갑니다.",
     ] },
     { id: 'sound', title: "사운드와 채팅 효과음", paragraphs: [
@@ -99,7 +99,7 @@ const content: Record<AppLanguage, TutorialPage[]> = {
       "Check the current version and updates in Settings → About & updates. Reopen this guide and the terms in Settings → Help.",
     ] },
     { id: 'display', title: "Screen orientation and chat size", paragraphs: [
-      "The phone app defaults to portrait lock. Choose Portrait or Landscape in Settings → Display → Screen orientation. Turning your phone keeps the selected orientation. It applies immediately to the app and stories and saves automatically. This control is only shown in Android and iOS apps.",
+      "The phone app defaults to portrait lock. Choose Portrait or Landscape in Settings → Display → Screen orientation. The selected orientation applies only to story playback and saves automatically. Other screens stay in portrait. This control is only shown in Android and iOS apps.",
       "Use Settings → Display → Chat size to adjust to 80–150% and check the preview. It applies to normal and saved chats and saves automatically. Reset restores 100%.",
     ] },
     { id: 'sound', title: "Sound and chat effects", paragraphs: [
@@ -130,7 +130,7 @@ const content: Record<AppLanguage, TutorialPage[]> = {
       "設定 → アプリ情報とアップデートで現在のバージョンと更新を確認できます。使い方と利用規約は設定 → ガイドから再度開けます。",
     ] },
     { id: 'display', title: "画面の向きとチャットサイズ", paragraphs: [
-      "スマートフォンアプリは初期状態で縦向き固定です。設定 → 画面 → 画面の向きで縦か横を選びます。端末を回しても選んだ向きを維持し、アプリとストーリーにすぐ反映して自動保存します。この項目はAndroid・iOSアプリのみ表示されます。",
+      "スマートフォンアプリは初期状態で縦向き固定です。設定 → 画面 → 画面の向きで縦か横を選びます。選んだ向きはストーリー再生画面にのみ適用され、自動保存されます。他の画面は縦向きのままです。この項目はAndroid・iOSアプリのみ表示されます。",
       "設定 → 画面 → チャットサイズで80～150%に調整し、プレビューで確認できます。通常と保存済みの会話に適用され、自動保存されます。初期サイズに戻すと100%になります。",
     ] },
     { id: 'sound', title: "サウンドとチャット効果音", paragraphs: [
@@ -161,7 +161,7 @@ const content: Record<AppLanguage, TutorialPage[]> = {
       "在设置 → 应用信息与更新中查看当前版本并检查更新。在设置 → 帮助中重新打开使用方法与条款。",
     ] },
     { id: 'display', title: "屏幕方向与聊天大小", paragraphs: [
-      "手机应用默认锁定竖屏。在设置 → 显示 → 屏幕方向中选择竖屏或横屏。转动手机时保持所选方向，立即应用于应用和剧情并自动保存。此选项仅在Android与iOS应用中显示。",
+      "手机应用默认锁定竖屏。在设置 → 显示 → 屏幕方向中选择竖屏或横屏。所选方向仅应用于剧情播放画面，并自动保存。其他画面保持竖屏。此选项仅在Android与iOS应用中显示。",
       "在设置 → 显示 → 聊天大小中调整为80至150%，并查看预览。适用于普通和已保存聊天，自动保存。恢复默认大小可回到100%。",
     ] },
     { id: 'sound', title: "声音与聊天音效", paragraphs: [

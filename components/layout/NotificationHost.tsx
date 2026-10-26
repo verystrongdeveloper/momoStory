@@ -22,7 +22,7 @@ export default function NotificationHost() {
     if (arrival.reading && AppState.currentState === 'active') return;
     const preview = getSetting('notificationPreview');
     void showNotification('chat', t('chatNotifications'), displayCharacterName(arrival.character, language),
-      preview ? arrival.message.slice(0, 240) : t('notificationNewChat'), preview).catch(() => {});
+      preview ? arrival.message.slice(0, 240) : t('notificationNewChat'), preview, arrival.character).catch(() => {});
   }), [language, t]);
   useEffect(() => {
     const ids = new Set(queue.map(item => item.id));

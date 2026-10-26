@@ -5,6 +5,7 @@ type NotificationBridge = {
   openSettings(): Promise<void>;
   clear(): Promise<void>;
   show(kind: string, channel: string, title: string, body: string, preview: boolean): Promise<boolean>;
+  showChat?(channel: string, title: string, body: string, preview: boolean, character: string): Promise<boolean>;
 };
 const bridge = (): NotificationBridge | undefined => Platform.OS === 'android' ? NativeModules.MomoNotifications : undefined;
 export const notificationsSupported = () => !!bridge();
@@ -22,6 +23,10 @@ export async function requestNotifications() {
 }
 export const openNotificationSettings = async () => { await bridge()?.openSettings(); };
 export const clearNotifications = async () => { await bridge()?.clear(); };
-export async function showNotification(kind: 'chat' | 'story' | 'export' | 'test', channel: string, title: string, body: string, preview = false) {
-  return await bridge()?.show(kind, channel, title, body, preview) ?? false;
+export async function showNotification(kind: 'chat' | 'story' | 'export' | 'test', channel: string, title: string, body: string, preview = false, character?: string) {
+  const native = bridge();
+  if (kind === 'chat' && character && native?.showChat) {
+    return native.showChat(channel, title, body, preview, character);
+  }
+  return await native?.show(kind, channel, title, body, preview) ?? false;
 }

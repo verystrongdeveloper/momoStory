@@ -4,7 +4,8 @@
   "version": "1.4.5",
   "scripts": {
     "test:orientation": "node scripts/test-screen-orientation.cjs",
-    "test:notifications": "node scripts/test-notifications.cjs",
+    "notification:avatars": "node scripts/build-notification-avatars.cjs",
+    "test:notifications": "node scripts/build-notification-avatars.cjs --check && node scripts/test-notifications.cjs",
     "community:assets": "node scripts/build-community-assets.cjs && node scripts/build-community-validation.cjs",
     "test:community": "node scripts/build-community-assets.cjs --check && node scripts/build-community-validation.cjs --check && node scripts/test-community.cjs && node scripts/test-community-client.cjs && node scripts/test-community-ui.cjs",
     "test:editor": "node scripts/test-story-editor.cjs && node scripts/test-chat-editor.cjs && node scripts/test-keyboard-layout.cjs",

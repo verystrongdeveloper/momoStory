@@ -79,19 +79,27 @@ function load(file, mocks = {}) {
       picker = Renderer.create(React.createElement(Picker));
     });
     const stackMode = () => tree.root.findByType('Stack').props.screenOptions.orientation;
+    const storyMode = () => tree.root.findAllByType('StackScreen').find(screen => screen.props.name === 'event').props.options.orientation;
     const choice = label => picker.root.findAllByType('TouchableOpacity').find(button => button.findByType('Text').props.children === label);
     assert.equal(stackMode(), 'portrait_up', 'all routes start with a portrait lock');
+    assert.equal(storyMode(), 'portrait_up', 'story playback defaults to portrait');
     assert.equal(choice('screenPortrait').props.accessibilityState.checked, true);
     await React.act(async () => { event = Renderer.create(React.createElement(Event)); });
     assert.equal(stackMode(), 'portrait_up', 'entering a story must not unlock rotation');
     await React.act(async () => choice('screenLandscape').props.onPress());
-    assert.equal(stackMode(), 'landscape', 'settings immediately update the whole navigation stack');
+    assert.equal(stackMode(), 'portrait_up', 'settings and other routes must stay in portrait');
+    assert.equal(storyMode(), 'landscape', 'only story playback uses the selected landscape mode');
     assert.equal(persisted.screenOrientation, 'landscape');
     assert.equal(choice('screenLandscape').props.accessibilityState.checked, true);
     await React.act(async () => event.unmount());
-    assert.equal(stackMode(), 'landscape', 'leaving a story must preserve the selected mode');
+    assert.equal(stackMode(), 'portrait_up', 'leaving a story restores the portrait route lock');
+    assert.equal(storyMode(), 'landscape', 'leaving a story must preserve its selected mode');
+    await React.act(async () => { tree.unmount(); tree = Renderer.create(React.createElement(Root)); });
+    assert.equal(stackMode(), 'portrait_up', 'reopening the app with landscape saved keeps other routes in portrait');
+    assert.equal(storyMode(), 'landscape', 'reopening the app restores landscape for story playback only');
     await React.act(async () => choice('screenPortrait').props.onPress());
     assert.equal(stackMode(), 'portrait_up');
+    assert.equal(storyMode(), 'portrait_up');
     await React.act(async () => { tree.unmount(); picker.unmount(); });
   }
   orientation.setScreenOrientation('landscape');
@@ -110,5 +118,5 @@ function load(file, mocks = {}) {
   assert.equal(config.orientation, 'default', 'iOS native build must permit both orientations');
   assert.equal(config.ios.requireFullScreen, true);
   assert.deepEqual(config.plugins.find(plugin => Array.isArray(plugin) && plugin[0] === 'expo-screen-orientation')[1], { initialOrientation: 'PORTRAIT_UP' });
-  console.log('PASS portrait default, invalid/legacy preferences, hydration, persistence, native settings, shared route locks, story enter/exit, web exclusion and four languages');
+  console.log('PASS portrait default, invalid/legacy preferences, hydration, persistence, native settings, story-only route locks, story enter/exit, web exclusion and four languages');
 })().catch(error => { console.error(error); process.exitCode = 1; });

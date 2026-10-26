@@ -24,9 +24,9 @@ export default function RootLayout() {
   return (
     <SafeAreaProvider>
       <I18nProvider>
-        <Stack screenOptions={{ headerShown: false, orientation: orientation === 'landscape' ? 'landscape' : 'portrait_up' }}>
+        <Stack screenOptions={{ headerShown: false, orientation: 'portrait_up' }}>
           <Stack.Screen name="index" />
-          <Stack.Screen name="event" />
+          <Stack.Screen name="event" options={{ orientation: orientation === 'landscape' ? 'landscape' : 'portrait_up' }} />
           <Stack.Screen name="+not-found" options={{ headerShown: true }} />
         </Stack>
         <VideoExportHost />

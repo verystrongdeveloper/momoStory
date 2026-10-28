@@ -1,4 +1,5 @@
 import type { EventLine } from '@/types/EventLine';
+import { characterAffiliation } from '../shared/prompts/speakerNames';
 
 export const EVENT_TIMING = {
   titleReveal: 0.5, titleShow: 3, titleFade: 0.3, titleGap: 1,
@@ -68,8 +69,9 @@ export function shownEventDialogue(current: EventLine | null | undefined, last: 
 }
 
 export function parseEventSpeaker(character: string) {
-  const match = character.match(/^(.*?)\((.*?)\)$/);
-  return match ? { name: match[1], affiliation: match[2] } : { name: character, affiliation: '' };
+  const match = character.trim().match(/^(.*?)[（(](.*?)[）)]$/);
+  const name = (match?.[1] ?? character).trim();
+  return { name, affiliation: characterAffiliation(name) || match?.[2]?.trim() || '' };
 }
 
 export function eventStoryFont(width: number, height: number, fraction: number, floor: number) {

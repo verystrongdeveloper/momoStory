@@ -159,11 +159,11 @@ const model = id => ({ name: `models/${id}`, displayName: id, supportedGeneratio
   }).default;
   let tree; await React.act(async () => { tree = Renderer.create(React.createElement(Picker)); });
   const button = label => tree.root.findAllByType('TouchableOpacity').find(node => node.props.accessibilityLabel === label);
-  await React.act(async () => button('geminiModel').props.onPress());
+  await React.act(async () => button('aiModel').props.onPress());
   assert.ok(tree.root.findAllByType('Text').some(node => node.props.children === 'geminiModelKeyRequired'));
   await React.act(async () => { key = 'key'; listeners.forEach(fn => fn()); });
   await React.act(async () => button('Gemini 4 Argon').props.onPress()); assert.equal(chosen, 'gemini-4-argon');
-  await React.act(async () => button('geminiModel').props.onPress());
+  await React.act(async () => button('aiModel').props.onPress());
   fail = true; await React.act(async () => button('geminiModelRefresh').props.onPress()); assert.equal(forceCalls.at(-1), true);
   assert.ok(tree.root.findAllByType('Text').some(node => node.props.children === 'geminiModelFailed'));
   await React.act(async () => button('geminiModelAuto').props.onPress()); assert.equal(chosen, 'auto', 'automatic remains selectable after list failure');

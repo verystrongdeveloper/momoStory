@@ -43,7 +43,7 @@ ${COMMON_RULES}
 
 메인 캐릭터: '${mainChar}'
 등장 인물: ${allCharsWithEmotions.map((c) => c.name).join(', ')}
-대사 화자는 이 목록의 인물만 쓰되, 짧은 이름과 소속 표기는 선택된 출력 언어에 맞춘다. 목록 밖 학생·NPC·엑스트라는 화자로 쓰지 말고, 현장에 있는 인물로 나레이션에 넣지도 않는다.
+대사 화자는 이 목록의 인물만 쓰되, 짧은 이름만 선택된 출력 언어로 쓴다. 소속·직책은 앱이 자동으로 표시하므로 화자 이름이나 speaker 메타데이터에 괄호로 붙이지 않는다. 목록 밖 학생·NPC·엑스트라는 화자로 쓰지 말고, 현장에 있는 인물로 나레이션에 넣지도 않는다.
 페르소나의 【다른 학생】은 말투 참고일 뿐이다. 그 이름을 장면에 출연시키지 않는다.
 
 [스토리 전개 방향]
@@ -93,7 +93,7 @@ ${historyTXT}
 
 [출력 형식]
 타이틀 : 이벤트 제목
-캐릭터명(소속) : 대사 [emotion : xx.png, bg : xx.jpg, sound : SE_xx.mp3, music : xx.mp3, expression : xx.png, animation : shakeX]
+캐릭터명 : 대사 [emotion : xx.png, bg : xx.jpg, sound : SE_xx.mp3, music : xx.mp3, expression : xx.png, animation : shakeX]
 narration : (내용) [bg : xx.jpg, music : xx.mp3, expression : Headpat.png, animation : slideY]
 selection : (1)"선택지 A" (2)"선택지 B"
 deleteEmotion
@@ -104,19 +104,19 @@ endEvent
 - 캐릭터명은 짧은 이름만 (소라사키 히나 X → 히나).
 - emotion/bg/sound/music/expression/animation은 반드시 [ ] 안에 넣고, 대사 본문에는 쓰지 않는다.
 - selection은 반드시 selection으로 적는다.
-- 제목 명령은 타이틀 : 또는 title : 모두 지원한다. 한국어 외 출력에서는 title :을 사용하고, 명령 뒤 제목·화자 이름·소속·대사·나레이션·선택지 문구는 모두 선택 언어로 쓴다. 에셋 파일명은 번역하지 않는다.
+- 제목 명령은 타이틀 : 또는 title : 모두 지원한다. 한국어 외 출력에서는 title :을 사용하고, 명령 뒤 제목·화자 이름·대사·나레이션·선택지 문구는 모두 선택 언어로 쓴다. 에셋 파일명은 번역하지 않는다.
 
 [형식 예시]
 타이틀 : 잠자는 고래
-호시노(대책위원회) : 그러니까 고래는 잘 때도 숨을 참고 있다는 얘기잖아. [emotion : hoshino_laugh.png, bg : BG_AbydosCouncilRoom.jpg, music : Aira.mp3]
+호시노 : 그러니까 고래는 잘 때도 숨을 참고 있다는 얘기잖아. [emotion : hoshino_laugh.png, bg : BG_AbydosCouncilRoom.jpg, music : Aira.mp3]
 selection : (1)"갑자기 웬 고래 얘기?" (2)"도움이 필요하다는 건 뭐야?"
-호시노(대책위원회) : 아아. 낭만이 없구만, 선생도. [emotion : hoshino_teasing_smile.png]
-호시노(대책위원회) : 힘쓰는 일이 필요해서 말이지. [emotion : hoshino_serious.png]
+호시노 : 아아. 낭만이 없구만, 선생도. [emotion : hoshino_teasing_smile.png]
+호시노 : 힘쓰는 일이 필요해서 말이지. [emotion : hoshino_serious.png]
 narration : (낡은 창고 문을 열었다.) [bg : BG_AbydosResidence.jpg, sound : SE_DoorSlowOpen_01.mp3]
-호시노(대책위원회) : 자, 여기야. [emotion : hoshino_yawn.png]
+호시노 : 자, 여기야. [emotion : hoshino_yawn.png]
 selection : (1)"여기는?" (2)"창고?"
-호시노(대책위원회) : 응. 아무도 안 오는 낮잠 스팟이지. [emotion : hoshino_relaxed_smile.png]
-호시노(대책위원회) : 으헤, 그런 눈으로 보지 말라구. 아저씨도 조금은 일한다니까? [emotion : hoshino_worried_sweat.png, animation : shakeX, expression : sweat.png]
+호시노 : 응. 아무도 안 오는 낮잠 스팟이지. [emotion : hoshino_relaxed_smile.png]
+호시노 : 으헤, 그런 눈으로 보지 말라구. 아저씨도 조금은 일한다니까? [emotion : hoshino_worried_sweat.png, animation : shakeX, expression : sweat.png]
 narration : (호시노는 순식간에 잠들었다.) [music : Aoharu.mp3]
 deleteAll
 narration : 결국 호시노의 낮잠 자리를 봐 주고 말았다.

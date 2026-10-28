@@ -30,6 +30,18 @@ const AFFILIATIONS = {
   시스터후드: { en: 'Sisterhood', ja: 'シスターフッド', zh: '修女会' },
   트리니티: { en: 'Trinity', ja: 'トリニティ', zh: '圣三一' },
 };
+const CHARACTER_AFFILIATIONS = {
+  키쿄: '백화요란 분쟁조정위원회', 유우카: '세미나', 코유키: '세미나', 케이: '초현상특무부',
+  후부키: '생활안전국', 호시노: '대책위원회', 히나: '선도부', 마리: '시스터후드',
+};
+function characterAffiliation(name) {
+  const canonical = canonicalCharacterName(name);
+  const affiliation = CHARACTER_AFFILIATIONS[canonical];
+  if (!affiliation) return '';
+  // Follow the script's speaker language so saved stories and video exports agree.
+  const language = Object.keys(NAMES[canonical]).find(code => NAMES[canonical][code].toLowerCase() === name.trim().toLowerCase()) || 'ko';
+  return language === 'ko' ? affiliation : AFFILIATIONS[affiliation]?.[language] || affiliation;
+}
 function canonicalCharacterName(name) {
   const text = name.trim();
   return Object.keys(NAMES).find(key => Object.values(NAMES[key]).some(value => value.toLowerCase() === text.toLowerCase())) || text;
@@ -67,4 +79,4 @@ function speakerLanguageGuide(language) {
   return Object.entries(NAMES).map(([key, values]) => `${key} => ${values[language] || key}`).join('; ')
     + '. Affiliations: ' + Object.entries(AFFILIATIONS).map(([key, values]) => `${key} => ${values[language] || key}`).join('; ');
 }
-module.exports = { canonicalCharacterName, localizedCharacterName, localizeStoryScript, speakerLanguageGuide };
+module.exports = { canonicalCharacterName, localizedCharacterName, localizeStoryScript, speakerLanguageGuide, characterAffiliation };

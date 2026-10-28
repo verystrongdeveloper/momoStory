@@ -62,6 +62,7 @@ function load(file, mocks = {}) {
     createEvent: async () => ({ eventScript: 'story' }),
   };
   const { geminiClient } = load('services/geminiClient/index.ts', {
+    '../geminiModel': { getGeminiModel: () => 'auto' }, '../../shared/aiProviders': require('../shared/aiProviders'),
     'react-native': { Platform: { OS: 'android' } },
     './directClient': { directClient: transport }, './expressTransport': { expressTransport: transport }, './errors': {},
   });

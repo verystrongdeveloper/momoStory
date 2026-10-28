@@ -6,6 +6,7 @@ const React = require('react');
 const Renderer = require('react-test-renderer');
 global.IS_REACT_ACT_ENVIRONMENT = true;
 function load(file, mocks, clock = { setTimeout, clearTimeout }) {
+  mocks = { '../shared/prompts/speakerNames': require('../shared/prompts/speakerNames'), ...mocks };
   const mod = { exports: {} };
   const code = ts.transpileModule(fs.readFileSync(path.join(__dirname, '..', file), 'utf8'), {
     compilerOptions: { module: ts.ModuleKind.CommonJS, jsx: ts.JsxEmit.React, esModuleInterop: true, target: ts.ScriptTarget.ES2022 },

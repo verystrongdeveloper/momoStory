@@ -7,6 +7,7 @@ export function throwIfOffline() {
 }
 
 export function geminiFailureText(err: unknown): string {
+  if (err instanceof Error && 'code' in err && err.code === 'AI_PROVIDER_ERROR') return err.message;
   if (err instanceof Error && (('code' in err && err.code === 'STORY_FORMAT_INVALID') || err.message.includes('스토리 형식을 바로잡지 못했습니다'))) {
     return '스토리 형식을 바로잡지 못했습니다. 다시 생성해 주세요.';
   }

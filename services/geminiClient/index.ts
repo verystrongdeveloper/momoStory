@@ -4,6 +4,8 @@ import { expressTransport } from './expressTransport';
 import type { ChatRoom } from '@/shared/chatRoom';
 import type { ConversationContext } from '../../shared/conversation';
 import { withBackgroundGeneration } from '../../platform/backgroundGeneration';
+import { getGeminiModel } from '../geminiModel';
+import { parseSelection } from '../../shared/aiProviders';
 
 export { geminiFailureText } from './errors';
 
@@ -16,6 +18,7 @@ export type GeminiTransport = 'direct' | 'express';
  * 키는 호출 시점의 사용자 입력이며, 빌드에 개발자 키를 넣지 않는다.
  */
 export function geminiTransport(): GeminiTransport {
+  if (parseSelection(getGeminiModel()).provider !== 'gemini') return 'direct';
   const chosen = process.env.EXPO_PUBLIC_GEMINI_TRANSPORT;
   if (chosen === 'direct' || chosen === 'express') return chosen;
   return Platform.OS === 'web' ? 'express' : 'direct';

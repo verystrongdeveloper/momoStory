@@ -15,7 +15,7 @@ export interface DialogueHandle {
 
 const TYPEWRITER_MS = EVENT_TIMING.typewriter * 1000;
 
-/** "이름(소속)" 형태의 화자 문자열을 분리 */
+/** 소속은 캐릭터 이름으로 자동 매칭한다. 기존 괄호 표기도 읽을 수 있다. */
 const EventDialogue = forwardRef<DialogueHandle, Props>(function EventDialogue({ character, text }, ref) {
   const { eventWidth, eventHeight } = useLayout();
   const styles = useMemo(() => makeStyles(eventWidth, eventHeight), [eventWidth, eventHeight]);

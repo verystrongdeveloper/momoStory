@@ -43,8 +43,9 @@ for (const word of ['채팅 포함', '스토리만', '10분', '저장 위치', '
 for (const word of ['자동 번역', '업데이트', '설정 → 안내', '설정 → 알림', '뒤로가기']) assert.ok(ko.settings.includes(word));
 for (const word of ['80~150%', '세로 고정', '설정 → 화면 → 화면 방향', 'Android·iOS', '100%']) assert.ok(ko.display.includes(word));
 for (const word of ['미리듣기', '설정 → 사운드', '스토리 선택지', '영상 추출']) assert.ok(ko.sound.includes(word));
-assert.ok(ko.key.includes('설정 → AI 및 대화 → Gemini API 키'));
-assert.ok(ko.key.includes('Gemini 모델과 선생 모드'));
+assert.ok(ko.key.includes('설정 → AI 및 대화'));
+for (const service of ['Gemini', 'OpenRouter', 'Venice']) assert.ok(ko.key.includes(service));
+assert.ok(ko.key.includes('AI 모델과 선생 모드'));
 const settingsLabels = load('i18n/settings.ts').settingsTranslations;
 for (const language of ['ko', 'en', 'ja', 'zh']) {
   const pages = Object.fromEntries(content.getTutorialContent(language).map(page => [page.id, page.paragraphs.join(' ')]));

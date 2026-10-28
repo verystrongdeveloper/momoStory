@@ -5,6 +5,7 @@ const FALLBACK_MODELS = ['gemini-3.7-flash', 'gemini-3.6-flash', 'gemini-3.5-fla
 const cache = new Map();
 const TTL = 10 * 60 * 1000;
 function normalizeModel(value) {
+  if (typeof value === 'string' && /^(openrouter|venice):[a-zA-Z0-9][a-zA-Z0-9._/:+-]{0,199}$/.test(value)) return value;
   return typeof value === 'string' && CURRENT_MODEL_SET.has(value) ? value : 'auto';
 }
 function compareModels(a, b) {

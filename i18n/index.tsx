@@ -9,11 +9,13 @@ import { senseiModeTranslations } from './senseiMode';
 import { notificationTranslations } from './notifications';
 import { screenOrientationTranslations } from './screenOrientation';
 import { settingsTranslations } from './settings';
+import { aiProviderTranslations } from './aiProvider';
 
 type Dictionary = Record<string, string>;
 
 const translations: Record<AppLanguage, Dictionary> = {
   ko: {
+    ...aiProviderTranslations.ko,
     cancelMessage: '응답 취소',
     ...notificationTranslations.ko,
     ...screenOrientationTranslations.ko,
@@ -63,6 +65,7 @@ const translations: Record<AppLanguage, Dictionary> = {
     termsTitle: '이용 약관', tutorialTitle: '사용 방법', agreeTerms: '위 내용을 확인했고, 이에 동의합니다.', agreeStart: '동의하고 시작', skip: '건너뛰기', previous: '이전', start: '시작하기', next: '다음', openAiStudio: 'Google AI Studio 열기',
   },
   en: {
+    ...aiProviderTranslations.en,
     cancelMessage: 'Cancel reply',
     ...notificationTranslations.en,
     ...screenOrientationTranslations.en,
@@ -112,6 +115,7 @@ const translations: Record<AppLanguage, Dictionary> = {
     termsTitle: 'Terms of use', tutorialTitle: 'How to use', agreeTerms: 'I have read and agree to the above.', agreeStart: 'Agree and start', skip: 'Skip', previous: 'Previous', start: 'Start', next: 'Next', openAiStudio: 'Open Google AI Studio',
   },
   ja: {
+    ...aiProviderTranslations.ja,
     cancelMessage: '返信をキャンセル',
     ...notificationTranslations.ja,
     ...screenOrientationTranslations.ja,
@@ -161,6 +165,7 @@ const translations: Record<AppLanguage, Dictionary> = {
     termsTitle: '利用規約', tutorialTitle: '使い方', agreeTerms: '上記を確認し、同意します。', agreeStart: '同意して始める', skip: 'スキップ', previous: '戻る', start: '始める', next: '次へ', openAiStudio: 'Google AI Studio を開く',
   },
   zh: {
+    ...aiProviderTranslations.zh,
     cancelMessage: '取消回复',
     ...notificationTranslations.zh,
     ...screenOrientationTranslations.zh,

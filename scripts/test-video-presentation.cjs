@@ -9,6 +9,7 @@ function load(file) {
     compilerOptions: { module: ts.ModuleKind.CommonJS, target: ts.ScriptTarget.ES2022, esModuleInterop: true },
   }).outputText;
   new Function('require', 'module', 'exports', code)(id => {
+    if (id === '../shared/prompts/speakerNames') return require('../shared/prompts/speakerNames');
     if (id.includes('/assets/')) return id;
     if (id.startsWith('@/')) return load(`${id.slice(2)}.ts`);
     if (id.startsWith('.')) return load(path.relative(root, path.resolve(root, path.dirname(file), `${id}.ts`)));
@@ -40,7 +41,15 @@ for (const [time, offset] of [[0, 0], [0.04, 7.5], [0.08, 15], [0.12, 0], [0.16,
 }
 for (const [time, offset] of [[0, 0], [0.04, 7.5], [0.08, 15], [0.12, 7.5], [0.16, 0], [1, 0]]) near(spriteMotionAt('slideX', time).x, offset);
 for (const [time, opacity] of [[0, 0], [0.15, 0.5], [0.3, 1], [1.9, 1], [2, 1], [2.25, 0.5], [2.5, 0], [3, 0]]) near(expressionOpacityAt(time), opacity);
-assert.deepEqual(parseEventSpeaker('호시노(아비도스)'), { name: '호시노', affiliation: '아비도스' });
+assert.deepEqual(parseEventSpeaker('호시노(아비도스)'), { name: '호시노', affiliation: '대책위원회' });
+for (const [name, affiliation] of Object.entries({ 호시노: '대책위원회', 유우카: '세미나', 코유키: '세미나', 케이: '초현상특무부', 후부키: '생활안전국', 키쿄: '백화요란 분쟁조정위원회', 히나: '선도부', 마리: '시스터후드' })) {
+  assert.deepEqual(parseEventSpeaker(name), { name, affiliation });
+}
+for (const [name, affiliation] of [['Hoshino', 'Foreclosure Task Force'], ['ホシノ', '対策委員会'], ['星野', '对策委员会']]) {
+  assert.deepEqual(parseEventSpeaker(name), { name, affiliation });
+}
+assert.deepEqual(parseEventSpeaker(' 호시노 （다른 소속） '), { name: '호시노', affiliation: '대책위원회' });
+assert.deepEqual(parseEventSpeaker('안내원(안내소)'), { name: '안내원', affiliation: '안내소' });
 assert.deepEqual(parseEventSpeaker('선생'), { name: '선생', affiliation: '' });
 for (const [W, H] of [[360, 640], [390, 844], [320, 1000], [720, 1280], [1080, 1920]]) {
   for (const aspect of [373 / 668, 572 / 1024]) {
@@ -57,7 +66,7 @@ const landscapeLayout = expressionLayoutAt(1280, 720, 400, 705.6);
 assert.deepEqual(landscapeLayout, { left: 294.4, top: 28.8, size: 80 });
 
 const story = { id: 'effects', title: 'effects', character: '호시노', createdAt: 0, script:
-  '호시노(아비도스) : 안녕 [emotion : hoshino_smallsmile.png, bg : BG_AbydosCouncilRoom.jpg, expression : sweat.png, animation : shakeX, sound : SE_Confirm_01.mp3]\n'
+  '호시노 : 안녕 [emotion : hoshino_smallsmile.png, bg : BG_AbydosCouncilRoom.jpg, expression : sweat.png, animation : shakeX, sound : SE_Confirm_01.mp3]\n'
   + 'sound : SE_Crow_04.wav\nanimation : slideY\nselection : (1)"가자" (2)"쉬자"\ndeleteEmotion\n'
   + '호시노 : 돌아왔어 [emotion : hoshino_smallsmile.png]\ndeleteAll\nnarration : 마지막\nendEvent' };
 const timeline = buildVideoTimeline(story, 0.3, 0.4);
@@ -105,7 +114,7 @@ for (const ratio of ['16:9', '9:16']) {
   near(effectDraw.x, spriteDraw.x + layout.left);
   near(effectDraw.y, spriteDraw.y + layout.top + layout.size / 4);
   near(effectDraw.width, layout.size);
-  assert.ok(frame.texts.some(item => item.text === '아비도스' && item.color === '#6fc5ee'));
+  assert.ok(frame.texts.some(item => item.text === '대책위원회' && item.color === '#6fc5ee'));
   assert.ok(frame.texts.some(item => item.text === '▾'));
   assert.ok(!frame.texts.some(item => item.text === 'AUTO'));
   const moved = render(initial, 0.08);

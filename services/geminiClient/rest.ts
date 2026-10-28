@@ -6,6 +6,7 @@ import { withGenerationLanguage } from '../../shared/prompts/generationLanguage'
 import type { AppLanguage } from '@/storage/types';
 import type { ChatRoom } from '@/shared/chatRoom';
 import { conversationHistory, type ConversationContext } from '../../shared/conversation';
+import { endpoints, parseSelection } from '../../shared/aiProviders';
 
 type Part = { text: string };
 type Content = { role: 'user' | 'model'; parts: Part[] };
@@ -108,6 +109,46 @@ async function generate(apiKey: string, modelName: string, systemInstruction: st
   return text;
 }
 
+async function generateCompatible(provider: 'openrouter' | 'venice', apiKey: string, model: string, instruction: string, history: Content[], message: string, signal?: AbortSignal): Promise<string> {
+  checkCanceled(signal);
+  throwIfOffline();
+  const name = provider === 'openrouter' ? 'OpenRouter' : 'Venice';
+  const fail = (message: string) => Object.assign(new Error(message), { code: 'AI_PROVIDER_ERROR' });
+  if (model === 'auto') {
+    if (provider === 'venice') throw fail('설정에서 Venice 모델을 선택해 주세요. 모델별 API 요금이 적용됩니다.');
+    model = 'openrouter/free';
+  }
+  let response: Response;
+  try {
+    response = await fetch(`${endpoints[provider]}/chat/completions`, {
+      method: 'POST', signal,
+      headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${apiKey}` },
+      body: JSON.stringify({ model, messages: [
+        { role: 'system', content: instruction },
+        ...history.map(item => ({ role: item.role === 'model' ? 'assistant' : 'user', content: item.parts.map(part => part.text).join('') })),
+        { role: 'user', content: message },
+      ] }),
+    });
+  } catch {
+    checkCanceled(signal);
+    throw fail(`${name}에 연결하지 못했습니다. 네트워크 연결을 확인해 주세요.`);
+  }
+  checkCanceled(signal);
+  if (!response.ok) {
+    const reason = response.status === 401 || response.status === 403 ? 'API 키와 모델 접근 권한을 확인해 주세요.'
+      : response.status === 402 ? 'API 크레딧 또는 잔액을 확인해 주세요.'
+      : response.status === 429 ? '사용 한도 또는 요청 빈도를 초과했습니다. 잠시 후 다시 시도해 주세요.'
+      : response.status === 404 ? '설정에서 현재 제공 중인 모델을 선택해 주세요.' : '잠시 후 다시 시도해 주세요.';
+    throw fail(`${name} 요청 실패 (${response.status}). ${reason}`);
+  }
+  const data = await response.json();
+  checkCanceled(signal);
+  const text = data.choices?.[0]?.message?.content;
+  if (data.choices?.[0]?.finish_reason === 'length') throw fail(`${name} 응답이 길이 제한으로 중단됐습니다. 다른 모델을 선택하거나 대화 길이를 줄여 주세요.`);
+  if (typeof text !== 'string' || !text.trim()) throw fail(`${name} 응답이 비어 있습니다. 다른 모델을 선택하거나 다시 시도해 주세요.`);
+  return text.trim();
+}
+
 /** Explicit selection is strict; automatic selection can recover from retired or busy models. */
 export async function sendWithFallback(
   character: string,
@@ -122,11 +163,19 @@ export async function sendWithFallback(
 ): Promise<string> {
   checkCanceled(signal);
   const selection = normalizeModel(modelSelection);
+  const { provider, model } = parseSelection(selection);
+  const instruction = withGenerationLanguage(systemText(character, systemInstruction), language, sessionKey === 'event' ? 'event' : sessionKey === 'select' ? 'select' : 'chat');
+  if (provider !== 'gemini') {
+    const session = sessionFor(character, sessionKey, apiKey, room);
+    const text = await generateCompatible(provider, apiKey, model, instruction, session.history, message, signal);
+    checkCanceled(signal);
+    session.history.push({ role: 'user', parts: [{ text: message }] }, { role: 'model', parts: [{ text }] });
+    return text;
+  }
   const order = await modelOrder(apiKey, selection);
   checkCanceled(signal);
   const attempted = new Set<string>();
   let refreshed = false;
-  const instruction = withGenerationLanguage(systemText(character, systemInstruction), language, sessionKey === 'event' ? 'event' : sessionKey === 'select' ? 'select' : 'chat');
   let lastError: unknown;
 
   for (const modelName of order) {
@@ -159,8 +208,8 @@ export async function sendWithFallback(
 
 export function userApiKey(raw: string): string {
   const apiKey = raw.trim();
-  if (!apiKey) throw new Error('Gemini API 키를 입력하세요');
-  if (apiKey.length > 200) throw new Error('Gemini API 키 형식이 올바르지 않습니다');
+  if (!apiKey) throw new Error('선택한 AI 서비스의 API 키를 입력하세요');
+  if (apiKey.length > 512) throw new Error('API 키 형식이 올바르지 않습니다');
   return apiKey;
 }
 

@@ -12,6 +12,7 @@ function load(file, mocks = {}, globals = {}) {
     compilerOptions: { module: ts.ModuleKind.CommonJS, target: ts.ScriptTarget.ES2022, jsx: ts.JsxEmit.React, esModuleInterop: true },
   }).outputText;
   new Function('require', 'module', 'exports', ...Object.keys(globals), code)(id => {
+    if (id === '../shared/prompts/speakerNames') return require('../shared/prompts/speakerNames');
     if (Object.hasOwn(mocks, id)) return mocks[id];
     if (id.startsWith('@/')) return load(id.slice(2) + '.ts', mocks);
     if (id.startsWith('.')) return load(path.relative(root, path.resolve(root, path.dirname(file), id + '.ts')), mocks);

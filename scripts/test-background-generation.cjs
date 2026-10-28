@@ -62,6 +62,7 @@ const flush = () => new Promise(resolve => setImmediate(resolve));
     },
   };
   const { geminiClient } = load('services/geminiClient/index.ts', {
+    '../geminiModel': { getGeminiModel: () => 'auto' }, '../../shared/aiProviders': require('../shared/aiProviders'),
     'react-native': rn, './directClient': { directClient: transport },
     './expressTransport': { expressTransport: transport }, './errors': {},
     '../../platform/backgroundGeneration': { withBackgroundGeneration },

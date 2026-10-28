@@ -13,9 +13,9 @@ const content: Record<AppLanguage, TutorialPage[]> = {
       '키는 비밀번호와 같습니다. 다른 사람에게 보내거나 채팅·댓글·공개 대본에 붙여 넣지 마세요. API 사용량과 비용은 본인 Google 계정에 적용됩니다.',
     ] },
     { id: 'key', title: "키와 AI 설정", paragraphs: [
-      "톱니바퀴 설정 → AI 및 대화 → Gemini API 키에 붙여 넣고 저장합니다. 좁은 화면에서는 설정 아이콘이 아래쪽에 있습니다.",
+      "톱니바퀴 설정 → AI 및 대화에서 Gemini, OpenRouter, Venice 중 사용할 서비스를 선택하고 해당 서비스의 API 키를 저장합니다. 좁은 화면에서는 설정 아이콘이 아래쪽에 있습니다.",
       "API 키 기억하기를 켜면 이 기기에 저장하고, 끄면 이번 실행에서만 사용합니다. 프로그램에 공용 Gemini 키가 포함되어 있지는 않습니다.",
-      "같은 AI 및 대화 화면에서 Gemini 모델과 선생 모드도 고릅니다. 모델 변경은 다음 요청부터, 순한맛·매운맛 변경은 다음 스토리 생성부터 적용됩니다.",
+      "같은 AI 및 대화 화면에서 AI 모델과 선생 모드도 고릅니다. OpenRouter 자동 선택은 무료 라우터를 사용하고, Venice는 모델을 직접 선택해야 합니다. 무료 이용 한도와 API 요금은 서비스·모델별로 다릅니다. 모델 변경은 다음 요청부터, 순한맛·매운맛 변경은 다음 스토리 생성부터 적용됩니다.",
     ] },
     { id: 'chat', title: '캐릭터와 대화하기', paragraphs: [
       '사람 아이콘에서 상대를 고르고 메시지를 입력한 뒤 보내기를 누릅니다. 먼저 말 걸기를 켜면 방에 들어갈 때 캐릭터가 먼저 말을 겁니다.',
@@ -80,9 +80,9 @@ const content: Record<AppLanguage, TutorialPage[]> = {
     { id: 'welcome', title: 'MomoStory', paragraphs: ['An unofficial fan app for chatting with Blue Archive characters and creating bond stories from your conversations. AI-generated content may differ from the official setting.', 'You can also watch stories in the archive without a Gemini API key. Your own key is required only to generate new chats and stories.'] },
     { id: 'api', title: 'Get a Gemini API key', aiStudio: true, paragraphs: ['1. Open Google AI Studio below and sign in with your own Google account.', '2. Create and copy an API key. Follow Google’s instructions for project requirements and availability.', 'Treat your key like a password. Never send it to others or paste it into chats, comments or public scripts. API usage and charges apply to your Google account.'] },
     { id: 'key', title: "Key and AI settings", paragraphs: [
-      "Open the gear-shaped Settings icon → AI & conversations → Gemini API key, paste your key, and save. On narrow screens, Settings is in the bottom navigation.",
+      "Open Settings → AI & conversations, choose Gemini, OpenRouter or Venice, and save that service's API key. On narrow screens, Settings is in the bottom navigation.",
       "Remember API key keeps it on this device. Turn it off to use it only for the current session. The app does not include a shared Gemini key.",
-      "Choose Gemini model and Sensei mode on the same AI & conversations screen. Model changes apply to the next request; Mild/Spicy changes apply to the next story generation.",
+      "Choose the AI model and Sensei mode on the same screen. OpenRouter Automatic uses its free router; Venice requires a model selection. API prices and free quotas vary by service and model. Model changes apply to the next request; Mild/Spicy changes apply to the next story generation.",
     ] },
     { id: 'chat', title: 'Chat with a character', paragraphs: ['Use the person icon to choose a character, enter a message and send. Enable Greet first to let the character start when you enter.', 'In Bond story chat, Create story becomes available after at least one completed message and character reply. It creates a story from the current conversation and saves it to your library. The initial greeting alone does not count. Chat without an exchange limit and generate whenever you want. After generating or watching a story, continue the same conversation and generate more stories from the accumulated chat.'] },
     { id: 'story', title: 'Play a bond story', paragraphs: ['Tap the dialogue or an empty part of the screen. On PC and web, Space works too. While text is appearing, the first tap completes it; the next advances.', 'Choose options yourself. Normal playback’s AUTO stops at choices. Selecting an option plays your selected chat sound.', 'Background changes fade between scenes, briefly hiding dialogue and choices. Use the in-story volume menu for music and effects.'] },
@@ -111,9 +111,9 @@ const content: Record<AppLanguage, TutorialPage[]> = {
     { id: 'welcome', title: 'MomoStory', paragraphs: ['ブルーアーカイブのキャラクターと会話し、その会話から絆ストーリーを作る非公式ファンアプリです。AIの生成内容は公式設定と異なる場合があります。', 'アーカイブのストーリー鑑賞にGemini APIキーは不要です。新しい会話やストーリーを生成するときだけ、自分のキーを使用します。'] },
     { id: 'api', title: 'Gemini APIキーの取得', aiStudio: true, paragraphs: ['1. 下のボタンでGoogle AI Studioを開き、自分のGoogleアカウントでログインします。', '2. APIキーを作成してコピーします。必要なプロジェクト設定や利用条件はGoogleの案内に従ってください。', 'キーはパスワードと同じです。他人に渡したり、会話・コメント・公開台本に貼り付けたりしないでください。使用量や料金は自分のGoogleアカウントに適用されます。'] },
     { id: 'key', title: "キーとAIの設定", paragraphs: [
-      "歯車の設定 → AIと会話 → Gemini APIキーに貼り付けて保存します。狭い画面では設定は下部タブにあります。",
+      "設定 → AIと会話でGemini、OpenRouter、Veniceからサービスを選び、そのサービスのAPIキーを保存します。狭い画面では設定は下部タブにあります。",
       "APIキーを記憶するとこの端末に保存します。オフの場合は今回の起動中のみ使用します。共用のGeminiキーは含まれていません。",
-      "同じAIと会話の画面でGeminiモデルと先生モードも選べます。モデル変更は次のリクエストから、マイルド・スパイシーの変更は次のストーリー生成から適用されます。",
+      "同じ画面でAIモデルと先生モードも選べます。OpenRouterの自動選択は無料ルーターを使い、Veniceはモデル選択が必要です。API料金と無料利用上限はサービスやモデルで異なります。モデル変更は次のリクエストから、マイルド・スパイシーの変更は次のストーリー生成から適用されます。",
     ] },
     { id: 'chat', title: 'キャラクターと会話する', paragraphs: ['人のアイコンで相手を選び、メッセージを入力して送信します。先に話しかける設定をオンにすると、入室時に相手が話し始めます。', '絆ストーリーチャットでは、メッセージと相手の返答が1往復以上完了すると「ストーリー生成」で現在の会話からストーリーを作り、ライブラリに保存できます。最初の挨拶だけでは生成できません。会話回数に制限はなく、好きなタイミングで生成できます。生成や鑑賞の後も同じ会話を続け、蓄積した会話から新しいストーリーを何度でも生成できます。'] },
     { id: 'story', title: '絆ストーリーの操作', paragraphs: ['会話欄や画面の空いた場所をタップして進めます。PC・Webではスペースキーも使えます。文字表示中は全文を表示し、もう一度押すと次へ進みます。', '選択肢は自分で選びます。通常再生のAUTOも選択肢で止まります。選ぶと設定したチャット効果音が鳴ります。', '背景変更時はフェードし、切り替え中は会話欄と選択肢を一時的に隠します。音量メニューでBGMと効果音を調整できます。'] },
@@ -142,9 +142,9 @@ const content: Record<AppLanguage, TutorialPage[]> = {
     { id: 'welcome', title: 'MomoStory', paragraphs: ['这是与《蔚蓝档案》角色聊天并根据对话生成羁绊故事的非官方同人应用。AI生成的内容可能与官方设定不同。', '观看档案馆故事不需要Gemini API密钥。只有生成新聊天和故事时才需要使用自己的密钥。'] },
     { id: 'api', title: '获取Gemini API密钥', aiStudio: true, paragraphs: ['1. 点击下方按钮打开Google AI Studio，用自己的Google账号登录。', '2. 创建并复制API密钥。所需项目配置和可用条件请遵循Google的说明。', '密钥如同密码。不要提供给他人，也不要粘贴到聊天、评论或公开剧本中。API用量及费用计入你的Google账号。'] },
     { id: 'key', title: "密钥与AI设置", paragraphs: [
-      "打开齿轮设置 → AI与对话 → Gemini API密钥，粘贴后保存。窄屏的设置位于底部导航。",
+      "打开设置 → AI与对话，选择Gemini、OpenRouter或Venice，然后保存该服务的API密钥。窄屏的设置位于底部导航。",
       "开启记住API密钥会保存在本设备；关闭后仅本次运行有效。应用不包含公用Gemini密钥。",
-      "同一AI与对话页面还可选择Gemini模型与老师模式。模型更改从下一次请求生效；温和或辛辣模式从下次生成故事起生效。",
+      "同一页面还可选择AI模型与老师模式。OpenRouter自动选择使用免费路由；Venice需要选择模型。API费用与免费限额因服务和模型而异。模型更改从下一次请求生效；温和或辛辣模式从下次生成故事起生效。",
     ] },
     { id: 'chat', title: '与角色聊天', paragraphs: ['点击人物图标选择角色，输入消息并发送。开启主动开场后，进入时角色会先说话。', '在羁绊故事聊天室中，至少完成一组消息与角色回复后，即可点击“生成故事”，根据当前对话生成故事并保存到资料库。仅有开场问候不算一组。聊天轮数不限，可自行选择生成时机。生成或看完故事后仍可继续原来的对话，并根据累积的对话再次生成新故事。'] },
     { id: 'story', title: '推进羁绊故事', paragraphs: ['点击对话框或画面空白处推进。PC和网页也支持空格键。文字显示中先补全句子，再次点击进入下一句。', '选项须自行选择，普通播放的AUTO也会在选项处暂停。选择时播放设置中的聊天音效。', '背景变化时淡出淡入，并暂时隐藏对话和选项。可在故事音量菜单中调整背景音乐及音效。'] },

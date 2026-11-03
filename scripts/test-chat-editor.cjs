@@ -11,6 +11,8 @@ function load(file, mocks) {
     compilerOptions: { module: ts.ModuleKind.CommonJS, target: ts.ScriptTarget.ES2022, jsx: ts.JsxEmit.React, esModuleInterop: true },
   }).outputText;
   new Function('require', 'module', 'exports', source)(id => {
+    if (id.endsWith('/chatImages')) return require('../shared/chatImages');
+    if (id === '@/platform/chatImagePicker') return { bindChatImagePaste: () => () => {}, pickChatImage: async () => ({ mimeType: 'image/png', data: 'aGVsbG8=' }) };
     assert.ok(Object.hasOwn(mocks, id), `Unexpected import ${id}`);
     return mocks[id];
   }, mod, mod.exports);

@@ -2,6 +2,8 @@ import { loadStories, saveStories, subscribeStorage } from '@/storage';
 import type { SavedChatMessage, StoryRecord, StoryEpisode } from '@/storage/types';
 import { canonicalCharacterName } from '../shared/prompts/speakerNames';
 
+import { hasChatImages } from '../shared/chatImages';
+
 export type SavedStory = StoryRecord;
 
 export function subscribeStories(listener: () => void) {
@@ -83,13 +85,13 @@ export function publicationStory(story: SavedStory, episodeId?: string): SavedSt
   return { ...selected, id: story.id, title: titleOf(selected.script, selected.character) };
 }
 
-export function updateRoom(id: string, change: Partial<Pick<SavedStory, 'title' | 'chatMessages' | 'episodes'>>): SavedStory | null {
+export function updateRoom(id: string, change: Partial<Pick<SavedStory, 'title' | 'chatMessages' | 'episodes' | 'hasImageHistory'>>): SavedStory | null {
   const stories = readStored();
   const index = stories.findIndex(story => story.id === id);
   if (index < 0) return null;
   const current = stories[index];
   const episodes = change.episodes ?? episodesOf(current);
-  const next = { ...current, ...change, episodes, script: episodes.at(-1)?.script ?? '', updatedAt: Date.now() };
+  const next = { ...current, ...change, hasImageHistory: hasChatImages(current) || hasChatImages(change), episodes, script: episodes.at(-1)?.script ?? '', updatedAt: Date.now() };
   stories[index] = next;
   writeStored(stories);
   return next;
@@ -113,7 +115,7 @@ export function updateStory(id: string, script: string, chatMessages?: SavedChat
   const stories = readStored();
   const index = stories.findIndex((story) => story.id === id);
   if (index < 0) return null;
-  const next = { ...stories[index], script, title: titleOf(script, stories[index].character),
+  const next = { ...stories[index], hasImageHistory: hasChatImages(stories[index]) || hasChatImages({ chatMessages }), script, title: titleOf(script, stories[index].character),
     ...(stories[index].episodes?.length ? { episodes: stories[index].episodes!.map((episode, episodeIndex, episodes) => episodeIndex === episodes.length - 1 ? { ...episode, script, title: titleOf(script, stories[index].character) } : episode) } : {}),
     ...(chatMessages !== undefined ? { chatMessages: chatMessages.map(message => ({ ...message })) } : {}),
   };
@@ -138,6 +140,7 @@ export function importSharedStory(source: SavedStory): SavedStory {
   const existing = stories.find(story => story.id === source.id);
   if (existing) return existing;
   const story: SavedStory = {
+    hasImageHistory: hasChatImages(source),
     id: source.id, title: source.title, character: source.character, script: source.script,
     createdAt: Date.now(),
     ...(source.chatMessages ? { chatMessages: source.chatMessages.map(message => ({ ...message })) } : {}),
@@ -150,6 +153,7 @@ export function importSharedStory(source: SavedStory): SavedStory {
 export function saveStory(character: string, script: string, chatMessages?: SavedChatMessage[]): SavedStory {
   const story: SavedStory = {
     id: `${Date.now()}-${Math.random().toString(36).slice(2, 8)}`,
+    hasImageHistory: hasChatImages({ chatMessages }),
     title: titleOf(script, character),
     character,
     script,

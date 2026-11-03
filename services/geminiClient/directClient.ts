@@ -1,3 +1,4 @@
+import { checkImageBudget, messageParts, type ChatImage } from '../../shared/chatImages';
 import { resources } from '../../shared/prompts';
 import { buildEventPromptPro } from '../../shared/prompts/promptBuilderPro';
 import { buildSelectionPrompt } from '../../shared/prompts/selectionPromptBuilder';
@@ -49,13 +50,14 @@ export const directClient = {
     return { triggerLine };
   },
 
-  async chat(character: string, message: string, room: ChatRoom = 'bond', context?: ConversationContext, signal?: AbortSignal) {
+  async chat(character: string, message: string, room: ChatRoom = 'bond', context?: ConversationContext, signal?: AbortSignal, images?: ChatImage[]) {
     const language = getAppLanguage();
     const apiKey = readKey();
-    if (!character || !message) throw new Error('character 또는 message 누락');
+    if (!character || (!message && !images?.length)) throw new Error('character 또는 message 누락');
+    checkImageBudget(context?.messages ?? [], images);
     const sessionRoom = context ? `room-${context.id}` : room;
     if (context) restoreConversation(character, apiKey, sessionRoom, context);
-    const reply = await sendWithFallback(character, '', message, undefined, apiKey, language, sessionRoom, undefined, signal);
+    const reply = await sendWithFallback(character, '', messageParts(message, images), undefined, apiKey, language, sessionRoom, undefined, signal);
     if (signal?.aborted) throw Object.assign(new Error('REQUEST_CANCELED'), { name: 'AbortError' });
     const eventReady = room === 'bond' && (context ? true : pushLog(character, apiKey, { user: message, ai: reply }));
     return { reply, eventReady };

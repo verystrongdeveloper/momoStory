@@ -11,11 +11,14 @@ import { screenOrientationTranslations } from './screenOrientation';
 import { settingsTranslations } from './settings';
 import { aiProviderTranslations } from './aiProvider';
 
+import { chatImageTranslations } from './chatImages';
+
 type Dictionary = Record<string, string>;
 
 const translations: Record<AppLanguage, Dictionary> = {
   ko: {
     ...aiProviderTranslations.ko,
+    ...chatImageTranslations.ko,
     cancelMessage: '응답 취소',
     ...notificationTranslations.ko,
     ...screenOrientationTranslations.ko,
@@ -66,6 +69,7 @@ const translations: Record<AppLanguage, Dictionary> = {
   },
   en: {
     ...aiProviderTranslations.en,
+    ...chatImageTranslations.en,
     cancelMessage: 'Cancel reply',
     ...notificationTranslations.en,
     ...screenOrientationTranslations.en,
@@ -116,6 +120,7 @@ const translations: Record<AppLanguage, Dictionary> = {
   },
   ja: {
     ...aiProviderTranslations.ja,
+    ...chatImageTranslations.ja,
     cancelMessage: '返信をキャンセル',
     ...notificationTranslations.ja,
     ...screenOrientationTranslations.ja,
@@ -166,6 +171,7 @@ const translations: Record<AppLanguage, Dictionary> = {
   },
   zh: {
     ...aiProviderTranslations.zh,
+    ...chatImageTranslations.zh,
     cancelMessage: '取消回复',
     ...notificationTranslations.zh,
     ...screenOrientationTranslations.zh,

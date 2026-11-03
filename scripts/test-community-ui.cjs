@@ -9,7 +9,7 @@ const root = path.resolve(__dirname, '..');
 function load(file, mocks) {
   const mod = { exports: {} };
   const code = ts.transpileModule(fs.readFileSync(path.join(root, file), 'utf8'), { compilerOptions: { module: ts.ModuleKind.CommonJS, target: ts.ScriptTarget.ES2022, jsx: ts.JsxEmit.React, esModuleInterop: true } }).outputText;
-  new Function('require', 'module', 'exports', code)(id => Object.hasOwn(mocks, id) ? mocks[id] : require(id), mod, mod.exports);
+  new Function('require', 'module', 'exports', code)(id => Object.hasOwn(mocks, id) ? mocks[id] : id.endsWith('/chatImages') ? require('../shared/chatImages') : id === '@/store/storyLibrary' ? { listStories: () => [] } : require(id), mod, mod.exports);
   return mod.exports;
 }
 const rn = Object.fromEntries(['View', 'Text', 'Modal', 'Pressable', 'TextInput', 'ScrollView', 'TouchableOpacity', 'ActivityIndicator', 'Image'].map(name => [name, name]));
@@ -306,5 +306,11 @@ const hasCount = (tree, count) => tree.root.findAllByType('Text').some(text => J
   assert.equal(avatarLoaded, 1); assert.equal(avatarFailed, 1);
   await React.act(async () => tree.unmount());
   for (const language of ['en', 'ja', 'zh']) assert.deepEqual(Object.keys(translations[language]).sort(), Object.keys(translations.ko).sort());
+  await React.act(async () => tree.unmount());
+  await React.act(async () => { tree = Renderer.create(React.createElement(Publish, { story: { ...publishStory, hasImageHistory: true, chatMessages: [] }, onClose() {} })); });
+  assert.ok(has(tree, 'imageHistoryPrivate'));
+  assert.equal(tree.root.findAllByProps({ accessibilityRole: 'checkbox' }).length, 0);
+  assert.equal(button(tree, 'communityPublish'), undefined, 'private rooms cannot choose story-only publishing');
+  await React.act(async () => tree.unmount());
   console.log('PASS setup state, publish consent/duplicate guard, liked feed/search/sort, read-only chat-story playback, likes/comments/rate errors/Unicode lengths, library publish entry and four-language UI');
 })().catch(error => { console.error(error); process.exitCode = 1; });

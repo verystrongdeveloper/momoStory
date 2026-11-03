@@ -1,3 +1,4 @@
+import { type ChatImage } from '../../shared/chatImages';
 import { Platform } from 'react-native';
 import { directClient } from './directClient';
 import { expressTransport } from './expressTransport';
@@ -57,6 +58,6 @@ export const geminiClient = {
     return track(slot, async () => { await Promise.allSettled(previous); return transport.reset(character, room); });
   },
   trigger: (character: string, room: ChatRoom = 'bond', signal?: AbortSignal) => track(`${character}:${room}`, () => withBackgroundGeneration(() => cancellable(signal, () => current().trigger(character, room, signal)))),
-  chat: (character: string, message: string, room: ChatRoom = 'bond', context?: ConversationContext, signal?: AbortSignal) => track(`${character}:${context?.id ?? room}`, () => withBackgroundGeneration(() => cancellable(signal, () => current().chat(character, message, room, context, signal)))),
+  chat: (character: string, message: string, room: ChatRoom = 'bond', context?: ConversationContext, signal?: AbortSignal, images?: ChatImage[]) => track(`${character}:${context?.id ?? room}`, () => withBackgroundGeneration(() => cancellable(signal, () => current().chat(character, message, room, context, signal, images)))),
   createEvent: (character: string, context?: ConversationContext) => track(`${character}:${context?.id ?? 'bond'}`, () => withBackgroundGeneration(() => current().createEvent(character, context))),
 };

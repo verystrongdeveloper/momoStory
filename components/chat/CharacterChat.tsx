@@ -4,6 +4,7 @@ import {
   AppState,
   FlatList,
   ImageSourcePropType,
+  Image,
   Keyboard,
   Modal,
   Pressable,
@@ -31,6 +32,9 @@ import { splitChatReply } from '@/utils/splitChatReply';
 import useChatPop from '@/hooks/useChatPop';
 import type { ChatRoom } from '@/shared/chatRoom';
 
+import { bindChatImagePaste, pickChatImage } from '@/platform/chatImagePicker';
+import { imageUri, MAX_MESSAGE_IMAGES, checkImageBudget, type ChatImage } from '../../shared/chatImages';
+
 export type ChatRefreshAction = { onPress: () => void; disabled: boolean; generate?: { onPress: () => void; disabled: boolean } };
 
 interface Props {
@@ -44,6 +48,7 @@ interface Props {
   onStoryActions?: (storyId: string) => void;
   onRefreshActionChange?: (action: ChatRefreshAction | null) => void;
 }
+
 
 type Chat = TemporaryMessage;
 
@@ -79,6 +84,32 @@ const CharacterChat: React.FC<Props> = ({ characterName, room = 'bond', displayN
   }, [characterName, apiKey, room, conversation?.id]);
   const draft = useSyncExternalStore(session.subscribe, session.getSnapshot, session.getSnapshot);
   const { messages, input, isWaiting, completedPairs } = draft;
+  const images = draft.images ?? [];
+  const [imageError, setImageError] = useState('');
+  const [pickingImage, setPickingImage] = useState(false);
+  const imageLoadPending = useRef(false);
+  const attachImages = useCallback(async (load: () => Promise<ChatImage[]>) => {
+    const current = session.getSnapshot();
+    const generation = current.generation;
+    if (savedStory || !hasKey || imageLoadPending.current || current.isWaiting) return;
+    if ((current.images?.length ?? 0) >= MAX_MESSAGE_IMAGES) { setImageError(t('chatImageFailed')); return; }
+    imageLoadPending.current = true;
+    setPickingImage(true); setImageError('');
+    try {
+      const added = await load();
+      const latest = session.getSnapshot();
+      if (!added.length || latest.generation !== generation || latest.isWaiting) return;
+      const pending = [...(latest.images ?? []), ...added];
+      if (pending.length > MAX_MESSAGE_IMAGES) throw new Error('INVALID_CHAT_IMAGES');
+      checkImageBudget(latest.messages, pending);
+      session.update({ images: pending });
+    } catch (error) { setImageError(t(error instanceof Error && error.message === 'CHAT_IMAGE_BUDGET' ? 'chatImageBudget' : 'chatImageFailed')); }
+    finally { imageLoadPending.current = false; setPickingImage(false); }
+  }, [session, savedStory, hasKey, t]);
+  const attachImage = () => attachImages(async () => {
+    const image = await pickChatImage();
+    return image ? [image] : [];
+  });
   const [, refreshLibrary] = useState(0);
   useEffect(() => subscribeStories(() => refreshLibrary(value => value + 1)), []);
   const storedRoom = draft.roomId ? listStories().find(story => story.id === draft.roomId) : conversation;
@@ -125,6 +156,10 @@ const CharacterChat: React.FC<Props> = ({ characterName, room = 'bond', displayN
   useChatPop(shownMessages);
 
   const inputRef = useRef<TextInput>(null);
+  useFocusEffect(useCallback(() => {
+    if (savedStory || !hasKey) return;
+    return bindChatImagePaste(inputRef.current, load => { void attachImages(load); });
+  }, [savedStory, hasKey, attachImages]));
   const listRef = useRef<FlatList<Chat>>(null);
   const setWaiting = (value: boolean) => session.update({ isWaiting: value });
   const ensureFreshConversation = async (generation: number) => {
@@ -238,22 +273,25 @@ const CharacterChat: React.FC<Props> = ({ characterName, room = 'bond', displayN
 
   const handleSend = async () => {
     const text = input.trim();
-    if (savedStory || !hasKey || !text || session.getSnapshot().isWaiting) return;
+    if (savedStory || !hasKey || (!text && !images.length) || pickingImage || session.getSnapshot().isWaiting) return;
+    try { checkImageBudget(messages, images); } catch { setImageError(t('chatImageBudget')); return; }
+    setImageError('');
     const generation = session.getSnapshot().generation;
 
     const controller = new AbortController();
     session.update({ isWaiting: true, replyController: controller });
     setMessages((prev) => [
       ...prev,
-      { sender: 'user', text },
+      { sender: 'user', text, ...(images.length ? { images } : {}) },
       { sender: 'typing', text: '···', showImage: true },
     ]);
     setInput('');
+    session.update({ images: [] });
 
     try {
       await ensureFreshConversation(generation);
       if (session.getSnapshot().generation !== generation) return;
-      const { reply, eventReady: ready } = await geminiClient.chat(characterName, text, room, contextFor(messages), controller.signal);
+      const { reply, eventReady: ready } = await geminiClient.chat(characterName, text, room, contextFor(messages), controller.signal, images);
       if (session.getSnapshot().generation !== generation) return;
       session.update({ replyController: undefined });
       setEventReady(includeBondStory && ready);
@@ -351,9 +389,10 @@ const CharacterChat: React.FC<Props> = ({ characterName, room = 'bond', displayN
         )}
         <View style={styles.messageColumn}>
           {!isUser && item.showImage && <Text style={[styles.charName, sizeStyles.charName]}>{visibleName}</Text>}
-          <Text style={[styles.bubble, isUser ? styles.userBubble : styles.charBubble, isTyping && styles.typingBubble, sizeStyles.bubble]}>
+          {!!item.images?.length && <View style={styles.messageImages}>{item.images.map((image, imageIndex) => <Image key={imageIndex} accessibilityLabel={t('chatAttachedImage')} source={{ uri: imageUri(image) }} style={styles.messageImage} resizeMode="contain" />)}</View>}
+          {!!item.text && <Text style={[styles.bubble, isUser ? styles.userBubble : styles.charBubble, isTyping && styles.typingBubble, sizeStyles.bubble]}>
             {item.text}
-          </Text>
+          </Text>}
         </View>
       </View>
       {!isTyping && storyPoints.filter(point => point.after === messageOffsets[index]).map(point => renderStory(point.story))}
@@ -397,7 +436,17 @@ const CharacterChat: React.FC<Props> = ({ characterName, room = 'bond', displayN
           <Text style={[styles.eventButtonText, styles.quickGenerateText]}>{t('generateStoryNow')}</Text>
         </TouchableOpacity>
       </View>}
-      {!savedStory && <View style={styles.inputArea}>
+      {!savedStory && <View>
+        {!!images.length && <View style={styles.attachmentTray}>{images.map((image, index) => <View key={index}>
+          <Image accessibilityLabel={t('chatAttachedImage')} source={{ uri: imageUri(image) }} style={styles.attachmentPreview} resizeMode="contain" />
+          <TouchableOpacity accessibilityRole="button" accessibilityLabel={t('chatRemoveImage')} disabled={isWaiting} onPress={() => session.update({ images: images.filter((_, i) => i !== index) })} style={styles.removeImage}><Ionicons name="close-circle" size={22} color="#a33a54" /></TouchableOpacity>
+        </View>)}</View>}
+        {!!imageError && <Text accessibilityRole="alert" style={styles.imageNotice}>{imageError}</Text>}
+        {!!images.length && <Text style={styles.imageNotice}>{t('chatImageNotice')}</Text>}
+        <View style={styles.inputArea}>
+        <TouchableOpacity accessibilityRole="button" accessibilityLabel={t('chatAttachImage')} disabled={!hasKey || isWaiting || pickingImage || images.length >= MAX_MESSAGE_IMAGES} onPress={() => void attachImage()} style={styles.attachButton}>
+          <Ionicons name="image-outline" size={24} color="#87616e" />
+        </TouchableOpacity>
         <TextInput
           ref={inputRef}
           style={[styles.input, sizeStyles.input, (!hasKey || isWaiting) && styles.inputLocked]}
@@ -408,9 +457,9 @@ const CharacterChat: React.FC<Props> = ({ characterName, room = 'bond', displayN
           onSubmitEditing={handleSend}
           blurOnSubmit={false}
         />
-        <Button title={t('send')} onPress={handleSend} disabled={!hasKey || isWaiting} />
+        <Button title={t('send')} onPress={handleSend} disabled={!hasKey || isWaiting || pickingImage} />
         {!!draft.replyController && <Button title={t('cancelMessage')} onPress={cancelMessage} />}
-      </View>}
+      </View></View>}
       {replaying && (
         <Pressable
           style={styles.replaySkip}
@@ -437,6 +486,13 @@ const CharacterChat: React.FC<Props> = ({ characterName, room = 'bond', displayN
 export default CharacterChat;
 
 const styles = StyleSheet.create({
+  attachmentTray: { flexDirection: 'row', gap: 12, paddingHorizontal: 12, paddingTop: 8 },
+  attachmentPreview: { width: 80, height: 80, borderRadius: 8, backgroundColor: '#f8edf1' },
+  removeImage: { position: 'absolute', right: -6, top: -6, padding: 4 },
+  attachButton: { padding: 8, justifyContent: 'center' },
+  imageNotice: { fontSize: 12, color: '#87616e', paddingHorizontal: 12, paddingVertical: 4 },
+  messageImages: { gap: 8, marginBottom: 6 },
+  messageImage: { width: 220, height: 180, maxWidth: '100%', borderRadius: 10, backgroundColor: '#f8edf1' },
   refreshBar: { flexDirection: 'row', alignItems: 'center', justifyContent: 'flex-end', gap: 6, paddingHorizontal: 12, paddingTop: 10, paddingBottom: 4 },
   generateBar: { flexShrink: 0, width: '100%', maxWidth: 520, alignSelf: 'center', paddingHorizontal: 12, paddingTop: 6, paddingBottom: 8 },
   quickGenerate: { alignSelf: 'center', maxWidth: '100%', minHeight: 44, justifyContent: 'center', alignItems: 'center' },

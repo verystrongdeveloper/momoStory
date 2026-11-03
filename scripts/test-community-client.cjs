@@ -6,13 +6,14 @@ const root = path.resolve(__dirname, '..');
 function compile(file, mocks, globals = {}) {
   const mod = { exports: {} };
   const code = ts.transpileModule(fs.readFileSync(path.join(root, file), 'utf8'), { compilerOptions: { module: ts.ModuleKind.CommonJS, target: ts.ScriptTarget.ES2022, esModuleInterop: true } }).outputText;
-  new Function('require', 'module', 'exports', ...Object.keys(globals), code)(id => Object.hasOwn(mocks, id) ? mocks[id] : require(id), mod, mod.exports, ...Object.values(globals));
+  new Function('require', 'module', 'exports', ...Object.keys(globals), code)(id => Object.hasOwn(mocks, id) ? mocks[id] : id.endsWith('/chatImages') ? require('../shared/chatImages') : id === '@/store/storyLibrary' ? { listStories: () => [] } : require(id), mod, mod.exports, ...Object.values(globals));
   return mod.exports;
 }
 (async () => {
   const validation = compile('shared/community/validation.ts', {});
   let sessions = 0, signIns = 0, creations = 0, appListeners = 0, authError = false;
   const requests = [], options = [];
+  let localStories = [];
   const mocks = {
     'react-native-url-polyfill/auto': {},
     '@react-native-async-storage/async-storage': { setItem() {}, getItem() {} },
@@ -23,6 +24,7 @@ function compile(file, mocks, globals = {}) {
     } },
     '@/shared/community/assets.json': require('../shared/community/assets.json'),
     '@/shared/community/validation': validation,
+    '@/store/storyLibrary': { listStories: () => localStories },
   };
   const file = 'services/community/client.ts';
   const absent = compile(file, mocks, { process: { env: {} } });
@@ -59,6 +61,11 @@ function compile(file, mocks, globals = {}) {
   assert.equal(storyOnlyBody.data.clientId, story.id, 'scope does not bypass duplicate-publication checks');
   assert.deepEqual(story.chatMessages, [{ sender: 'user', text: 'hi' }], 'upload does not mutate local chat');
   assert.throws(() => connected.community.publish({ ...story, script: 'invalid' }));
+  const requestsBeforePrivate = requests.length;
+  assert.throws(() => connected.community.publish({ ...story, hasImageHistory: true, chatMessages: [] }), error => error.code === 'IMAGE_HISTORY_PRIVATE');
+  localStories = [{ ...story, hasImageHistory: true, chatMessages: [] }];
+  assert.throws(() => connected.community.publish({ ...story, chatMessages: [] }), error => error.code === 'IMAGE_HISTORY_PRIVATE', 'stale dialogs cannot bypass an updated local room restriction');
+  assert.equal(requests.length, requestsBeforePrivate, 'private stories never reach Supabase');
   apiError = 'RATE_LIMIT';
   await assert.rejects(() => connected.community.like('id', true), error => connected.communityErrorKey(error) === 'communityRateLimit');
   authError = true;

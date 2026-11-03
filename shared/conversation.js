@@ -1,16 +1,19 @@
+const { messageParts, validateImages, checkImageBudget } = require('./chatImages');
 // Stored room context is sent explicitly so a room survives app/server restarts.
 function conversationContext(value) {
   if (!value || typeof value.id !== 'string' || !/^[\w-]{1,100}$/.test(value.id)) return null;
   const messages = Array.isArray(value.messages) ? value.messages.filter(message =>
     message && (message.sender === 'user' || message.sender === 'character') && typeof message.text === 'string') : [];
   const scripts = Array.isArray(value.scripts) ? value.scripts.filter(script => typeof script === 'string') : [];
+  for (const message of messages) validateImages(message.images);
+  checkImageBudget(messages);
   return { id: value.id, messages, scripts };
 }
 function dialogPairs(messages) {
   const pairs = [];
   let user = null;
   for (const message of messages) {
-    if (message.sender === 'user') { user = message.text; }
+    if (message.sender === 'user') { user = message.text || (message.images?.length ? '(이미지 첨부)' : ''); }
     else if (user !== null) { pairs.push({ user, ai: message.text }); user = null; }
     else if (pairs.length) { pairs[pairs.length - 1].ai += '\n' + message.text; }
   }
@@ -28,8 +31,10 @@ function conversationHistory(context) {
   for (const message of context.messages) {
     const role = message.sender === 'user' ? 'user' : 'model';
     const last = history[history.length - 1];
-    if (last?.role === role) last.parts[0].text += '\n' + message.text;
-    else history.push({ role, parts: [{ text: message.text }] });
+    const parts = messageParts(message.text, role === 'user' ? message.images : undefined);
+    if (!parts.length) continue;
+    if (last?.role === role) last.parts.push(...parts);
+    else history.push({ role, parts });
   }
   // Gemini requires chat history to begin with a user turn.
   if (history[0]?.role === 'model') history.unshift({ role: 'user', parts: [{ text: '(이전 대화)' }] });

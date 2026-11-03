@@ -6,6 +6,7 @@ const React = require('react');
 const Renderer = require('react-test-renderer');
 global.IS_REACT_ACT_ENVIRONMENT = true;
 
+let pasteAttach;
 let apiKey = 'test-key', greet = false, chatCalls = [], triggerCalls = [], resetCalls = [], eventCalls = [], savedStories = [], failSave = false;
 const pending = queue => new Promise((resolve, reject) => queue.push({ resolve, reject }));
 const timers = new Map();
@@ -26,7 +27,7 @@ let storedRows = [];
 const libraryModule = { exports: {} };
 new Function('require', 'module', 'exports', ts.transpileModule(fs.readFileSync(path.join(__dirname, '../store/storyLibrary.ts'), 'utf8'), {
  compilerOptions: { module: ts.ModuleKind.CommonJS, target: ts.ScriptTarget.ES2022 },
-}).outputText)(id => id === '@/storage' ? { loadStories: () => storedRows, saveStories: rows => { storedRows = rows; }, subscribeStorage: () => () => {} } : require('../shared/prompts/speakerNames'), libraryModule, libraryModule.exports);
+}).outputText)(id => id === '@/storage' ? { loadStories: () => storedRows, saveStories: rows => { storedRows = rows; }, subscribeStorage: () => () => {} } : id.endsWith('/chatImages') ? require('../shared/chatImages') : require('../shared/prompts/speakerNames'), libraryModule, libraryModule.exports);
 const library = libraryModule.exports;
 const testLibrary = { ...library, saveStory(...args) { return library.saveStory(...args); }, appendRoomStory(...args) {
  if (failSave) throw new Error('save failed');
@@ -53,7 +54,9 @@ const source = ts.transpileModule(fs.readFileSync(path.join(__dirname, '../compo
   compilerOptions: { module: ts.ModuleKind.CommonJS, target: ts.ScriptTarget.ES2022, jsx: ts.JsxEmit.React, esModuleInterop: true },
 }).outputText;
 new Function('require', 'module', 'exports', 'setTimeout', 'clearTimeout', source)(id => {
-  assert.ok(Object.hasOwn(mocks, id), `Unexpected import ${id}`);
+  if (id.endsWith('/chatImages')) return require('../shared/chatImages');
+    if (id === '@/platform/chatImagePicker') return { bindChatImagePaste: (_target, attach) => { pasteAttach = attach; return () => { pasteAttach = undefined; }; }, pickChatImage: async () => ({ mimeType: 'image/png', data: 'aGVsbG8=' }) };
+    assert.ok(Object.hasOwn(mocks, id), `Unexpected import ${id}`);
   return mocks[id];
 }, mod, mod.exports, (fn, ms) => { timers.set(++timerId, { fn, ms }); return timerId; }, id => timers.delete(id));
 const Chat = mod.exports.default;
@@ -567,6 +570,28 @@ process.once('beforeExit', () => { if (!completed) { console.error('FAIL unfinis
   assert.ok(!cancelSession.getSnapshot().messages.some(item => item.sender === 'typing'));
   assert.equal(cancelSession.getSnapshot().completedPairs, 2, 'bubble playback finishes and counts the complete reply');
   assert.ok(!library.listStories().find(item => item.id === cancelSession.getSnapshot().roomId).chatMessages.some(item => item.sender === 'typing'));
+  await unmount();
+  await mount({ characterName: 'image-chat-test' });
+  const attach = () => tree.root.findAllByType('TouchableOpacity').find(node => node.props.accessibilityLabel === 'chatAttachImage');
+  await React.act(async () => attach().props.onPress());
+  assert.equal(temporaryChats.getTemporaryChat('image-chat-test', apiKey).getSnapshot().images.length, 1);
+  await type('What is in this picture?');
+  await React.act(async () => { sending = send().props.onPress(); });
+  const imageRequest = chatCalls.at(-1);
+  assert.equal(imageRequest.args[1], 'What is in this picture?');
+  assert.equal(imageRequest.args[5][0].mimeType, 'image/png');
+  await React.act(async () => imageRequest.resolve({ reply: 'I can see it.', eventReady: true }));
+  await React.act(async () => sending);
+  const imageRoom = library.listStories().find(item => item.character === 'image-chat-test');
+  assert.equal(imageRoom.hasImageHistory, true);
+  await React.act(async () => pasteAttach(async () => [{ mimeType: 'image/png', data: 'aGVsbG8=' }]));
+  assert.equal(temporaryChats.getTemporaryChat('image-chat-test', apiKey).getSnapshot().images.length, 1, 'clipboard images enter the same attachment draft');
+  await React.act(async () => { sending = send().props.onPress(); });
+  assert.equal(chatCalls.at(-1).args[1], '', 'image-only messages are accepted');
+  assert.equal(chatCalls.at(-1).args[3].messages[0].images.length, 1, 'previous images survive room hydration');
+  await React.act(async () => chatCalls.at(-1).resolve({ reply: 'Another picture.', eventReady: true }));
+  await React.act(async () => sending);
+  assert.equal(library.updateRoom(imageRoom.id, { chatMessages: [], hasImageHistory: false }).hasImageHistory, true, 'deleting messages cannot clear image history');
   await unmount();
   completed = true;
   console.log('PASS input/send/Enter lock during requests and multi-sentence replies, rapid duplicate prevention, greeting lock, empty/error recovery, missing key and saved chat');

@@ -1,3 +1,4 @@
+import { type ChatImage } from '../../shared/chatImages';
 import { getGeminiModel } from '../geminiModel';
 import { getSenseiMode } from '../senseiMode';
 import { getGeminiKey } from '@/services/geminiKey';
@@ -38,8 +39,8 @@ export const expressTransport = {
   trigger: (character: string, room: ChatRoom = 'bond', signal?: AbortSignal) =>
     post<{ triggerLine: string }>('/api/trigger', { character, room }, signal),
 
-  chat: (character: string, message: string, room: ChatRoom = 'bond', context?: ConversationContext, signal?: AbortSignal) =>
-    post<{ reply: string; eventReady: boolean }>('/api/chat', { character, message, room, context }, signal),
+  chat: (character: string, message: string, room: ChatRoom = 'bond', context?: ConversationContext, signal?: AbortSignal, images?: ChatImage[]) =>
+    post<{ reply: string; eventReady: boolean }>('/api/chat', { character, message, room, context, images }, signal),
 
   createEvent: (character: string, context?: ConversationContext) =>
     post<{ eventScript: string }>('/api/event', { character, context, senseiMode: getSenseiMode() }),

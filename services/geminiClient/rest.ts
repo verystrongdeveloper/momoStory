@@ -8,7 +8,15 @@ import type { ChatRoom } from '@/shared/chatRoom';
 import { conversationHistory, type ConversationContext } from '../../shared/conversation';
 import { endpoints, parseSelection } from '../../shared/aiProviders';
 
-type Part = { text: string };
+type Part = import('../../shared/chatImages').ChatPart;
+type Input = string | Part[];
+const partsFor = (message: Input): Part[] => typeof message === 'string' ? [{ text: message }] : message;
+function compatibleContent(parts: Part[]) {
+  if (!parts.some(part => part.inlineData)) return parts.map(part => part.text ?? '').join('');
+  return parts.map(part => part.inlineData
+    ? { type: 'image_url', image_url: { url: 'data:' + part.inlineData.mimeType + ';base64,' + part.inlineData.data } }
+    : { type: 'text', text: part.text });
+}
 type Content = { role: 'user' | 'model'; parts: Part[] };
 
 type Session = {
@@ -60,7 +68,7 @@ class GeminiHttpError extends Error {
 function checkCanceled(signal?: AbortSignal) {
   if (signal?.aborted) throw Object.assign(new Error('REQUEST_CANCELED'), { name: 'AbortError' });
 }
-async function generate(apiKey: string, modelName: string, systemInstruction: string, history: Content[], message: string, signal?: AbortSignal): Promise<string> {
+async function generate(apiKey: string, modelName: string, systemInstruction: string, history: Content[], message: Input, signal?: AbortSignal): Promise<string> {
   checkCanceled(signal);
   throwIfOffline();
   let res: Response;
@@ -76,7 +84,7 @@ async function generate(apiKey: string, modelName: string, systemInstruction: st
         },
         body: JSON.stringify({
           systemInstruction: { parts: [{ text: systemInstruction }] },
-          contents: [...history, { role: 'user', parts: [{ text: message }] }],
+          contents: [...history, { role: 'user', parts: partsFor(message) }],
         }),
       },
     );
@@ -109,7 +117,7 @@ async function generate(apiKey: string, modelName: string, systemInstruction: st
   return text;
 }
 
-async function generateCompatible(provider: 'openrouter' | 'venice', apiKey: string, model: string, instruction: string, history: Content[], message: string, signal?: AbortSignal): Promise<string> {
+async function generateCompatible(provider: 'openrouter' | 'venice', apiKey: string, model: string, instruction: string, history: Content[], message: Input, signal?: AbortSignal): Promise<string> {
   checkCanceled(signal);
   throwIfOffline();
   const name = provider === 'openrouter' ? 'OpenRouter' : 'Venice';
@@ -125,8 +133,8 @@ async function generateCompatible(provider: 'openrouter' | 'venice', apiKey: str
       headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${apiKey}` },
       body: JSON.stringify({ model, messages: [
         { role: 'system', content: instruction },
-        ...history.map(item => ({ role: item.role === 'model' ? 'assistant' : 'user', content: item.parts.map(part => part.text).join('') })),
-        { role: 'user', content: message },
+        ...history.map(item => ({ role: item.role === 'model' ? 'assistant' : 'user', content: compatibleContent(item.parts) })),
+        { role: 'user', content: compatibleContent(partsFor(message)) },
       ] }),
     });
   } catch {
@@ -153,7 +161,7 @@ async function generateCompatible(provider: 'openrouter' | 'venice', apiKey: str
 export async function sendWithFallback(
   character: string,
   sessionKey: string,
-  message: string,
+  message: Input,
   systemInstruction: string | undefined,
   apiKey: string,
   language: AppLanguage = 'ko',
@@ -169,7 +177,7 @@ export async function sendWithFallback(
     const session = sessionFor(character, sessionKey, apiKey, room);
     const text = await generateCompatible(provider, apiKey, model, instruction, session.history, message, signal);
     checkCanceled(signal);
-    session.history.push({ role: 'user', parts: [{ text: message }] }, { role: 'model', parts: [{ text }] });
+    session.history.push({ role: 'user', parts: partsFor(message) }, { role: 'model', parts: [{ text }] });
     return text;
   }
   const order = await modelOrder(apiKey, selection);
@@ -187,7 +195,7 @@ export async function sendWithFallback(
       const text = await generate(apiKey, modelName, instruction, session.history, message, signal);
       checkCanceled(signal);
       session.history.push(
-        { role: 'user', parts: [{ text: message }] },
+        { role: 'user', parts: partsFor(message) },
         { role: 'model', parts: [{ text }] },
       );
       if (selection === 'auto') rememberModel(apiKey, modelName);

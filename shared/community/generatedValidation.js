@@ -38,6 +38,8 @@ function validatePublicStory(value, assets) {
     if (!value || typeof value !== 'object')
         return fail('INVALID_STORY');
     const raw = value;
+    if (raw.hasImageHistory === true || (Array.isArray(raw.chatMessages) && raw.chatMessages.some((message) => message?.images?.length)))
+        return fail('IMAGE_HISTORY_PRIVATE');
     if (typeof raw.title !== 'string' || !raw.title.trim() || (0, exports.charCount)(raw.title) > 100 || /[\r\n]/.test(raw.title))
         return fail('INVALID_TITLE');
     if (typeof raw.script !== 'string' || typeof raw.character !== 'string' || !assets.emotions[raw.character])

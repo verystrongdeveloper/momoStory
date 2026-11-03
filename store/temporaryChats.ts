@@ -5,6 +5,7 @@ export type TemporaryMessage = Omit<SavedChatMessage, 'sender'> & { sender: 'use
 type TemporaryChat = {
   messages: TemporaryMessage[];
   input: string;
+  images?: import('../shared/chatImages').ChatImage[];
   isWaiting: boolean;
   eventReady: boolean;
   completedPairs: number; // Successful chat replies since the last generated story.
@@ -18,7 +19,7 @@ type TemporaryChat = {
   recoveryContextId?: string;
 };
 
-const empty = (): TemporaryChat => ({ messages: [], input: '', isWaiting: false, eventReady: false, completedPairs: 0, greetingStarted: false, needsReset: false, storyScript: null, roomId: undefined, generation: 0, unreadCount: 0 });
+const empty = (): TemporaryChat => ({ messages: [], input: '', images: [], isWaiting: false, eventReady: false, completedPairs: 0, greetingStarted: false, needsReset: false, storyScript: null, roomId: undefined, generation: 0, unreadCount: 0 });
 
 export type ChatArrival = { character: string; message: string; reading: boolean };
 const arrivalListeners = new Set<(arrival: ChatArrival) => void>();

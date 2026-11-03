@@ -9,6 +9,7 @@ function load(file, mocks = {}) {
   new Function('require', 'module', 'exports', code)(id => {
     if (Object.hasOwn(mocks, id)) return mocks[id];
     if (id === '../shared/geminiModels') return require('../shared/geminiModels');
+    if (id === '../shared/chatImages') return require('../shared/chatImages');
     if (id === '../shared/senseiMode') return require('../shared/senseiMode');
     if (id.startsWith('.')) return load(path.relative(root, path.resolve(root, path.dirname(file), `${id}.ts`)), mocks);
     return require(id);

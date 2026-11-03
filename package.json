@@ -34,7 +34,8 @@
     "desktop:exe": "tauri build --no-bundle && node scripts/place-desktop-exe.js",
     "android:apk": "node scripts/build-android-apk.js",
     "test": "jest --watchAll",
-    "lint": "expo lint"
+    "lint": "expo lint",
+    "test:chat-images": "node scripts/test-chat-images.cjs"
   },
   "jest": {
     "preset": "jest-expo"

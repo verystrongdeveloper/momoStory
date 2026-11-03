@@ -3,6 +3,8 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import { AppState, Platform } from 'react-native';
 import { createClient, type SupabaseClient } from '@supabase/supabase-js';
 import type { StoryRecord } from '@/storage/types';
+import { hasChatImages } from '@/shared/chatImages';
+import { listStories } from '@/store/storyLibrary';
 import assets from '@/shared/community/assets.json';
 import { validatePublicStory, validateComment } from '@/shared/community/validation';
 
@@ -72,6 +74,7 @@ export const community = {
   page: (options: { liked: boolean; mine?: boolean; query: string; character?: string; sort: 'latest' | 'popular'; period?: RankingPeriod; offset: number }) => call<{ posts: CommunityPost[]; total: number }>('list', { ...options, pagination: true }),
   detail: (id: string, offset = 0) => call<CommunityDetail>('detail', { id, offset }),
   publish: (story: StoryRecord) => {
+    if (hasChatImages(story) || hasChatImages(listStories().find(item => item.id === story.id) ?? {})) throw new CommunityError('IMAGE_HISTORY_PRIVATE');
     const clean = validatePublicStory({ title: story.title, character: story.character, script: story.script, chatMessages: story.chatMessages ?? [], clientId: story.id }, assets);
     return call<{ id: string; alreadyPublished?: boolean; updated?: boolean }>('publish', { ...clean });
   },
@@ -87,6 +90,7 @@ export function communityStory(detail: CommunityDetail): StoryRecord {
 }
 export function communityErrorKey(error: unknown) {
   const code = error && typeof error === 'object' && 'code' in error ? String(error.code) : '';
+  if (code === 'IMAGE_HISTORY_PRIVATE') return 'imageHistoryPrivate';
   if (code === 'NOT_CONFIGURED') return 'communitySetup';
   if (code === 'RATE_LIMIT') return 'communityRateLimit';
   if (code === 'INVALID_COMMENT') return 'communityCommentLimit';

@@ -2,10 +2,12 @@ import React, { useRef, useState } from 'react';
 import { Modal, ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { useI18n } from '@/i18n';
 import { community, communityConfigured, communityErrorKey } from '@/services/community/client';
+import { hasChatImages } from '@/shared/chatImages';
 import type { StoryRecord } from '@/storage/types';
 
 export default function PublishStoryModal({ story, onClose }: { story: StoryRecord; onClose: () => void }) {
   const { t } = useI18n();
+  const imageRestricted = hasChatImages(story);
   const [consent, setConsent] = useState(false);
   const hasChat = (story.chatMessages?.length ?? 0) > 0;
   const [includeChat, setIncludeChat] = useState(hasChat);
@@ -14,7 +16,7 @@ export default function PublishStoryModal({ story, onClose }: { story: StoryReco
   const [done, setDone] = useState(false);
   const pending = useRef(false);
   const publish = async () => {
-    if (pending.current || !consent) return;
+    if (pending.current || !consent || imageRestricted) return;
     pending.current = true; setBusy(true); setNotice('');
     try {
       const result = await community.publish({ ...story, chatMessages: includeChat ? story.chatMessages : [] });
@@ -29,7 +31,8 @@ export default function PublishStoryModal({ story, onClose }: { story: StoryReco
     <View style={styles.overlay}><ScrollView style={styles.card} contentContainerStyle={styles.content}>
       <Text style={styles.title}>{t('communityPublish')}</Text>
       <Text style={styles.story}>{story.title}</Text>
-      {!done && <View accessibilityRole="radiogroup" accessibilityLabel={t('communityPublishScope')} style={scopeStyles.group}>
+      {imageRestricted && <Text accessibilityRole="alert" style={styles.notice}>{t('imageHistoryPrivate')}</Text>}
+      {!done && !imageRestricted && <View accessibilityRole="radiogroup" accessibilityLabel={t('communityPublishScope')} style={scopeStyles.group}>
         <Text style={scopeStyles.title}>{t('communityPublishScope')}</Text>
         {([true, false] as const).map(withChat => <TouchableOpacity key={String(withChat)} accessibilityRole="radio" accessibilityState={{ checked: includeChat === withChat, disabled: busy || (withChat && !hasChat) }} disabled={busy || (withChat && !hasChat)} style={[scopeStyles.option, includeChat === withChat && scopeStyles.selected, withChat && !hasChat && styles.disabled]} onPress={() => {
           if (pending.current || includeChat === withChat) return;
@@ -44,11 +47,11 @@ export default function PublishStoryModal({ story, onClose }: { story: StoryReco
       <Text style={styles.text}>{t('communityLimits')}</Text>
       <Text style={styles.text}>{t('communityPrivacy')}</Text>
       {!communityConfigured() && <Text style={styles.notice}>{t('communitySetup')}</Text>}
-      {!done && <TouchableOpacity accessibilityRole="checkbox" accessibilityState={{ checked: consent }} disabled={busy} onPress={() => setConsent(value => !value)} style={styles.consent}><Text>{consent ? '☑' : '☐'} {t('communityConsent')}</Text></TouchableOpacity>}
+      {!done && !imageRestricted && <TouchableOpacity accessibilityRole="checkbox" accessibilityState={{ checked: consent }} disabled={busy} onPress={() => setConsent(value => !value)} style={styles.consent}><Text>{consent ? '☑' : '☐'} {t('communityConsent')}</Text></TouchableOpacity>}
       {!!notice && <Text accessibilityRole="alert" style={styles.notice}>{notice}</Text>}
       <View style={styles.actions}>
         <TouchableOpacity disabled={busy} onPress={onClose} style={styles.button}><Text>{t(done ? 'close' : 'cancel')}</Text></TouchableOpacity>
-        {!done && <TouchableOpacity disabled={busy || !consent || !communityConfigured()} onPress={() => void publish()} style={[styles.button, styles.primary, (!consent || busy || !communityConfigured()) && styles.disabled]}><Text style={styles.white}>{t(busy ? 'communityBusy' : 'communityPublish')}</Text></TouchableOpacity>}
+        {!done && !imageRestricted && <TouchableOpacity disabled={busy || !consent || !communityConfigured()} onPress={() => void publish()} style={[styles.button, styles.primary, (!consent || busy || !communityConfigured()) && styles.disabled]}><Text style={styles.white}>{t(busy ? 'communityBusy' : 'communityPublish')}</Text></TouchableOpacity>}
       </View>
     </ScrollView></View>
   </Modal>;

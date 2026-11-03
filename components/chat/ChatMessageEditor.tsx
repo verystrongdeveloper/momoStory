@@ -1,7 +1,9 @@
 import React, { useRef } from 'react';
-import { ScrollView, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
+import { Image, ScrollView, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
 import type { SavedChatMessage } from '@/storage/types';
 import { useI18n } from '@/i18n';
+
+import { imageUri } from '../../shared/chatImages';
 
 interface Props {
   value: SavedChatMessage[];
@@ -53,6 +55,10 @@ export default function ChatMessageEditor({ value, onChange, onDeleteMessage, st
             onChange(value.filter((_, i) => i !== index));
           }}><Text style={styles.deleteText}>{t('delete')}</Text></TouchableOpacity>
         </View>
+        {!!message.images?.length && <View style={styles.images}>{message.images.map((image, imageIndex) => <View key={imageIndex}>
+          <Image accessibilityLabel={t('chatAttachedImage')} source={{ uri: imageUri(image) }} style={styles.image} resizeMode="contain" />
+          <TouchableOpacity accessibilityRole="button" accessibilityLabel={t('chatRemoveImage')} onPress={() => change(index, { images: message.images?.filter((_, i) => i !== imageIndex) })} style={styles.button}><Text style={styles.deleteText}>{t('chatRemoveImage')}</Text></TouchableOpacity>
+        </View>)}</View>}
         <TextInput accessibilityLabel={t('chatEditorMessage', { index: index + 1 })} value={message.text} onChangeText={text => change(index, { text })} multiline textAlignVertical="top" style={styles.input} />
         {message.sender === 'character' && <TouchableOpacity accessibilityRole="checkbox" accessibilityState={{ checked: !!message.showImage }} style={styles.avatarToggle} onPress={() => change(index, { showImage: !message.showImage })}>
           <Text style={styles.buttonText}>{message.showImage ? '☑' : '☐'} {t('chatEditorShowAvatar')}</Text>
@@ -67,6 +73,8 @@ export default function ChatMessageEditor({ value, onChange, onDeleteMessage, st
 }
 
 const styles = StyleSheet.create({
+  images: { flexDirection: 'row', flexWrap: 'wrap', gap: 8 },
+  image: { width: 120, height: 100, borderRadius: 8 },
   root: { flex: 1, minWidth: 0, minHeight: 0 },
   hint: { color: '#748094', fontSize: 13, lineHeight: 20, paddingBottom: 12 },
   scroll: { flex: 1 }, messages: { gap: 12, paddingBottom: 24 },

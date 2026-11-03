@@ -152,7 +152,7 @@ export default function StoryLibraryList({ onOpenStory, initialEdit, initialStor
     if (editing !== 'new' && getTemporaryChat(editing.character, getGeminiKey(), 'bond', editing.id).getSnapshot().isWaiting) {
       setNotice(t('roomBusy')); return;
     }
-    if (chatDraft.some(message => !message.text.trim())) {
+    if (chatDraft.some(message => !message.text.trim() && !message.images?.length)) {
       setEditorTab('chat');
       setNotice(t('chatEditorEmptyMessage'));
       return;

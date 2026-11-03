@@ -3,4 +3,4 @@ export type ConversationContext = { id: string; messages: SavedChatMessage[]; sc
 export function conversationContext(value: unknown): ConversationContext | null;
 export function dialogPairs(messages: SavedChatMessage[]): { user: string; ai: string }[];
 export function continuationText(scripts: string[]): string;
-export function conversationHistory(context: ConversationContext): { role: 'user' | 'model'; parts: { text: string }[] }[];
+export function conversationHistory(context: ConversationContext): { role: 'user' | 'model'; parts: import('./chatImages').ChatPart[] }[];

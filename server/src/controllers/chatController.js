@@ -1,4 +1,5 @@
 // src/controllers/chatController.js
+const { validateImages, messageParts, checkImageBudget } = require('../../../shared/chatImages');
 const chatLogs = new Map(); // 키+캐릭터+채팅방별 누적 대화
 const { getChat, apiKeyFrom, keyId, resetChatSessions, restoreConversation } = require('../services/geminiService');
 const { conversationContext } = require('../../../shared/conversation');
@@ -28,7 +29,10 @@ exports.sendChat = async (req, res) => {
   const room = req.body.room === 'chat' ? 'chat' : 'bond';
   const apiKey = readKey(req, res);
   if (!apiKey) return;
-  if (!character || !message) {
+  let images;
+  try { images = validateImages(req.body.images); }
+  catch { return res.status(400).json({ error: 'INVALID_CHAT_IMAGES' }); }
+  if (typeof character !== 'string' || typeof message !== 'string' || (!message.trim() && !images.length)) {
     return res.status(400).json({ error: 'character 또는 message 누락' });
   }
 
@@ -38,10 +42,11 @@ exports.sendChat = async (req, res) => {
 
   try {
     const context = conversationContext(req.body.context);
+    checkImageBudget(context?.messages ?? [], images);
     const sessionRoom = context ? `room-${context.id}` : room;
     if (context) restoreConversation(character, apiKey, sessionRoom, context);
     const chat   = await getChat(character, undefined, '', undefined, apiKey, req.body.language, sessionRoom, req.body.model);
-    const result = await chat.sendMessage(message, { signal: controller.signal });
+    const result = await chat.sendMessage(messageParts(message, images), { signal: controller.signal });
     if (controller.signal.aborted) return;
     const reply  = result.response.text();
 
@@ -55,6 +60,7 @@ exports.sendChat = async (req, res) => {
     res.json({ reply, eventReady });
   } catch (err) {
     if (controller.signal.aborted) return;
+    if (err?.message === 'INVALID_CHAT_IMAGES' || err?.message === 'CHAT_IMAGE_BUDGET') return res.status(400).json({ error: err.message });
     console.error('[Gemini 오류]', err);
     res.status(500).json({ error: 'Gemini 응답 실패' });
   } finally {

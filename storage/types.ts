@@ -1,3 +1,4 @@
+import { hasChatImages, validImage, type ChatImage } from '../shared/chatImages';
 import { normalizeModel } from '../shared/geminiModels';
 import { normalizeSenseiMode, type SenseiMode } from '../shared/senseiMode';
 import { normalizeChatSound, type ChatSoundId } from '../utils/chatPresentation';
@@ -24,13 +25,16 @@ export type Preferences = {
   tutorialSeen: boolean;
 };
 
+
 export type SavedChatMessage = {
+  images?: ChatImage[];
   sender: 'user' | 'character';
   text: string;
   showImage?: boolean;
 };
 
 export type StoryRecord = {
+  hasImageHistory?: boolean;
   id: string;
   title: string;
   character: string;
@@ -122,6 +126,7 @@ export function sanitizeStories(input: unknown): StoryRecord[] {
   return input
     .filter((item) => item && typeof item.id === 'string' && typeof item.script === 'string')
     .map((item) => ({
+      hasImageHistory: hasChatImages(item),
       id: item.id,
       script: item.script,
       title: typeof item.title === 'string' ? item.title : '스토리',
@@ -139,6 +144,7 @@ export function sanitizeStories(input: unknown): StoryRecord[] {
             sender: message.sender,
             text: message.text,
             showImage: message.showImage === true,
+            ...(Array.isArray(message.images) && message.images.length ? { images: message.images.filter(validImage).map(image => ({ ...image })) } : {}),
           })),
       } : {}),
     }));

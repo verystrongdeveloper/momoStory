@@ -59,6 +59,10 @@ function load(file, mocks = {}, globals = {}) {
   assert.equal(calls.at(-1).body.model, 'openrouter/free'); assert.equal(calls.at(-1).options.headers.Authorization, 'Bearer router-key');
   assert.ok(calls.at(-1).body.messages[0].content.includes('OUTPUT LANGUAGE: English.'));
   await send(); assert.deepEqual(calls.at(-1).body.messages.map(row => row.role), ['system', 'user', 'assistant', 'user']);
+  await rest.sendWithFallback('image-provider', '', [{ text: 'describe' }, { inlineData: { mimeType: 'image/png', data: 'aGVsbG8=' } }], undefined, 'router-key', 'en', 'bond', selection);
+  assert.deepEqual(calls.at(-1).body.messages.at(-1).content, [{ type: 'text', text: 'describe' }, { type: 'image_url', image_url: { url: 'data:image/png;base64,aGVsbG8=' } }]);
+  await rest.sendWithFallback('image-provider', '', 'follow up', undefined, 'router-key', 'en', 'bond', selection);
+  assert.equal(calls.at(-1).body.messages[1].content[1].type, 'image_url');
   selection = 'openrouter:paid/model'; status = 429; const before = calls.length;
   await assert.rejects(send(), /429/); assert.equal(calls.length, before + 1, 'no automatic switch or paid fallback');
   status = 200; await send(); assert.equal(calls.at(-1).body.messages.length, 6, 'failed requests never enter history');

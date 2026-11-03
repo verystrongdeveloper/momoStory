@@ -1,0 +1,12 @@
+export type ChatImage = { mimeType: string; data: string };
+export type ChatPart = { text: string; inlineData?: never } | { inlineData: ChatImage; text?: never };
+export const MAX_IMAGE_BYTES: number;
+export const MAX_MESSAGE_IMAGES: number;
+export const MAX_HISTORY_IMAGE_CHARS: number;
+export const IMAGE_MIME_TYPES: string[];
+export function validImage(image: unknown): image is ChatImage;
+export function validateImages(value: unknown): ChatImage[];
+export function messageParts(text: string, images?: ChatImage[]): ChatPart[];
+export function imageUri(image: ChatImage): string;
+export function hasChatImages(story: { hasImageHistory?: boolean; chatMessages?: { images?: ChatImage[] }[]; episodes?: { chatMessages: { images?: ChatImage[] }[] }[] }): boolean;
+export function checkImageBudget(messages: { images?: ChatImage[] }[], images?: ChatImage[]): void;

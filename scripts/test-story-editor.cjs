@@ -14,7 +14,7 @@ function load(file, mocks = {}) {
     if (Object.hasOwn(mocks, id)) return mocks[id];
     if (id.startsWith('@/') || id.startsWith('.')) {
       const base = id.startsWith('@/') ? id.slice(2) : path.relative(root, path.resolve(root, path.dirname(file), id));
-      return load(fs.existsSync(path.join(root, base)) && fs.statSync(path.join(root, base)).isFile() ? base : fs.existsSync(path.join(root, base + '.ts')) ? base + '.ts' : base + '.tsx', mocks);
+      return load(fs.existsSync(path.join(root, base)) && fs.statSync(path.join(root, base)).isFile() ? base : fs.existsSync(path.join(root, base + '.ts')) ? base + '.ts' : fs.existsSync(path.join(root, base + '.js')) ? base + '.js' : base + '.tsx', mocks);
     }
     return require(id);
   }, mod, mod.exports);

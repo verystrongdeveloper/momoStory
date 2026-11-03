@@ -53,6 +53,11 @@ const model = id => ({ name: `models/${id}`, displayName: id, supportedGeneratio
     const code = status; status = 0;
     return { ok: !code, status: code || 200, text: async () => code ? '{"error":{"message":"unavailable"}}' : '{"candidates":[{"content":{"parts":[{"text":"reply"}]}}]}' };
   } });
+  const image = { mimeType: 'image/png', data: 'aGVsbG8=' };
+  await rest.sendWithFallback('image-rest', '', [{ text: 'describe' }, { inlineData: image }], undefined, 'test-key', 'en', 'bond');
+  assert.deepEqual(generation.at(-1).body.contents[0].parts, [{ text: 'describe' }, { inlineData: image }]);
+  await rest.sendWithFallback('image-rest', '', 'follow up', undefined, 'test-key', 'en', 'bond');
+  assert.deepEqual(generation.at(-1).body.contents[0].parts[1].inlineData, image);
   const send = (character = '호시노', room = 'bond', session = '') => rest.sendWithFallback(character, session, 'hello', undefined, 'test-key', 'en', room);
   await send(); assert.ok(generation.at(-1).url.includes('gemini-4-argon:generateContent'));
   selection = 'gemini-3.8-flash'; await send(); assert.equal(generation.at(-1).body.contents.length, 3, 'manual model switch preserves chat');
@@ -115,6 +120,8 @@ const model = id => ({ name: `models/${id}`, displayName: id, supportedGeneratio
   } }).expressTransport;
   await transport.trigger('호시노'); await transport.chat('호시노', 'hello'); await transport.createEvent('호시노');
   assert.ok(requests.every(request => request.model === 'gemini-4-argon'));
+  await transport.chat('image-express', '', 'bond', undefined, undefined, [image]);
+  assert.deepEqual(requests.at(-1).images, [image]);
   const expressAbort = new AbortController();
   const canceledExpress = transport.chat('호시노', 'cancel', 'bond', undefined, expressAbort.signal);
   const rejectedExpress = assert.rejects(canceledExpress, error => error.name === 'AbortError');

@@ -25,6 +25,7 @@ export function validateComment(value: unknown): string {
 export function validatePublicStory(value: unknown, assets: AssetManifest): PublicStoryInput {
   if (!value || typeof value !== 'object') return fail('INVALID_STORY');
   const raw = value as Record<string, unknown>;
+  if (raw.hasImageHistory === true || (Array.isArray(raw.chatMessages) && raw.chatMessages.some((message: any) => message?.images?.length))) return fail('IMAGE_HISTORY_PRIVATE');
   if (typeof raw.title !== 'string' || !raw.title.trim() || charCount(raw.title) > 100 || /[\r\n]/.test(raw.title)) return fail('INVALID_TITLE');
   if (typeof raw.script !== 'string' || typeof raw.character !== 'string' || !assets.emotions[raw.character]) return fail('INVALID_STORY');
   if (typeof raw.clientId !== 'string' || !/^[a-zA-Z0-9_-]{1,100}$/.test(raw.clientId)) return fail('INVALID_STORY');
